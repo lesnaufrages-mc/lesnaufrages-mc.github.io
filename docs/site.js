@@ -106,11 +106,17 @@ var SITE = {
         var lien = a.lien && lienSur(a.lien)
           ? '<a class="more" href="' + esc(a.lien) + '"' + (/^https?:/.test(a.lien) ? ' target="_blank" rel="noopener"' : '') + '>' + esc(a.bouton || 'En savoir plus') + ' →</a>'
           : '';
+        // Vidéo seulement depuis un fichier du site (pas de lien externe).
+        var media = a.video && /^[\w\/.-]+\.(mp4|webm)$/i.test(a.video)
+          ? '<video class="post-video" controls playsinline preload="none"' +
+            (a.image && /^[\w\/.-]+\.(jpe?g|png|webp)$/i.test(a.image) ? ' poster="' + esc(a.image) + '"' : '') +
+            '><source src="' + esc(a.video) + '" type="video/' + (/webm$/i.test(a.video) ? 'webm' : 'mp4') + '"></video>'
+          : '';
         return '<article class="post' + (a.epingle ? ' pin' : '') + '">' +
           '<div class="meta"><span class="tag ' + c + '">' + ICONES[c] + ' ' + NOMS[c] + '</span>' +
           '<time datetime="' + esc(a.date) + '">' + dateFr(a.date) + '</time>' +
           (a.epingle ? '<span class="pin-mark">📌 Épinglé</span>' : '') + '</div>' +
-          '<h3>' + esc(a.titre) + '</h3><p>' + esc(a.texte) + '</p>' + lien + '</article>';
+          '<h3>' + esc(a.titre) + '</h3>' + media + '<p>' + esc(a.texte) + '</p>' + lien + '</article>';
       }).join('') || '<p class="news-empty">Aucune actualité dans cette catégorie pour le moment.</p>';
     }
 

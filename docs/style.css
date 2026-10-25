@@ -181,6 +181,7 @@ footer a:hover{color:var(--txt)}
 .post .meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
 .post h3{font-size:19px}
 .post p{color:var(--muted);margin:0;font-size:15px}
+.post-video{display:block;width:100%;aspect-ratio:16/9;border-radius:12px;background:#000;border:1px solid var(--line)}
 .post .more{margin-top:auto;color:var(--green);font-weight:700;text-decoration:none;font-size:15px}
 .post .more:hover{text-decoration:underline}
 .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#26262a;color:var(--txt)}

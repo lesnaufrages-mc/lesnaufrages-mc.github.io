@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Mot Mystère",
+    "slug": "mot-mystere",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#121213",
+    "ios": {
+      "bundleIdentifier": "app.motmystere"
+    },
+    "android": {
+      "package": "app.motmystere",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#121213"
+      }
+    },
+    "plugins": [
+      "expo-status-bar",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "userTrackingUsageDescription": "Cela nous permet de te montrer des pubs plus adaptées et de garder le jeu gratuit."
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png"
+  }
+}

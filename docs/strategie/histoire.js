@@ -1,4 +1,4 @@
-/* Naufragés : Conquête — les campagnes historiques (700 → 1800).
+/* Imperium of Wars — les campagnes historiques (700 → 1800).
    Pour chaque époque : les royaumes, leur couleur et leurs provinces (la 1re = capitale).
    Les provinces non citées sont tenues par des rebelles / seigneurs indépendants. */
 var HISTOIRE = {

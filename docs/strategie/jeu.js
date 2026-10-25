@@ -1,4 +1,4 @@
-/* Naufragés : Conquête — affichage et commandes (carte du monde, villes, batailles). */
+/* Imperium of Wars — affichage et commandes (carte du monde, villes, batailles). */
 (function () {
   'use strict';
   var M = window.Moteur, U = M.UNITES, PROV = M.PROV, MONDE = M.MONDE, HIST = M.HISTOIRE;
@@ -483,14 +483,14 @@
     var titre, texte, partage;
     if (fin === 'victoire') {
       titre = '👑 Victoire !'; texte = F.nom + ' domine le monde en ' + etat.annee + ' avec ' + n + ' provinces. Un vrai conquérant !';
-      partage = 'J\'ai conquis le monde avec ' + F.nom + ' en ' + etat.annee + ' dans Naufragés : Conquête ⚔️ Tu fais mieux ?';
+      partage = 'J\'ai conquis le monde avec ' + F.nom + ' en ' + etat.annee + ' dans Imperium of Wars ⚔️ Tu fais mieux ?';
     } else if (fin === 'temps') {
       titre = rang === 1 ? '🏆 Premier royaume du monde !' : '⏳ ' + HIST.FIN + ' : fin de la campagne';
       texte = F.nom + ' finit ' + rang + (rang === 1 ? 'er' : 'e') + ' avec ' + n + ' provinces.';
-      partage = 'En ' + HIST.FIN + ', mon royaume ' + F.nom + ' est ' + rang + (rang === 1 ? 'er' : 'e') + ' du monde dans Naufragés : Conquête 🏰 Et toi ?';
+      partage = 'En ' + HIST.FIN + ', mon royaume ' + F.nom + ' est ' + rang + (rang === 1 ? 'er' : 'e') + ' du monde dans Imperium of Wars 🏰 Et toi ?';
     } else {
       titre = '💀 Défaite...'; texte = F.nom + ' est tombé en ' + etat.annee + '. Retente ta chance !';
-      partage = 'Mon royaume ' + F.nom + ' est tombé en ' + etat.annee + ' dans Naufragés : Conquête 🏰 Tu tiendras plus longtemps ?';
+      partage = 'Mon royaume ' + F.nom + ' est tombé en ' + etat.annee + ' dans Imperium of Wars 🏰 Tu tiendras plus longtemps ?';
     }
     feuille('<h2>' + titre + '</h2><p>' + texte + '</p>' +
       '<button class="btn or" id="fPartager">📤 Partager mon score</button>' +
@@ -503,12 +503,15 @@
     $('fRejouer').onclick = choisirEpoque;
   }
 
-  // ---------- Bataille ----------
+  // ---------- Bataille (3D si possible, sinon vue 2D) ----------
   var cv = $('champ'), ctx = cv.getContext('2d');
   var B = null, ennemi = -1, apres = null, attaqueEnCours = null;
   var vitesse = 1, enCours = false, selection = null, echelle = 1, dernier = 0, marques = [];
+  var vue3d = null, majCartes = 0;
+  function veut3d() { try { return localStorage.getItem('strategie-vue') !== '2d'; } catch (e) { return true; } }
 
   function taille() {
+    if (vue3d) { vue3d.taille(); return; }
     var z = $('zoneChamp'), w = z.clientWidth - 12, h = z.clientHeight - 12;
     echelle = Math.min(w / M.CHAMP.l, h / M.CHAMP.h);
     var dpr = window.devicePixelRatio || 1;
@@ -518,7 +521,36 @@
     cv.height = M.CHAMP.h * echelle * dpr;
     ctx.setTransform(echelle * dpr, 0, 0, echelle * dpr, 0, 0);
   }
-  window.addEventListener('resize', function () { if (B) { taille(); dessinerBataille(); } });
+  window.addEventListener('resize', function () { if (B) { taille(); afficher(0); } });
+
+  function preparerVue() {
+    if (vue3d) { vue3d.detruire(); vue3d = null; }
+    var ok = veut3d() && window.Bataille3D && window.Bataille3D.dispo();
+    if (ok) {
+      try {
+        vue3d = window.Bataille3D.creer($('zoneChamp'), B, {
+          unites: U, champ: M.CHAMP, couleurs: [coul(moi()), coul(ennemi)],
+          onTap: function (x, y) { toucherChamp(x, y); }
+        });
+      } catch (e) { vue3d = null; }
+    }
+    cv.classList.toggle('hide', !!vue3d);
+    $('oVue').textContent = vue3d ? '🗺️ 2D' : '🎥 3D';
+    $('oVue').classList.toggle('hide', !(window.Bataille3D && window.Bataille3D.dispo()));
+    taille();
+  }
+  $('oVue').onclick = function () {
+    try { localStorage.setItem('strategie-vue', vue3d ? '2d' : '3d'); } catch (e) {}
+    preparerVue(); afficher(0);
+  };
+
+  function afficher(dt) {
+    if (!B) return;
+    if (vue3d) vue3d.maj(B, dt, selection); else dessinerBataille();
+    jauges();
+    majCartes -= dt;
+    if (majCartes <= 0) { cartesUnites(); majCartes = 0.25; }
+  }
 
   function lancerBataille(att, auto, ensuite) {
     attaqueEnCours = att; apres = ensuite;
@@ -534,21 +566,22 @@
     $('jEux').style.background = coul(ennemi);
     var nom = PROV[att.vers].nom;
     $('titreBataille').textContent = B.mur ? (defense ? '🏰 Siège de ' + nom + ' : défends la ville !' : '🏰 Siège de ' + nom) : (defense ? '🛡️ Défense de ' : '⚔️ Bataille de ') + nom;
-    $('texteBataille').textContent = (B.mur ? (defense ? 'Tes troupes sont derrière les remparts (en bas). Les ennemis doivent percer les murs.' :
+    $('texteBataille').textContent = (B.mur ? (defense ? 'Tes troupes sont derrière les remparts. Les ennemis doivent percer les murs.' :
       'La ville est protégée par des remparts. Frappe les murs ou la porte (au milieu) pour ouvrir une brèche. Les canons les abattent vite !') :
-      'Tes troupes sont en bas. Piques et hommes d\'armes devant, tireurs derrière, cavalerie sur les côtés.');
+      'Piques et hommes d\'armes devant, tireurs derrière, cavalerie sur les côtés.') +
+      ' Choisis une unité (en bas ou sur le terrain), puis touche un ennemi ou le sol. Fais glisser pour tourner la caméra, pince pour zoomer.';
     $('debutBataille').classList.remove('hide');
     $('finBataille').classList.add('hide');
     montrer('bataille');
-    taille();
-    dessinerBataille();
-    if (auto) finirAuto();
+    if (auto) { finirAuto(); return; }
+    preparerVue();
+    dernier = performance.now();
+    requestAnimationFrame(boucle);
   }
 
   $('bLancer').onclick = function () {
     $('debutBataille').classList.add('hide');
-    enCours = true; dernier = performance.now();
-    requestAnimationFrame(boucle);
+    enCours = true;
   };
   $('bAutoAvant').onclick = finirAuto;
   $('oAuto').onclick = finirAuto;
@@ -577,21 +610,25 @@
     $('oVitesse').textContent = '⏩ x' + vitesse;
   };
 
+  // Une seule boucle : la caméra 3D tourne même avant le début ; la simulation avance pendant la bataille.
   function boucle(t) {
-    if (!enCours || !B) return;
+    if (!B) return;
     var dt = Math.min(0.05, (t - dernier) / 1000); dernier = t;
-    for (var i = 0; i < vitesse * 2; i++) M.etape(B, dt / 2);
-    dessinerBataille();
-    if (B.fin) { enCours = false; setTimeout(terminer, 600); return; }
+    if (enCours && !B.fin) {
+      for (var i = 0; i < vitesse * 2; i++) M.etape(B, dt / 2);
+      if (B.fin) setTimeout(terminer, 900);
+    }
+    afficher(dt);
     requestAnimationFrame(boucle);
   }
 
   function terminer() {
     if (!B || !$('finBataille').classList.contains('hide')) return;
+    enCours = false;
     var gagne = B.fin.gagnant === 0, defense = attaqueEnCours.camp !== moi();
     var pertes = [0, 0];
     B.esc.forEach(function (e) { pertes[e.camp] += U[e.t].hommes - Math.ceil(Math.max(0, e.hp) / U[e.t].pv); });
-    dessinerBataille();
+    if (!vue3d) dessinerBataille();
     M.appliquerBataille(etat, attaqueEnCours, B);
     sauver();
     var nom = PROV[attaqueEnCours.vers].nom;
@@ -600,26 +637,76 @@
       nom + '. Pertes : ' + pertes[0] + ' de tes soldats, ' + pertes[1] + ' ennemis.';
     $('finBataille').classList.remove('hide');
   }
-  $('bRetourCarte').onclick = function () { var f = apres; B = null; if (f) f(); };
+  $('bRetourCarte').onclick = function () {
+    var f = apres; B = null;
+    if (vue3d) { vue3d.detruire(); vue3d = null; }
+    if (f) f();
+  };
 
-  cv.addEventListener('pointerdown', function (ev) {
+  // Ordres : choisir une de tes unités, puis un ennemi (attaque) ou le sol (déplacement).
+  function toucherChamp(x, y) {
     if (!B || !enCours) return;
-    var rect = cv.getBoundingClientRect();
-    var x = (ev.clientX - rect.left) / echelle, y = (ev.clientY - rect.top) / echelle;
-    var touche = null, bd = 28;
+    var touche = null, bd = vue3d ? 34 : 28;
     B.esc.forEach(function (e) {
       if (!M.vivant(e)) return;
       var d = Math.hypot(e.x - x, e.y - y);
       if (d < bd) { bd = d; touche = e; }
     });
-    if (touche && touche.camp === 0) { selection = selection === touche.id ? null : touche.id; return; }
-    if (selection == null) { if (touche) toast('Touche d\'abord une de TES unités.'); return; }
+    if (touche && touche.camp === 0) { selection = selection === touche.id ? null : touche.id; majCartes = 0; return; }
+    if (selection == null) { if (touche) toast('Choisis d\'abord une de TES unités.'); return; }
     var s = B.esc[selection];
     if (!M.vivant(s)) { selection = null; return; }
-    if (touche) { s.ordre = { cible: touche.id }; marques.push({ x: touche.x, y: touche.y, t: 0.6, c: '#ef4444' }); }
-    else { s.ordre = { x: x, y: y }; marques.push({ x: x, y: y, t: 0.6, c: '#fbbf24' }); }
-    selection = null;
+    if (x < 0 || x > M.CHAMP.l || y < 0 || y > M.CHAMP.h) return;
+    if (touche) { s.ordre = { cible: touche.id }; marquer(touche.x, touche.y, '#ef4444'); }
+    else { s.ordre = { x: x, y: y }; marquer(x, y, '#fbbf24'); }
+    selection = null; majCartes = 0;
+  }
+  function marquer(x, y, c) {
+    if (vue3d) vue3d.marquer(x, y, c); else marques.push({ x: x, y: y, t: 0.6, c: c });
+  }
+  cv.addEventListener('pointerdown', function (ev) {
+    var rect = cv.getBoundingClientRect();
+    toucherChamp((ev.clientX - rect.left) / echelle, (ev.clientY - rect.top) / echelle);
   });
+
+  // Cartes d'unités en bas de l'écran (comme dans Total War).
+  function cartesUnites() {
+    var zone = $('cartes'), miens = B.esc.filter(function (e) { return e.camp === 0; });
+    if (zone._B !== B || zone.children.length !== miens.length) {
+      zone._B = B;
+      zone.innerHTML = miens.map(function (e) {
+        return '<button class="carteU" data-u="' + e.id + '"><span class="ic"></span><span class="nb"></span><i></i></button>';
+      }).join('');
+    }
+    // Mise à jour sur place (sans recréer les boutons, pour ne jamais perdre un appui).
+    miens.forEach(function (e, k) {
+      var b = zone.children[k], Ue = U[e.t], hp = Math.max(0, e.hp / e.hpMax), mort = e.hp <= 0 || e.sorti;
+      b.className = 'carteU' + (selection === e.id ? ' sel' : '') + (e.fuite ? ' fuit' : '') + (mort ? ' mort' : '');
+      b.children[0].textContent = e.fuite ? '🏳️' : Ue.ico;
+      b.children[1].textContent = Math.ceil(Math.max(0, e.hp) / Ue.pv);
+      b.children[2].style.width = Math.round(hp * 100) + '%';
+      b.children[2].style.background = hp > 0.5 ? '#22c55e' : hp > 0.25 ? '#fbbf24' : '#ef4444';
+    });
+  }
+  $('cartes').addEventListener('pointerdown', function (ev) {
+    var b = ev.target.closest('[data-u]');
+    if (!b || !B) return;
+    var id = +b.getAttribute('data-u'), e = B.esc[id];
+    if (!M.vivant(e)) return;
+    selection = selection === id ? null : id;
+    majCartes = 0;
+    if (!enCours) toast('Lance la bataille pour donner des ordres.');
+  });
+
+  function jauges() {
+    var f = [0, 0];
+    B.esc.forEach(function (e) { if (M.vivant(e)) f[e.camp] += U[e.t].cout * e.hp / e.hpMax; });
+    var tot = f[0] + f[1] || 1;
+    $('jMoi').style.width = (f[0] / tot * 100) + '%';
+    $('jEux').style.width = (f[1] / tot * 100) + '%';
+    $('conseil').textContent = selection != null ? 'Touche un ennemi pour l\'attaquer, ou le sol pour y aller.' :
+      'Choisis une de tes unités (cartes en bas ou sur le terrain).';
+  }
 
   function dessinerBataille() {
     var L = M.CHAMP.l, H = M.CHAMP.h;
@@ -721,13 +808,6 @@
       ctx.strokeStyle = f.c; ctx.globalAlpha = f.t / 0.6; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(f.x, f.y, 10 + (0.6 - f.t) * 20, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
     });
-    var f = [0, 0];
-    B.esc.forEach(function (e) { if (M.vivant(e)) f[e.camp] += U[e.t].cout * e.hp / e.hpMax; });
-    var tot = f[0] + f[1] || 1;
-    $('jMoi').style.width = (f[0] / tot * 100) + '%';
-    $('jEux').style.width = (f[1] / tot * 100) + '%';
-    $('conseil').textContent = selection != null ? 'Maintenant touche un ennemi pour l\'attaquer, ou le sol pour y aller.' :
-      'Touche une de tes unités pour lui donner un ordre.';
   }
 
   menu();

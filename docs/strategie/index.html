@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Naufragés : Conquête – Stratégie historique 771-1800</title>
+<title>Imperium of Wars – Stratégie historique 771-1800</title>
 <meta name="description" content="Jeu de stratégie historique gratuit sur téléphone : de Charlemagne à Louis XIV, conquiers l'Europe et l'Orient, construis tes villes, assiège les forteresses et commande tes batailles.">
 <meta name="theme-color" content="#0b1220">
 <link rel="icon" href="../icon.png">
-<meta property="og:title" content="Naufragés : Conquête – Jeu de stratégie">
+<meta property="og:title" content="Imperium of Wars – Jeu de stratégie">
 <meta property="og:description" content="De 771 à 1800 : choisis ton royaume, assiège les villes, commande tes armées. Tu conquiers l'Europe ?">
 <meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
 <meta property="og:url" content="https://lesnaufrages-mc.github.io/strategie/">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0b1220;--bg2:#111a2e;--card:#16213a;--line:#25324f;
@@ -27,7 +29,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 /* Menu */
 #menu{align-items:center;justify-content:center;padding:24px 16px;text-align:center;
   background:radial-gradient(600px 400px at 50% 0%,rgba(59,130,246,.25),transparent 70%),radial-gradient(500px 400px at 50% 110%,rgba(229,72,77,.18),transparent 70%),var(--bg)}
-#menu h1{font-size:clamp(30px,9vw,52px);margin:0;letter-spacing:1px;font-weight:900;line-height:1.05}
+#menu h1{font-family:Cinzel,Georgia,serif;font-size:clamp(34px,11vw,60px);margin:0;letter-spacing:3px;font-weight:900;line-height:1.02;text-shadow:0 4px 24px rgba(0,0,0,.6)}
 #menu h1 span{color:var(--or)}
 #menu .sous{color:var(--muted);margin:10px 0 26px;max-width:420px}
 .blason{font-size:64px;margin-bottom:8px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
@@ -91,7 +93,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .feuille{width:100%;max-width:520px;background:var(--bg2);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 16px;padding-bottom:max(18px,env(safe-area-inset-bottom));max-height:85vh;overflow:auto;animation:monte .2s ease-out}
 @keyframes monte{from{transform:translateY(40px);opacity:0}}
-.feuille h2{margin:0 0 4px;font-size:20px}
+.feuille h2{margin:0 0 4px;font-size:20px;font-family:Cinzel,Georgia,serif;letter-spacing:.5px}
 .feuille p{margin:0 0 12px;color:var(--muted);font-size:14px}
 .recrues{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .recrue{text-align:left;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
@@ -115,15 +117,27 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .jauge{height:9px;border-radius:9px;background:#334155;overflow:hidden;display:flex}
 .jauge i{display:block;height:100%;transition:width .3s}
 .forces .noms{display:flex;justify-content:space-between;font-size:12px;font-weight:800}
-#zoneChamp{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+#zoneChamp{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.vue3d{position:absolute;inset:0;display:block;touch-action:none}
 #champ{touch-action:none;border-radius:10px;box-shadow:0 0 0 1px #1e3a1f}
 .ordres{display:flex;gap:6px;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--line);flex:none}
 .ordres button{flex:1;padding:11px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:800;font-size:13px}
 .ordres button.actif{background:var(--bleu);border-color:var(--bleu)}
-#conseil{position:absolute;left:10px;right:10px;top:8px;text-align:center;font-size:13px;font-weight:700;color:#e2e8f0;background:rgba(0,0,0,.45);border-radius:10px;padding:6px 8px;pointer-events:none}
-#debutBataille,#finBataille{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:16px}
+#conseil{z-index:2;position:absolute;left:10px;right:10px;top:8px;text-align:center;font-size:13px;font-weight:700;color:#e2e8f0;background:rgba(0,0,0,.45);border-radius:10px;padding:6px 8px;pointer-events:none}
+#debutBataille,#finBataille{z-index:3;position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.7));padding:16px}
+#debutBataille .boite,#finBataille .boite{background:rgba(17,26,46,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#oVue{flex:none;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:800;font-size:13px;margin-left:8px}
+#cartes{flex:none;display:flex;gap:6px;overflow-x:auto;padding:8px 10px 2px;background:var(--bg2);border-top:1px solid var(--line);scrollbar-width:none}
+#cartes::-webkit-scrollbar{display:none}
+.carteU{flex:none;position:relative;width:52px;height:62px;border-radius:10px;background:linear-gradient(180deg,#2a3a5c,#16213a);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 0 6px;overflow:hidden}
+.carteU .ic{font-size:24px;line-height:1.1}
+.carteU .nb{font-size:11px;font-weight:900;color:#e2e8f0}
+.carteU i{position:absolute;left:0;bottom:0;height:4px}
+.carteU.sel{border-color:#fbbf24;box-shadow:0 0 0 2px rgba(251,191,36,.35);transform:translateY(-3px)}
+.carteU.fuit{opacity:.55}
+.carteU.mort{opacity:.25;filter:grayscale(1)}
 .boite{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:18px;max-width:380px;width:100%;text-align:center}
-.boite h2{margin:0 0 6px;font-size:24px}
+.boite h2{margin:0 0 6px;font-size:22px;font-family:Cinzel,Georgia,serif}
 .boite p{color:var(--muted);font-size:14px;margin:0 0 14px}
 .toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;z-index:40;max-width:92vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:monte .2s}
 </style>
@@ -133,7 +147,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 <!-- MENU -->
 <section id="menu" class="ecran">
   <div class="blason">⚔️🏰</div>
-  <h1>NAUFRAGÉS :<br><span>CONQUÊTE</span></h1>
+  <h1>IMPERIUM<br><span>OF WARS</span></h1>
   <p class="sous">De Charlemagne à Louis XIV : choisis ton royaume sur la vraie carte, construis tes villes, assiège les forteresses et commande tes armées en pleine bataille.</p>
   <button class="btn or" id="bNouvelle">📜 Nouvelle campagne (771 – 1800)</button>
   <button class="btn hide" id="bContinuer">▶ Continuer la campagne</button>
@@ -166,6 +180,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
       <div class="noms"><span id="nomMoi">Toi</span><span id="nomEux">Ennemi</span></div>
       <div class="jauge"><i id="jMoi" style="background:#3b82f6;width:50%"></i><i id="jEux" style="background:#e5484d;width:50%"></i></div>
     </div>
+    <button id="oVue" class="hide">🗺️ 2D</button>
   </div>
   <div id="zoneChamp">
     <canvas id="champ"></canvas>
@@ -182,6 +197,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
       <button class="btn or" id="bRetourCarte">Retour à la carte</button>
     </div></div>
   </div>
+  <div id="cartes"></div>
   <div class="ordres">
     <button id="oCharge">⚔️ Charge !</button>
     <button id="oTenir">🛡️ Tenir</button>
@@ -195,6 +211,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 <script src="monde.js"></script>
 <script src="histoire.js"></script>
 <script src="moteur.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="bataille3d.js"></script>
 <script src="jeu.js"></script>
 <script src="../site.js" defer></script>
 </body>

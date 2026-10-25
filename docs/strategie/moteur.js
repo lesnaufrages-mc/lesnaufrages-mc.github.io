@@ -1,4 +1,4 @@
-/* Naufragés : Conquête — moteur du jeu (aucun code d'affichage ici).
+/* Imperium of Wars — moteur du jeu (aucun code d'affichage ici).
    Marche dans le navigateur ET dans Node : réutilisable dans l'appli Expo et testable. */
 (function (root) {
   'use strict';

@@ -29,7 +29,7 @@
     ],
     "icon": "./assets/icon.png",
     "experiments": {
-      "baseUrl": "/projet-mobille-viral-2-mot-mystere-./jouer"
+      "baseUrl": "/jouer"
     },
     "web": {
       "name": "Mot Mystère",

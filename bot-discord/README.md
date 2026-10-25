@@ -48,16 +48,16 @@ Le bot reste en ligne tant que le terminal est ouvert.
 
 ## 4. L'héberger gratuitement 24 h/24 (sans carte bancaire)
 
-On utilise **bot-hosting.net** (offre gratuite : 256 Mo de RAM, largement assez pour ce bot).
-⚠️ Il faut cliquer **Renouveler** dans leur panneau **tous les 4 jours**, sinon le bot s'arrête.
+On utilise **Daki** (<https://free.daki.cc>) : gratuit, connexion avec Discord, 512 Mo de RAM.
+Le bot a un compteur de jours : chaque pub regardée ajoute 3 jours (2 pubs max par jour, jusqu'à 30 jours d'avance).
+Si le compteur tombe à zéro, le bot s'arrête. Guide officiel : <https://daki.cc/wiki/guides/free-tier>
 
-1. Va sur <https://bot-hosting.net>, clique **Start free** et crée un compte.
+1. Connecte-toi sur <https://free.daki.cc> avec ton compte Discord.
 2. Crée un serveur gratuit de type **Node.js**.
-3. Ouvre le panneau du serveur, onglet **Files** (Fichiers) :
-   - envoie (Upload) le contenu du dossier `bot-discord` : `package.json`, `package-lock.json` et les dossiers `src` et `test` (pas `node_modules`) ;
-   - clique **New File**, nomme-le `.env` et colle dedans les mêmes lignes que sur ton PC.
-4. Onglet **Startup** : mets le fichier principal (main file) sur `src/index.js`.
-5. Onglet **Console** : clique **Start**. Quand tu vois `✅ Connecté`, c'est bon, tu peux éteindre ton PC.
+3. Dans **Files** : envoie `package.json`, `package-lock.json` et les dossiers `src` et `test` (pas `node_modules`),
+   puis crée un fichier `.env` avec les mêmes lignes que sur ton PC.
+4. Dans **Startup** : mets le fichier principal (main file) sur `src/index.js`.
+5. **Console** > **Start**. Quand tu vois `✅ Connecté`, c'est bon.
 
 Éteins le bot sur ton PC (ferme la fenêtre noire) : le même bot ne doit tourner qu'à un seul endroit.
 Le fichier `.env` reste privé chez l'hébergeur : il n'est jamais envoyé sur GitHub (voir `.gitignore`).

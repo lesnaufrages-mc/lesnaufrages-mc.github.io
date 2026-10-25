@@ -1,22 +1,39 @@
 /* Naufragés : Conquête — moteur du jeu (aucun code d'affichage ici).
-   Ce fichier marche dans le navigateur ET dans Node, pour pouvoir le
-   réutiliser plus tard dans l'appli Expo et le tester facilement. */
+   Marche dans le navigateur ET dans Node : réutilisable dans l'appli Expo et testable. */
 (function (root) {
   'use strict';
+  var MONDE = root.MONDE || require('./monde.js');
+  var HISTOIRE = root.HISTOIRE || require('./histoire.js');
 
-  var LARGEUR = 400, HAUTEUR = 600;      // taille de la carte
-  var MAX_UNITES = 8;                    // unités max par région
-  var CHAMP = { l: 360, h: 520 };        // taille du champ de bataille
+  var MAX_UNITES = 8;
+  var CHAMP = { l: 360, h: 520 };
 
   // ---------- Unités ----------
-  // hommes × pv = points de vie de l'unité. bonus = multiplicateur contre un type.
+  // cat : inf, pique, tir, cav, art. bonus = multiplicateur contre une catégorie.
+  // annee / caserne : à partir de quand et avec quel niveau de caserne on peut les recruter.
   var UNITES = {
-    epee:  { nom: 'Épéistes',  ico: '⚔️', cout: 60,  hommes: 40, pv: 10, atq: 5, def: 5, vit: 30, portee: 0,   bonus: {} },
-    lance: { nom: 'Lanciers',  ico: '🔱', cout: 50,  hommes: 40, pv: 9,  atq: 4, def: 6, vit: 28, portee: 0,   bonus: { cav: 2.5 } },
-    arc:   { nom: 'Archers',   ico: '🏹', cout: 70,  hommes: 30, pv: 7,  atq: 2, def: 2, vit: 30, portee: 130, tir: 4, bonus: {} },
-    cav:   { nom: 'Cavaliers', ico: '🐎', cout: 100, hommes: 24, pv: 14, atq: 6, def: 4, vit: 64, portee: 0,   bonus: { arc: 2.2 }, charge: 2.2 }
+    milice:     { nom: 'Milice',            ico: '🔱', cat: 'pique', cout: 40,  hommes: 40, pv: 8,  atq: 3, def: 5, vit: 28, annee: 0,    caserne: 0, bonus: { cav: 2.2 } },
+    arc:        { nom: 'Archers',           ico: '🏹', cat: 'tir',   cout: 60,  hommes: 30, pv: 7,  atq: 2, def: 2, vit: 30, annee: 0,    caserne: 0, portee: 130, tir: 4, bonus: {} },
+    epee:       { nom: "Hommes d'armes",    ico: '⚔️', cat: 'inf',   cout: 70,  hommes: 40, pv: 10, atq: 5, def: 6, vit: 30, annee: 0,    caserne: 1, bonus: {} },
+    cav:        { nom: 'Cavalerie légère',  ico: '🐎', cat: 'cav',   cout: 80,  hommes: 24, pv: 12, atq: 5, def: 3, vit: 64, annee: 0,    caserne: 1, charge: 2, bonus: { tir: 2.2, art: 3 } },
+    chevalier:  { nom: 'Chevaliers',        ico: '🏇', cat: 'cav',   cout: 150, hommes: 24, pv: 18, atq: 8, def: 8, vit: 54, annee: 1000, caserne: 2, charge: 3, bonus: { tir: 2, inf: 1.3, art: 3 } },
+    arbal:      { nom: 'Arbalétriers',      ico: '🎯', cat: 'tir',   cout: 90,  hommes: 30, pv: 8,  atq: 2, def: 4, vit: 26, annee: 1150, caserne: 2, portee: 140, tir: 6, perce: true, bonus: {} },
+    piquier:    { nom: 'Piquiers',          ico: '🦔', cat: 'pique', cout: 80,  hommes: 48, pv: 9,  atq: 4, def: 7, vit: 24, annee: 1300, caserne: 2, bonus: { cav: 3 } },
+    arquebuse:  { nom: 'Arquebusiers',      ico: '🔥', cat: 'tir',   cout: 110, hommes: 32, pv: 8,  atq: 3, def: 3, vit: 28, annee: 1450, caserne: 2, portee: 120, tir: 9, perce: true, bonus: {} },
+    canon:      { nom: 'Canons',            ico: '💣', cat: 'art',   cout: 200, hommes: 12, pv: 12, atq: 1, def: 2, vit: 14, annee: 1450, caserne: 3, portee: 230, tir: 25, antiMur: 14, bonus: {} },
+    mousquet:   { nom: 'Mousquetaires',     ico: '💂', cat: 'tir',   cout: 120, hommes: 40, pv: 9,  atq: 4, def: 4, vit: 30, annee: 1600, caserne: 2, portee: 140, tir: 8, perce: true, bonus: {} },
+    cuirassier: { nom: 'Cuirassiers',       ico: '🎖️', cat: 'cav',   cout: 170, hommes: 28, pv: 16, atq: 8, def: 7, vit: 58, annee: 1600, caserne: 3, charge: 2.5, bonus: { tir: 2, art: 3 } }
   };
-  var TYPES = ['epee', 'lance', 'arc', 'cav'];
+  var TYPES = Object.keys(UNITES);
+
+  // ---------- Bâtiments ----------
+  var BATIMENTS = {
+    murs:    { nom: 'Remparts', ico: '🏰', niveaux: ['Palissade', 'Murs de pierre', 'Forteresse'], couts: [80, 200, 400], effet: 'Défense en cas de siège' },
+    caserne: { nom: 'Caserne',  ico: '⚒️', niveaux: ['Caserne', 'Grande caserne', 'Arsenal'], couts: [80, 200, 350], effet: 'Débloque de meilleures unités' },
+    marche:  { nom: 'Marché',   ico: '💰', niveaux: ['Marché', 'Foire', 'Port marchand'], couts: [100, 220, 400], effet: '+10 / +25 / +45 or par tour' },
+    ferme:   { nom: 'Fermes',   ico: '🌾', niveaux: ['Fermes', 'Moulins'], couts: [60, 150], effet: '+5 / +12 or et soigne la garnison' }
+  };
+  var BONUS_MARCHE = [0, 10, 25, 45], BONUS_FERME = [0, 5, 12];
 
   function pvMax(t) { return UNITES[t].hommes * UNITES[t].pv; }
   function creerUnite(t) { return { t: t, hp: pvMax(t), bouge: false }; }
@@ -24,8 +41,8 @@
   function force(armee) {
     return armee.reduce(function (s, u) { return s + UNITES[u.t].cout * u.hp / pvMax(u.t); }, 0);
   }
+  function forceDefense(p) { return force(p.armee) * (1 + 0.35 * p.bat.murs); }
 
-  // ---------- Hasard reproductible ----------
   function hasard(graine) {
     var a = graine >>> 0 || 1;
     return function () {
@@ -36,185 +53,195 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-
-  // ---------- Factions ----------
-  var FACTIONS = [
-    { nom: 'Les Naufragés',    coul: '#3b82f6', joueur: true },
-    { nom: 'Royaume du Nord',  coul: '#e5484d' },
-    { nom: 'Empire du Sud',    coul: '#e2b93b' },
-    { nom: "Clans de l'Est",   coul: '#a855f7' }
-  ];
-  var NEUTRE = { nom: 'Rebelles', coul: '#6b7280' };
-
-  // ---------- Carte ----------
-  // [nom, x, y, faction de départ (-1 = rebelles), capitale ?]
-  var LIEUX = [
-    ['Port-Naufrage', 70, 535, 0, true],
-    ['Givreterre',   200, 55,  1, true],
-    ['Solaria',      335, 545, 2, true],
-    ['Krahn',        350, 175, 3, true],
-    ['Brumeval',      55, 95,  -1], ['Hautecombe', 120, 190, -1], ['Pic-Gelé',  250, 150, -1],
-    ['Marais-Noir',   45, 300, -1], ['Clairefont', 165, 280, -1], ['Rochebrune', 270, 285, -1],
-    ['Dunes-Rouges', 365, 345, -1], ['Bois-Sombre', 100, 410, -1], ['Cœur-du-Monde', 215, 395, -1],
-    ['Fort-Corail',  300, 440, -1], ['Anse-Grise',  185, 520, -1], ['Vallée-Douce', 42, 455, -1],
-    ['Corne-du-Loup', 330, 60, -1], ['Lac-Miroir',  60, 200, -1]
-  ];
-
-  // Découpe un polygone par un demi-plan a·x + b·y <= c (Sutherland–Hodgman).
-  function couper(poly, a, b, c) {
-    var res = [];
-    for (var i = 0; i < poly.length; i++) {
-      var p = poly[i], q = poly[(i + 1) % poly.length];
-      var fp = a * p[0] + b * p[1] - c, fq = a * q[0] + b * q[1] - c;
-      if (fp <= 0) res.push(p);
-      if ((fp < 0 && fq > 0) || (fp > 0 && fq < 0)) {
-        var k = fp / (fp - fq);
-        res.push([p[0] + k * (q[0] - p[0]), p[1] + k * (q[1] - p[1])]);
-      }
-    }
-    return res;
-  }
-
-  // Régions = cellules de Voronoï : chaque point du terrain appartient au lieu le plus proche.
-  function construireCarte() {
-    var m = 6;
-    var regions = LIEUX.map(function (l, i) {
-      return { id: i, nom: l[0], x: l[1], y: l[2], depart: l[3], capitale: !!l[4] };
-    });
-    regions.forEach(function (r) {
-      var poly = [[m, m], [LARGEUR - m, m], [LARGEUR - m, HAUTEUR - m], [m, HAUTEUR - m]];
-      regions.forEach(function (o) {
-        if (o === r) return;
-        var a = o.x - r.x, b = o.y - r.y;
-        var c = (a * (o.x + r.x) + b * (o.y + r.y)) / 2;
-        poly = couper(poly, a, b, c);
-      });
-      r.poly = poly;
-      var cx = 0, cy = 0;
-      poly.forEach(function (p) { cx += p[0]; cy += p[1]; });
-      r.cx = cx / poly.length; r.cy = cy / poly.length;
-    });
-    // Deux régions sont voisines si elles partagent une frontière (2 sommets sur la médiatrice).
-    regions.forEach(function (r) {
-      r.voisins = [];
-      regions.forEach(function (o) {
-        if (o === r) return;
-        var a = o.x - r.x, b = o.y - r.y, n = Math.hypot(a, b);
-        var c = (a * (o.x + r.x) + b * (o.y + r.y)) / 2;
-        var surLigne = r.poly.filter(function (p) { return Math.abs(a * p[0] + b * p[1] - c) / n < 0.01; });
-        if (surLigne.length >= 2) {
-          var d = Math.hypot(surLigne[0][0] - surLigne[1][0], surLigne[0][1] - surLigne[1][1]);
-          if (d > 4) r.voisins.push(o.id);
-        }
-      });
-    });
-    return regions;
-  }
-
-  // ---------- Partie ----------
-  function nouvellePartie(graine) {
-    graine = graine || (Date.now() % 1e9);
-    var alea = hasard(graine);
-    var regions = construireCarte().map(function (r) {
-      var armee = [];
-      if (r.capitale) armee = ['epee', 'lance', 'arc'].map(creerUnite);
-      else {
-        var n = 1 + Math.floor(alea() * 2);
-        for (var i = 0; i < n; i++) armee.push(creerUnite(alea() < 0.6 ? 'lance' : 'epee'));
-      }
-      return {
-        id: r.id, nom: r.nom, x: r.x, y: r.y, cx: r.cx, cy: r.cy, poly: r.poly, voisins: r.voisins,
-        capitale: r.capitale, proprio: r.depart,
-        revenu: r.capitale ? 50 : 20 + Math.floor(alea() * 4) * 5,
-        armee: armee
-      };
-    });
-    return {
-      v: 1, graine: graine, tour: 1, alea: graine,
-      or: [150, 150, 150, 150],
-      regions: regions,
-      journal: ['Tour 1 : prends ton premier territoire !'],
-      fin: null
-    };
-  }
-
   function aleaPartie(etat) {
     var f = hasard(etat.alea);
     etat.alea = Math.floor(f() * 4294967295);
     return f;
   }
 
-  function revenu(etat, f) {
-    return etat.regions.reduce(function (s, r) { return s + (r.proprio === f ? r.revenu : 0); }, 0);
-  }
-  function nbRegions(etat, f) {
-    return etat.regions.filter(function (r) { return r.proprio === f; }).length;
+  var PROV = MONDE.provinces;
+  var INDEX = {};
+  PROV.forEach(function (p, i) { INDEX[p.id] = i; });
+
+  function epoque(id) { return HISTOIRE.EPOQUES.filter(function (e) { return e.id === id; })[0]; }
+
+  // ---------- Partie ----------
+  function nouvellePartie(epoqueId, factionId, graine) {
+    graine = graine || (Date.now() % 1e9);
+    var E = epoque(epoqueId), alea = hasard(graine);
+    var factions = E.factions.map(function (f) {
+      return { id: f[0], nom: f[1], coul: f[2], capitale: INDEX[f[3][0]], or: 200 };
+    });
+    var joueur = factions.map(function (f) { return f.id; }).indexOf(factionId);
+    var provinces = PROV.map(function (p, i) {
+      return { proprio: -1, armee: [], bat: { murs: alea() < 0.4 ? 1 : 0, caserne: 0, marche: 0, ferme: 0 },
+        base: 15 + Math.floor(alea() * 4) * 5, construit: false };
+    });
+    E.factions.forEach(function (f, fi) {
+      f[3].forEach(function (id, k) {
+        var p = provinces[INDEX[id]];
+        p.proprio = fi;
+        if (k === 0) {
+          p.bat = { murs: 2, caserne: 1, marche: 1, ferme: 1 };
+          p.base = 30;
+          p.armee = armeeDepart(E.annee, 4, alea);
+        } else {
+          p.bat.caserne = alea() < 0.5 ? 1 : 0;
+          p.armee = armeeDepart(E.annee, 1 + Math.floor(alea() * 2), alea);
+        }
+      });
+    });
+    provinces.forEach(function (p) {
+      if (p.proprio === -1) p.armee = armeeDepart(E.annee, 1 + Math.floor(alea() * 2), alea, true);
+    });
+    var pas = Math.max(1, Math.round((HISTOIRE.FIN - E.annee) / 150));
+    var etat = {
+      v: 2, epoque: epoqueId, annee: E.annee, pas: pas, tour: 1, joueur: joueur,
+      factions: factions, provinces: provinces, alea: graine,
+      journal: [E.annee + ' : ' + E.titre + '. Tu diriges ' + factions[joueur].nom + '.'],
+      fin: null, nouvelles: []
+    };
+    return etat;
   }
 
-  function recruter(etat, regionId, t) {
-    var r = etat.regions[regionId], f = r.proprio;
-    if (f < 0) return 'Région rebelle.';
-    if (etat.or[f] < UNITES[t].cout) return "Pas assez d'or.";
-    if (r.armee.length >= MAX_UNITES) return 'Région pleine (' + MAX_UNITES + ' unités max).';
-    etat.or[f] -= UNITES[t].cout;
-    var u = creerUnite(t); u.bouge = true; // une nouvelle recrue ne bouge pas ce tour-ci
-    r.armee.push(u);
+  function armeeDepart(annee, n, alea, rebelles) {
+    var dispo = TYPES.filter(function (t) { return UNITES[t].annee <= annee && UNITES[t].caserne <= (rebelles ? 0 : 2) && t !== 'canon'; });
+    var a = [];
+    for (var i = 0; i < n; i++) a.push(creerUnite(dispo[Math.floor(alea() * dispo.length)]));
+    return a;
+  }
+
+  function revenuProvince(p) { return p.base + BONUS_MARCHE[p.bat.marche] + BONUS_FERME[p.bat.ferme]; }
+  function revenu(etat, f) {
+    return etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? revenuProvince(p) : 0); }, 0);
+  }
+  function nbProvinces(etat, f) {
+    return etat.provinces.filter(function (p) { return p.proprio === f; }).length;
+  }
+
+  // Une unité peut-elle être recrutée ici ? Renvoie null si oui, sinon la raison.
+  function blocageRecrue(etat, id, t) {
+    var U = UNITES[t], p = etat.provinces[id];
+    if (U.annee > etat.annee) return 'Disponible en ' + U.annee;
+    if (U.caserne > p.bat.caserne) return 'Caserne niv. ' + U.caserne;
+    return null;
+  }
+  function recruter(etat, id, t) {
+    var p = etat.provinces[id], f = p.proprio;
+    if (f < 0) return 'Province rebelle.';
+    var b = blocageRecrue(etat, id, t);
+    if (b) return b;
+    if (etat.factions[f].or < UNITES[t].cout) return "Pas assez d'or.";
+    if (p.armee.length >= MAX_UNITES) return 'Province pleine (' + MAX_UNITES + ' unités max).';
+    etat.factions[f].or -= UNITES[t].cout;
+    var u = creerUnite(t); u.bouge = true;
+    p.armee.push(u);
     return null;
   }
 
-  // Déplace des unités vers une région voisine qui nous appartient.
+  function construire(etat, id, b) {
+    var p = etat.provinces[id], f = p.proprio, B = BATIMENTS[b], niv = p.bat[b];
+    if (f < 0) return 'Province rebelle.';
+    if (niv >= B.niveaux.length) return 'Déjà au maximum.';
+    if (p.construit) return 'Un seul chantier par province et par tour.';
+    if (b === 'caserne' && niv + 1 >= 3 && etat.annee < 1400) return 'Arsenal disponible en 1400';
+    if (etat.factions[f].or < B.couts[niv]) return "Pas assez d'or.";
+    etat.factions[f].or -= B.couts[niv];
+    p.bat[b]++;
+    p.construit = true;
+    return null;
+  }
+
+  function prendre(p, indices) {
+    var pris = [], restants = [];
+    p.armee.forEach(function (u, i) { (indices.indexOf(i) >= 0 && !u.bouge ? pris : restants).push(u); });
+    p.armee = restants;
+    return pris;
+  }
+
   function deplacer(etat, de, vers, indices) {
-    var a = etat.regions[de], b = etat.regions[vers];
-    if (a.voisins.indexOf(vers) < 0) return 'Pas voisine.';
-    if (b.proprio !== a.proprio) return 'Région ennemie : il faut attaquer.';
+    var a = etat.provinces[de], b = etat.provinces[vers];
+    if (PROV[de].voisins.indexOf(vers) < 0) return 'Pas voisine.';
+    if (b.proprio !== a.proprio) return 'Province ennemie : il faut attaquer.';
     var unites = prendre(a, indices);
-    if (b.armee.length + unites.length > MAX_UNITES) { a.armee = a.armee.concat(unites); return 'Trop d\'unités là-bas.'; }
+    if (b.armee.length + unites.length > MAX_UNITES) { a.armee = a.armee.concat(unites); return "Trop d'unités là-bas."; }
     unites.forEach(function (u) { u.bouge = true; });
     b.armee = b.armee.concat(unites);
     return null;
   }
 
-  function prendre(region, indices) {
-    var pris = [], restants = [];
-    region.armee.forEach(function (u, i) { (indices.indexOf(i) >= 0 && !u.bouge ? pris : restants).push(u); });
-    region.armee = restants;
-    return pris;
+  function preparerAttaque(etat, de, vers, indices) {
+    var a = etat.provinces[de], c = etat.provinces[vers];
+    if (PROV[de].voisins.indexOf(vers) < 0) return { erreur: 'Pas voisine.' };
+    if (c.proprio === a.proprio) return { erreur: 'Déjà à toi.' };
+    var unites = prendre(a, indices);
+    if (!unites.length) return { erreur: 'Aucune unité choisie.' };
+    return { de: de, vers: vers, camp: a.proprio, unites: unites };
   }
 
-  // ---------- Bataille (simulation temps réel, utilisée aussi pour la résolution auto) ----------
-  function creerBataille(attaquants, defenseurs, graine) {
-    var escouades = [];
+  // ---------- Bataille ----------
+  // bas / haut : unités en bas et en haut du champ. opts.defenseur = camp (0 bas, 1 haut) qui défend.
+  // opts.murs = niveau des remparts du défenseur (0 = bataille en rase campagne).
+  function creerBataille(bas, haut, graine, opts) {
+    opts = opts || {};
+    var def = opts.defenseur == null ? 1 : opts.defenseur;
+    var b = { esc: [], temps: 0, fin: null, alea: hasard(graine || 7), tenir: [false, false],
+      campAtt: 1 - def, mur: null };
+    if (opts.murs > 0) {
+      var y = def === 1 ? 175 : CHAMP.h - 175, segs = [];
+      for (var i = 0; i < 5; i++) {
+        var porte = i === 2, hp = (porte ? 220 : 450) * opts.murs;
+        segs.push({ x0: i * CHAMP.l / 5, x1: (i + 1) * CHAMP.l / 5, hp: hp, hpMax: hp, porte: porte });
+      }
+      b.mur = { y: y, camp: def, dedans: def === 1 ? -1 : 1, segs: segs, niveau: opts.murs };
+    }
     function placer(liste, camp) {
-      var y0 = camp === 0 ? CHAMP.h - 110 : 110, sens = camp === 0 ? 1 : -1;
-      var front = liste.filter(function (u) { return u.t === 'epee' || u.t === 'lance'; });
-      var arriere = liste.filter(function (u) { return u.t === 'arc'; });
-      var flancs = liste.filter(function (u) { return u.t === 'cav'; });
+      var bord = b.mur && b.mur.camp === camp ? 115 : 110;
+      var y0 = camp === 0 ? CHAMP.h - bord : bord, sens = camp === 0 ? 1 : -1;
+      var front = liste.filter(function (u) { var c = UNITES[u.t].cat; return c === 'inf' || c === 'pique'; });
+      var arriere = liste.filter(function (u) { var c = UNITES[u.t].cat; return c === 'tir' || c === 'art'; });
+      var flancs = liste.filter(function (u) { return UNITES[u.t].cat === 'cav'; });
       function ligne(l, y) {
         l.forEach(function (u, i) {
-          var x = CHAMP.l / 2 + (i - (l.length - 1) / 2) * 52;
-          escouades.push(nouvelleEscouade(u, camp, x, y));
+          var x = CHAMP.l / 2 + (i - (l.length - 1) / 2) * Math.min(52, (CHAMP.l - 40) / Math.max(1, l.length - 1 || 1));
+          b.esc.push(escouade(u, camp, x, y));
         });
       }
-      ligne(front, y0 - sens * 0);
+      ligne(front, y0);
       ligne(arriere, y0 + sens * 45);
       flancs.forEach(function (u, i) {
         var cote = i % 2 === 0 ? -1 : 1, rang = Math.floor(i / 2);
         var x = CHAMP.l / 2 + cote * (Math.max(front.length, 2) * 26 + 40 + rang * 30);
-        escouades.push(nouvelleEscouade(u, camp, Math.max(20, Math.min(CHAMP.l - 20, x)), y0 + sens * 10));
+        b.esc.push(escouade(u, camp, Math.max(20, Math.min(CHAMP.l - 20, x)), y0 + sens * 10));
       });
     }
-    function nouvelleEscouade(u, camp, x, y) {
-      return { id: escouades.length, camp: camp, t: u.t, hp: u.hp, hpMax: pvMax(u.t), x: x, y: y,
-        ordre: null, cible: null, fuite: false, sorti: false, contact: 0, tirT: 0, source: u };
+    function escouade(u, camp, x, y) {
+      return { id: b.esc.length, camp: camp, t: u.t, hp: u.hp, hpMax: pvMax(u.t), x: x, y: y,
+        ordre: null, cible: null, fuite: false, sorti: false, contact: 0, source: u };
     }
-    placer(attaquants, 0);
-    placer(defenseurs, 1);
-    return { esc: escouades, temps: 0, fin: null, alea: hasard(graine || 7), tenir: [false, false] };
+    placer(bas, 0);
+    placer(haut, 1);
+    return b;
   }
 
   function vivant(e) { return e.hp > 0 && !e.fuite && !e.sorti; }
   function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-
+  function segment(b, x) {
+    var s = b.mur.segs;
+    return s[Math.max(0, Math.min(s.length - 1, Math.floor(x / (CHAMP.l / s.length))))];
+  }
+  function abrite(b, e) { // défenseur derrière un rempart encore debout
+    return b.mur && e.camp === b.mur.camp && (e.y - b.mur.y) * b.mur.dedans > 0 && segment(b, e.x).hp > 0;
+  }
+  function brecheProche(b, x) {
+    var best = null;
+    b.mur.segs.forEach(function (s) {
+      if (s.hp > 0) return;
+      var cx = (s.x0 + s.x1) / 2;
+      if (!best || Math.abs(cx - x) < Math.abs(best - x)) best = cx;
+    });
+    return best;
+  }
   function plusProche(b, e) {
     var best = null, bd = 1e9;
     b.esc.forEach(function (o) {
@@ -224,7 +251,6 @@
     });
     return best;
   }
-
   function avancer(e, x, y, v, dt) {
     var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy);
     if (d < 1) return;
@@ -234,9 +260,25 @@
 
   var CONTACT = 22;
 
+  // Se rapproche d'une cible en tenant compte des remparts (passer par une brèche, sinon aller au mur).
+  function marcherVers(b, e, cx, cy, v, dt) {
+    var m = b.mur;
+    if (m && e.camp !== m.camp) {
+      var dehors = (e.y - m.y) * m.dedans < 0, cibleDedans = (cy - m.y) * m.dedans > 0;
+      if (dehors && cibleDedans && segment(b, e.x).hp > 0) {
+        var br = brecheProche(b, e.x);
+        if (br != null) { avancer(e, br, m.y, v, dt); return; }
+        avancer(e, Math.max(15, Math.min(CHAMP.l - 15, cx)), m.y - m.dedans * 10, v, dt);
+        return;
+      }
+    }
+    avancer(e, cx, cy, v, dt);
+  }
+
   function etape(b, dt) {
     if (b.fin) return;
     b.temps += dt;
+    var m = b.mur;
     b.esc.forEach(function (e) {
       if (e.hp <= 0 || e.sorti) return;
       var U = UNITES[e.t];
@@ -245,65 +287,92 @@
         if (e.y > CHAMP.h + 20 || e.y < -20) e.sorti = true;
         return;
       }
-      // Choix de la cible : l'ordre du commandant d'abord, sinon l'ennemi le plus proche.
+      var hommesE = Math.ceil(e.hp / U.pv);
+      // Les canons de l'assaillant visent d'abord les remparts.
+      if (m && U.antiMur && e.camp !== m.camp && !m.segs.some(function (s) { return s.hp <= 0; })) {
+        var seg = null, bd = 1e9;
+        m.segs.forEach(function (s) {
+          if (s.hp <= 0) return;
+          var d = Math.hypot((s.x0 + s.x1) / 2 - e.x, m.y - e.y) - (s.porte ? 30 : 0);
+          if (d < bd) { bd = d; seg = s; }
+        });
+        if (seg) {
+          if (Math.abs(m.y - e.y) <= U.portee) seg.hp -= hommesE * U.antiMur * dt;
+          else avancer(e, e.x, m.y - m.dedans * U.portee * 0.9, U.vit, dt);
+          return;
+        }
+      }
       var cible = null;
       if (e.ordre && e.ordre.cible != null) {
         var c = b.esc[e.ordre.cible];
         if (vivant(c)) cible = c; else e.ordre = null;
       }
       if (!cible && e.ordre && e.ordre.x != null) {
-        avancer(e, e.ordre.x, e.ordre.y, U.vit, dt);
-        if (Math.hypot(e.ordre.x - e.x, e.ordre.y - e.y) < 2) e.ordre = null;
+        marcherVers(b, e, e.ordre.x, e.ordre.y, U.vit, dt);
+        if (Math.hypot(e.ordre.x - e.x, e.ordre.y - e.y) < 3) e.ordre = null;
         var proche = plusProche(b, e);
         if (proche && dist(e, proche) < CONTACT) cible = proche; else { e.cible = null; return; }
       }
       if (!cible) cible = plusProche(b, e);
       e.cible = cible ? cible.id : null;
       if (!cible) return;
-      var d = dist(e, cible);
-      var hommesE = Math.ceil(e.hp / U.pv), V = UNITES[cible.t];
+      var d = dist(e, cible), V = UNITES[cible.t];
+      var defC = V.def * (abrite(b, cible) ? 1.6 : 1);
       var tenir = b.tenir[e.camp] && !(e.ordre && e.ordre.cible != null);
       if (U.portee && d > CONTACT) {
         if (d <= U.portee) {
-          var deg = hommesE * U.tir * 0.22 / V.def * (0.8 + b.alea() * 0.4);
+          var dd = U.perce ? Math.max(2, defC * 0.5) : defC;
+          var deg = hommesE * U.tir * 0.22 / dd * (abrite(b, cible) ? 0.5 : 1) * (0.8 + b.alea() * 0.4);
           cible.hp -= deg * dt;
-        } else if (!tenir) avancer(e, cible.x, cible.y, U.vit, dt);
+        } else if (!tenir) marcherVers(b, e, cible.x, cible.y, U.vit, dt);
       } else if (d > CONTACT) {
-        if (!tenir) avancer(e, cible.x, cible.y, U.vit, dt);
         e.contact = 0;
+        if (!tenir) marcherVers(b, e, cible.x, cible.y, U.vit, dt);
+        // Bloqué devant un rempart : on l'attaque (béliers, échelles…).
+        if (m && e.camp !== m.camp && Math.abs(e.y - (m.y - m.dedans * 10)) < 3) {
+          var s2 = segment(b, e.x);
+          if (s2.hp > 0) s2.hp -= hommesE * U.atq * 0.07 * dt;
+        }
       } else {
         e.contact += dt;
-        var mult = (U.bonus[cible.t] || 1) * (U.charge && e.contact < 2.5 ? U.charge : 1);
-        var degats = hommesE * U.atq * mult * 0.35 / V.def * (0.8 + b.alea() * 0.4);
-        cible.hp -= degats * dt;
+        var mult = (U.bonus[V.cat] || 1) * (U.charge && e.contact < 2.5 && !abrite(b, cible) ? U.charge : 1);
+        cible.hp -= hommesE * U.atq * mult * 0.35 / defC * (0.8 + b.alea() * 0.4) * dt;
       }
     });
-    // Moral : une unité qui a perdu 75 % de ses hommes s'enfuit.
+    // Moral : fuite quand il reste peu d'hommes (on tient mieux derrière des murs).
     b.esc.forEach(function (e) {
       if (e.hp <= 0) { e.hp = 0; return; }
-      if (!e.fuite && e.hp / e.hpMax < 0.25) e.fuite = true;
+      if (!e.fuite && e.hp / e.hpMax < (abrite(b, e) ? 0.15 : 0.25)) e.fuite = true;
     });
-    // Les unités d'un même camp ne se superposent pas.
     for (var i = 0; i < b.esc.length; i++) {
       for (var j = i + 1; j < b.esc.length; j++) {
         var p = b.esc[i], q = b.esc[j];
         if (!vivant(p) || !vivant(q) || p.camp !== q.camp) continue;
-        var dx = q.x - p.x, dy = q.y - p.y, dd = Math.hypot(dx, dy) || 0.01;
-        if (dd < 30) {
-          var push = (30 - dd) / 2;
-          p.x -= dx / dd * push; p.y -= dy / dd * push;
-          q.x += dx / dd * push; q.y += dy / dd * push;
+        var dx = q.x - p.x, dy = q.y - p.y, dd2 = Math.hypot(dx, dy) || 0.01;
+        if (dd2 < 30) {
+          var push = (30 - dd2) / 2;
+          p.x -= dx / dd2 * push; p.y -= dy / dd2 * push;
+          q.x += dx / dd2 * push; q.y += dy / dd2 * push;
         }
       }
     }
     b.esc.forEach(function (e) {
       e.x = Math.max(10, Math.min(CHAMP.l - 10, e.x));
-      if (!e.fuite) e.y = Math.max(10, Math.min(CHAMP.h - 10, e.y));
+      if (e.fuite) return;
+      e.y = Math.max(10, Math.min(CHAMP.h - 10, e.y));
+      // Les remparts debout bloquent le passage dans les deux sens.
+      if (m && segment(b, e.x).hp > 0) {
+        var cote = (e.y - m.y) * m.dedans;
+        if (e.camp === m.camp && cote < 10) e.y = m.y + m.dedans * 10;
+        if (e.camp !== m.camp && cote > -10) e.y = m.y - m.dedans * 10;
+      }
     });
+    if (m) m.segs.forEach(function (s) { if (s.hp < 0) s.hp = 0; });
     var reste = [0, 0];
     b.esc.forEach(function (e) { if (vivant(e)) reste[e.camp]++; });
     if (!reste[0] || !reste[1] || b.temps > 300) {
-      b.fin = { gagnant: reste[0] && !reste[1] ? 0 : (reste[1] && !reste[0] ? 1 : 1) }; // égalité : le défenseur tient
+      var g = reste[0] && !reste[1] ? 0 : reste[1] && !reste[0] ? 1 : 1 - b.campAtt; // égalité : le défenseur tient
+      b.fin = { gagnant: g };
     }
   }
 
@@ -313,7 +382,6 @@
     return b.fin;
   }
 
-  // Survivants d'un camp après la bataille (les fuyards reviennent, un peu affaiblis).
   function survivants(b, camp) {
     return b.esc.filter(function (e) { return e.camp === camp && e.hp > 0; }).map(function (e) {
       var u = e.source;
@@ -323,84 +391,105 @@
     });
   }
 
-  // Lance une attaque : retire les unités de la région de départ et renvoie ce qu'il faut pour la bataille.
-  function preparerAttaque(etat, de, vers, indices) {
-    var a = etat.regions[de], cibleR = etat.regions[vers];
-    if (a.voisins.indexOf(vers) < 0) return { erreur: 'Pas voisine.' };
-    if (cibleR.proprio === a.proprio) return { erreur: 'Déjà à toi.' };
-    var unites = prendre(a, indices);
-    if (!unites.length) return { erreur: 'Aucune unité choisie.' };
-    return { de: de, vers: vers, camp: a.proprio, unites: unites, defense: cibleR.armee };
+  // Bataille pour une attaque. joueurEnBas : le camp à placer en bas (pour l'affichage).
+  function batailleAttaque(etat, att, graine, campBas) {
+    var c = etat.provinces[att.vers];
+    var attEnBas = campBas == null ? true : campBas === att.camp;
+    return attEnBas ? creerBataille(att.unites, c.armee, graine, { defenseur: 1, murs: c.bat.murs })
+                    : creerBataille(c.armee, att.unites, graine, { defenseur: 0, murs: c.bat.murs });
   }
 
-  // Applique le résultat d'une bataille terminée sur la carte.
-  function appliquerBataille(etat, att, bataille) {
-    var a = etat.regions[att.de], c = etat.regions[att.vers];
-    var gagnant = bataille ? bataille.fin.gagnant : 0;
-    var survA = bataille ? survivants(bataille, 0) : att.unites;
-    var survD = bataille ? survivants(bataille, 1) : [];
+  function appliquerBataille(etat, att, b) {
+    var a = etat.provinces[att.de], c = etat.provinces[att.vers];
+    var gagne = b ? b.fin.gagnant === b.campAtt : true;
+    var survA = b ? survivants(b, b.campAtt) : att.unites;
+    var survD = b ? survivants(b, 1 - b.campAtt) : [];
     var ancien = c.proprio;
-    var nomA = (FACTIONS[att.camp] || NEUTRE).nom, nomD = (FACTIONS[ancien] || NEUTRE).nom;
-    if (gagnant === 0) {
+    if (gagne) {
       c.proprio = att.camp;
       c.armee = survA.slice(0, MAX_UNITES);
-      log(etat, '⚔️ ' + nomA + ' prend ' + c.nom + ' à ' + nomD + '.');
+      if (b && b.mur && b.mur.segs.some(function (s) { return s.hp <= 0; })) c.bat.murs = Math.max(0, c.bat.murs - 1);
+      log(etat, '⚔️ ' + nomF(etat, att.camp) + ' prend ' + PROV[att.vers].nom + ' à ' + nomF(etat, ancien) + '.');
+      if (ancien >= 0 && nbProvinces(etat, ancien) === 0) log(etat, '💀 ' + nomF(etat, ancien) + ' a disparu !');
       verifierFin(etat);
     } else {
       c.armee = survD;
       a.armee = a.armee.concat(survA).slice(0, MAX_UNITES);
-      log(etat, '🛡️ ' + nomD + ' repousse ' + nomA + ' à ' + c.nom + '.');
+      log(etat, '🛡️ ' + nomF(etat, ancien) + ' repousse ' + nomF(etat, att.camp) + ' à ' + PROV[att.vers].nom + '.');
     }
-    return gagnant === 0;
+    return gagne;
   }
 
+  function nomF(etat, f) { return f >= 0 ? etat.factions[f].nom : 'des rebelles'; }
   function log(etat, txt) {
     etat.journal.unshift(txt);
-    if (etat.journal.length > 30) etat.journal.length = 30;
+    if (etat.journal.length > 40) etat.journal.length = 40;
   }
 
   function verifierFin(etat) {
-    if (nbRegions(etat, 0) === 0) etat.fin = 'defaite';
-    else if ([1, 2, 3].every(function (f) { return nbRegions(etat, f) === 0; })) etat.fin = 'victoire';
+    var n = nbProvinces(etat, etat.joueur);
+    if (n === 0) etat.fin = 'defaite';
+    else if (n >= HISTOIRE.OBJECTIF) etat.fin = 'victoire';
+    else if (etat.annee >= HISTOIRE.FIN) etat.fin = 'temps';
+  }
+
+  // Classement des royaumes (pour la fin en 1800).
+  function classement(etat) {
+    return etat.factions.map(function (f, i) { return { i: i, nom: f.nom, coul: f.coul, n: nbProvinces(etat, i) }; })
+      .filter(function (x) { return x.n > 0; })
+      .sort(function (a, b) { return b.n - a.n; });
   }
 
   // ---------- IA ----------
-  // Joue les 3 factions ennemies. Les attaques contre une région du joueur défendue
-  // sont renvoyées pour que le joueur puisse commander sa défense.
+  function meilleuresRecrues(etat, id) {
+    return TYPES.filter(function (t) { return !blocageRecrue(etat, id, t); });
+  }
+
   function tourIA(etat) {
     var alea = aleaPartie(etat), pourJoueur = [];
-    [1, 2, 3].forEach(function (f) {
-      var miennes = etat.regions.filter(function (r) { return r.proprio === f; });
+    etat.factions.forEach(function (F, f) {
+      if (f === etat.joueur) return;
+      var miennes = [];
+      etat.provinces.forEach(function (p, i) { if (p.proprio === f) miennes.push(i); });
       if (!miennes.length) return;
-      // 1. Recruter, en priorité aux frontières menacées.
       miennes.sort(function (x, y) { return menace(etat, y) - menace(etat, x); });
-      var essais = 0;
-      while (etat.or[f] >= 50 && essais++ < 20) {
-        var r = miennes[essais % Math.min(miennes.length, 3)];
-        var t = alea() < 0.3 ? 'lance' : alea() < 0.5 ? 'epee' : alea() < 0.6 ? 'arc' : 'cav';
-        if (etat.or[f] < UNITES[t].cout) t = 'lance';
-        if (recruter(etat, r.id, t)) continue;
+      // 1. Construire (marché d'abord, puis caserne et remparts aux frontières).
+      if (F.or > 250) {
+        var id = miennes[Math.floor(alea() * Math.min(3, miennes.length))], p = etat.provinces[id];
+        var choix = p.bat.marche < 2 ? 'marche' : p.bat.caserne < 2 ? 'caserne' : p.bat.murs < 2 ? 'murs' : alea() < 0.5 ? 'caserne' : 'marche';
+        construire(etat, id, choix);
       }
-      // 2. Attaquer un voisin plus faible.
-      miennes.forEach(function (r) {
-        if (r.proprio !== f) return;
-        var dispo = r.armee.map(function (u, i) { return u.bouge ? -1 : i; }).filter(function (i) { return i >= 0; });
+      // 2. Recruter aux frontières menacées.
+      var essais = 0;
+      while (F.or >= 40 && essais++ < 12) {
+        var r = miennes[essais % Math.min(miennes.length, 3)];
+        var dispo = meilleuresRecrues(etat, r).filter(function (t) { return UNITES[t].cout <= F.or; });
+        if (!dispo.length) break;
+        // Préfère les unités les plus récentes.
+        dispo.sort(function (a, b) { return UNITES[b].cout - UNITES[a].cout; });
+        var t = dispo[Math.floor(alea() * Math.min(dispo.length, 4))];
+        if (recruter(etat, r, t)) continue;
+      }
+      // 3. Attaquer un voisin plus faible.
+      miennes.forEach(function (i) {
+        var p = etat.provinces[i];
+        if (p.proprio !== f) return;
+        var dispo = p.armee.map(function (u, k) { return u.bouge ? -1 : k; }).filter(function (k) { return k >= 0; });
         if (!dispo.length) return;
-        var cibles = r.voisins.map(function (id) { return etat.regions[id]; }).filter(function (c) { return c.proprio !== f; });
+        var cibles = PROV[i].voisins.filter(function (v) { return etat.provinces[v].proprio !== f; });
         if (!cibles.length) return;
-        cibles.sort(function (x, y) { return force(x.armee) - force(y.armee); });
-        var cible = cibles[0];
-        // Garde une unité à la maison si un autre ennemi est à côté.
+        cibles.sort(function (x, y) { return forceDefense(etat.provinces[x]) - forceDefense(etat.provinces[y]); });
+        var v = cibles[0], cp = etat.provinces[v];
         var envoi = dispo.slice();
-        if (cibles.length > 1 && envoi.length > 1 && r.armee.length === dispo.length) envoi.pop();
-        var fEnvoi = force(envoi.map(function (i) { return r.armee[i]; }));
-        var audace = etat.tour < 3 ? 1.6 : 1.25;
-        if (fEnvoi < force(cible.armee) * audace + 20) return;
-        var att = preparerAttaque(etat, r.id, cible.id, envoi);
+        if (cibles.length > 1 && envoi.length > 1 && p.armee.length === dispo.length) envoi.pop();
+        var fEnvoi = force(envoi.map(function (k) { return p.armee[k]; }));
+        var audace = etat.tour < 3 ? 1.7 : 1.3;
+        if (fEnvoi < forceDefense(cp) * audace + 25) return;
+        var att = preparerAttaque(etat, i, v, envoi);
         if (att.erreur) return;
-        if (cible.proprio === 0 && cible.armee.length) { pourJoueur.push(att); return; }
-        if (!cible.armee.length) { appliquerBataille(etat, att, null); return; }
-        var b = creerBataille(att.unites, cible.armee, Math.floor(alea() * 1e9));
+        if (cp.proprio === etat.joueur && cp.armee.length) { pourJoueur.push(att); return; }
+        if (!cp.armee.length) { appliquerBataille(etat, att, null); return; }
+        var b = batailleAttaque(etat, att, Math.floor(alea() * 1e9));
         resoudreAuto(b);
         appliquerBataille(etat, att, b);
       });
@@ -408,33 +497,53 @@
     return pourJoueur;
   }
 
-  function menace(etat, r) {
-    return r.voisins.reduce(function (s, id) {
-      var v = etat.regions[id];
-      return s + (v.proprio !== r.proprio && v.proprio >= 0 ? force(v.armee) : 0);
+  function menace(etat, i) {
+    var f = etat.provinces[i].proprio;
+    return PROV[i].voisins.reduce(function (s, v) {
+      var o = etat.provinces[v];
+      return s + (o.proprio !== f && o.proprio >= 0 ? force(o.armee) : 0);
     }, 0);
   }
 
-  // Fin du tour du joueur : revenus, soins, puis l'IA joue.
+  // Fin du tour du joueur : revenus, soins, années qui passent, événements, puis l'IA joue.
   function finDuTour(etat) {
-    [0, 1, 2, 3].forEach(function (f) { etat.or[f] += revenu(etat, f) + (f > 0 ? 10 : 0); });
-    etat.regions.forEach(function (r) {
-      r.armee.forEach(function (u) { u.bouge = false; u.hp = Math.min(pvMax(u.t), u.hp + pvMax(u.t) * 0.15); });
+    var avant = etat.annee;
+    etat.factions.forEach(function (F, f) { F.or += revenu(etat, f) + (f !== etat.joueur ? 10 : 0); });
+    etat.provinces.forEach(function (p) {
+      p.construit = false;
+      var soin = 0.15 + 0.08 * p.bat.ferme;
+      p.armee.forEach(function (u) { u.bouge = false; u.hp = Math.min(pvMax(u.t), u.hp + pvMax(u.t) * soin); });
+    });
+    etat.annee = Math.min(HISTOIRE.FIN, etat.annee + etat.pas);
+    etat.tour++;
+    etat.nouvelles = [];
+    HISTOIRE.EVENEMENTS.forEach(function (ev) {
+      if (ev.annee > avant && ev.annee <= etat.annee) {
+        etat.nouvelles.push('📜 ' + ev.txt);
+        log(etat, '📜 ' + ev.annee + ' : ' + ev.txt);
+        if (ev.effet === 'peste') etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.hp *= 0.55; }); });
+        if (ev.effet === 'or') etat.factions[etat.joueur].or += 200;
+      }
+    });
+    TYPES.forEach(function (t) {
+      var U = UNITES[t];
+      if (U.annee > avant && U.annee <= etat.annee) etat.nouvelles.push('🆕 Nouvelle unité : ' + U.ico + ' ' + U.nom + ' (caserne niv. ' + U.caserne + ')');
     });
     var defenses = tourIA(etat);
-    etat.regions.forEach(function (r) { r.armee.forEach(function (u) { u.bouge = false; }); });
-    etat.tour++;
+    etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); });
     verifierFin(etat);
     return defenses;
   }
 
   var M = {
-    LARGEUR: LARGEUR, HAUTEUR: HAUTEUR, CHAMP: CHAMP, MAX_UNITES: MAX_UNITES,
-    UNITES: UNITES, TYPES: TYPES, FACTIONS: FACTIONS, NEUTRE: NEUTRE,
-    construireCarte: construireCarte, nouvellePartie: nouvellePartie,
-    pvMax: pvMax, hommes: hommes, force: force, revenu: revenu, nbRegions: nbRegions,
-    recruter: recruter, deplacer: deplacer, preparerAttaque: preparerAttaque,
-    creerBataille: creerBataille, etape: etape, resoudreAuto: resoudreAuto, vivant: vivant,
+    MONDE: MONDE, HISTOIRE: HISTOIRE, PROV: PROV, CHAMP: CHAMP, MAX_UNITES: MAX_UNITES,
+    UNITES: UNITES, TYPES: TYPES, BATIMENTS: BATIMENTS,
+    nouvellePartie: nouvellePartie, epoque: epoque,
+    pvMax: pvMax, hommes: hommes, force: force, forceDefense: forceDefense,
+    revenu: revenu, revenuProvince: revenuProvince, nbProvinces: nbProvinces, classement: classement,
+    blocageRecrue: blocageRecrue, recruter: recruter, construire: construire, deplacer: deplacer,
+    preparerAttaque: preparerAttaque, creerBataille: creerBataille, batailleAttaque: batailleAttaque,
+    etape: etape, resoudreAuto: resoudreAuto, vivant: vivant, abrite: abrite,
     appliquerBataille: appliquerBataille, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = M;

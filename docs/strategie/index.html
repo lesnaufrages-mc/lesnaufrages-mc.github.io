@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Naufragés : Conquête – Jeu de stratégie gratuit</title>
-<meta name="description" content="Commande ton armée, conquiers les royaumes et mène tes batailles toi-même. Jeu de stratégie gratuit sur téléphone, sans inscription.">
+<title>Naufragés : Conquête – Stratégie historique 771-1800</title>
+<meta name="description" content="Jeu de stratégie historique gratuit sur téléphone : de Charlemagne à Louis XIV, conquiers l'Europe et l'Orient, construis tes villes, assiège les forteresses et commande tes batailles.">
 <meta name="theme-color" content="#0b1220">
 <link rel="icon" href="../icon.png">
 <meta property="og:title" content="Naufragés : Conquête – Jeu de stratégie">
-<meta property="og:description" content="Recrute, attaque, commande tes troupes en pleine bataille. Tu conquiers le monde en combien de tours ?">
+<meta property="og:description" content="De 771 à 1800 : choisis ton royaume, assiège les villes, commande tes armées. Tu conquiers l'Europe ?">
 <meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
 <meta property="og:url" content="https://lesnaufrages-mc.github.io/strategie/">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
@@ -47,15 +47,33 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .barre button{padding:9px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:800;font-size:14px;white-space:nowrap}
 .barre button.fin{background:var(--or);color:#1a1205;border:0}
 #zoneCarte{flex:1;min-height:0;position:relative;background:radial-gradient(circle at 50% 40%,#123052,#0a1a30 70%)}
-#carte{width:100%;height:100%;display:block}
-#carte .reg{stroke:#0b1220;stroke-width:2;stroke-linejoin:round;transition:fill-opacity .2s}
-#carte .reg.sel{stroke:#fff;stroke-width:3.5}
-#carte .reg.cible{stroke:#fbbf24;stroke-width:3;stroke-dasharray:6 4;animation:pointille 1s linear infinite}
-@keyframes pointille{to{stroke-dashoffset:-20}}
+#carte{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#carte .prov{stroke:#1f2937;stroke-width:.5;stroke-linejoin:round}
+#carte .bord{fill:none;pointer-events:none;stroke-linejoin:round}
+#carte .bord.sel{stroke:#fff;stroke-width:2}
+#carte .bord.cible{stroke:#fbbf24;stroke-width:1.6;stroke-dasharray:4 3;animation:pointille 1s linear infinite}
 #carte text{pointer-events:none;font-family:system-ui,sans-serif}
-#carte .nom{font-size:10px;font-weight:700;fill:#fff;paint-order:stroke;stroke:#0b1220;stroke-width:3px}
-#carte .nb{font-size:11px;font-weight:900;fill:#0b1220}
-.panneau{flex:none;background:var(--bg2);border-top:1px solid var(--line);padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));min-height:132px}
+#carte .nom{font-size:6.5px;font-weight:800;fill:#fff;paint-order:stroke;stroke:#111827;stroke-width:1.8px}
+#carte .cour{font-size:6px}
+#carte .armee text{font-size:6.5px;font-weight:900;fill:#111827}
+#carte .ville{pointer-events:none}
+#carte.loin .nom{font-size:10px;stroke-width:2.6px}
+#carte.loin .armee{display:none}
+#carte.tresloin .nom{display:none}
+.zoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:42px;height:42px;border-radius:12px;background:rgba(15,23,42,.85);border:1px solid var(--line);font-size:20px;font-weight:900}
+.carteChoix{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.carteChoix .an{float:right;font-weight:900;color:var(--or);font-size:18px}
+.carteChoix b{display:block;font-size:16px}
+.carteChoix small{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.35}
+.carteChoix.faction b{display:inline;margin-left:6px}
+.bats{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+.bat{font-size:12px;font-weight:700;padding:3px 7px;border-radius:8px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35)}
+.bat.vide{background:none;border-style:dashed;border-color:var(--line);color:var(--muted)}
+.murs{font-size:12px;color:var(--muted);margin-top:6px}
+.drapeau{width:12px;height:12px;border-radius:3px;display:inline-block}
+@keyframes pointille{to{stroke-dashoffset:-20}}
+.panneau{flex:none;max-height:42vh;overflow:auto;background:var(--bg2);border-top:1px solid var(--line);padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));min-height:132px}
 .panneau h3{margin:0 0 2px;font-size:17px;display:flex;align-items:center;gap:8px}
 .panneau .meta{color:var(--muted);font-size:13px;margin-bottom:8px}
 .pastille{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
@@ -114,10 +132,10 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <!-- MENU -->
 <section id="menu" class="ecran">
-  <div class="blason">🏰</div>
+  <div class="blason">⚔️🏰</div>
   <h1>NAUFRAGÉS :<br><span>CONQUÊTE</span></h1>
-  <p class="sous">Recrute ton armée, envahis les royaumes voisins et commande tes troupes toi-même en pleine bataille.</p>
-  <button class="btn or" id="bNouvelle">⚔️ Nouvelle campagne</button>
+  <p class="sous">De Charlemagne à Louis XIV : choisis ton royaume sur la vraie carte, construis tes villes, assiège les forteresses et commande tes armées en pleine bataille.</p>
+  <button class="btn or" id="bNouvelle">📜 Nouvelle campagne (771 – 1800)</button>
   <button class="btn hide" id="bContinuer">▶ Continuer la campagne</button>
   <button class="btn" id="bRegles">📖 Comment jouer</button>
   <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a></div>
@@ -127,7 +145,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 <section id="campagne" class="ecran hide">
   <div class="barre">
     <div class="info">
-      <span>Tour <span id="tTour">1</span></span>
+      <span class="drapeau" id="tFaction"></span>
+      <span>📅 <span id="tAnnee">771</span></span>
       <span class="or">💰 <span id="tOr">0</span> <span class="petit">(+<span id="tRev">0</span>)</span></span>
       <span class="petit">🏴 <span id="tReg">1</span></span>
     </div>
@@ -135,7 +154,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
     <button id="bMenu" aria-label="Menu">☰</button>
     <button class="fin" id="bFinTour">Fin du tour ⏭</button>
   </div>
-  <div id="zoneCarte"><svg id="carte" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div id="zoneCarte"><svg id="carte" preserveAspectRatio="xMidYMid slice"></svg>
+    <div class="zoom"><button id="zPlus" aria-label="Zoomer">+</button><button id="zMoins" aria-label="Dézoomer">−</button><button id="zMoi" aria-label="Recentrer">🎯</button></div></div>
   <div class="panneau" id="panneau"></div>
 </section>
 
@@ -172,6 +192,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <div id="voile" class="voile hide"><div class="feuille" id="feuille"></div></div>
 
+<script src="monde.js"></script>
+<script src="histoire.js"></script>
 <script src="moteur.js"></script>
 <script src="jeu.js"></script>
 <script src="../site.js" defer></script>

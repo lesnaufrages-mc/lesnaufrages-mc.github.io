@@ -56,7 +56,7 @@ Si le compteur tombe à zéro, le bot s'arrête. Guide officiel : <https://daki.
 2. Crée un serveur gratuit de type **Node.js**.
 3. Dans **Files** : envoie `package.json`, `package-lock.json` et les dossiers `src` et `test` (pas `node_modules`),
    puis crée un fichier `.env` avec les mêmes lignes que sur ton PC.
-4. Dans **Startup** : mets le fichier principal (main file) sur `src/index.js`.
+4. Dans **Startup** : le fichier principal peut rester `index.js` (il lance `src/index.js`).
 5. **Console** > **Start**. Quand tu vois `✅ Connecté`, c'est bon.
 
 Éteins le bot sur ton PC (ferme la fenêtre noire) : le même bot ne doit tourner qu'à un seul endroit.

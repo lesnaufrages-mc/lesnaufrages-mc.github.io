@@ -64,3 +64,9 @@ Tests de la logique du jeu : `npm test`
   2. Confidentialité et messages > RGPD : créer et publier le message de consentement (gratuit, obligatoire en Europe).
   3. Une fois accepté : Annonces > Annonces automatiques > activer. Les pubs se placent toutes seules.
   Le jeu (`docs/jouer/`) n'a pas de pub web pour ne pas gêner le clavier.
+
+## Jouer entre amis (site web)
+
+Page `docs/amis/` (https://lesnaufrages-mc.github.io/amis/) : pseudo + avatar gardés dans le navigateur, salon avec un code de 5 lettres, jusqu'à 10 joueurs, même mot pour tous, points selon le nombre d'essais et la rapidité.
+Pas de serveur à gérer : les navigateurs se connectent entre eux (WebRTC) avec [PeerJS](https://peerjs.com/) et son serveur gratuit. Le créateur du salon (l'hôte) choisit le mot et compte les points, il doit donc garder la page ouverte.
+La liste de mots `docs/amis/mots.js` est une copie de `src/words.js` : pense à la mettre à jour aussi.

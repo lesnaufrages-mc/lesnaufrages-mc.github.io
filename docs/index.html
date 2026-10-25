@@ -10,10 +10,20 @@
 body{margin:0;background:#121213;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:48px 16px}
 img{width:120px;border-radius:24px}h1{letter-spacing:3px;margin:16px 0 8px}p{color:#bbb;max-width:480px;margin:8px auto;line-height:1.5}
 .play{display:inline-block;margin-top:8px;background:#3aa757;color:#fff;text-decoration:none;font-weight:800;font-size:20px;padding:16px 40px;border-radius:10px}.btn{display:inline-block;margin-top:24px;background:#5865F2;color:#fff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:8px}h2{margin-top:40px}.grid{font-size:28px;margin:24px 0;line-height:1.2}a{color:#3aa757}footer{margin-top:48px;font-size:14px}
-.community{max-width:480px;margin:48px auto 0;background:#1e1f22;border:2px solid #5865F2;border-radius:14px;padding:24px 20px;text-align:left}
-.community h2{margin:0 0 4px;text-align:center}.community .tag{text-align:center;color:#b5bac1;margin:0 0 16px}
-.community ul{list-style:none;padding:0;margin:0 0 16px}.community li{padding:6px 0;color:#dbdee1}
-.community .punch{text-align:center;font-weight:800;color:#fff;font-size:18px}.community .center{text-align:center}
+.community{max-width:560px;margin:56px auto 0;border-radius:18px;overflow:hidden;background:#1e1f22;border:1px solid #2b2d31;box-shadow:0 12px 40px rgba(0,0,0,.45);text-align:left}
+.c-head{background:linear-gradient(135deg,#5865F2 0%,#3aa757 100%);padding:28px 24px;text-align:center}
+.c-badge{display:inline-block;background:rgba(0,0,0,.25);color:#fff;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:999px}
+.c-head h2{margin:12px 0 6px;font-size:26px;letter-spacing:.5px}.c-head p{color:rgba(255,255,255,.9);margin:0}
+.c-body{padding:24px}
+.c-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.c-item{background:#2b2d31;border-radius:12px;padding:14px}
+.c-item b{display:block;color:#fff;font-size:15px;margin-bottom:4px}.c-item span{color:#b5bac1;font-size:13px;line-height:1.4}
+.c-ico{font-size:22px;display:block;margin-bottom:6px}
+.c-punch{text-align:center;font-weight:800;font-size:20px;margin:24px 0 4px;color:#fff}
+.c-sub{text-align:center;color:#b5bac1;margin:0 0 20px}
+.c-cta{display:block;text-align:center;background:#5865F2;color:#fff;text-decoration:none;font-weight:800;font-size:17px;padding:16px;border-radius:12px}
+.c-cta:hover{background:#4752c4}
+@media(max-width:420px){.c-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -27,18 +37,24 @@ img{width:120px;border-radius:24px}h1{letter-spacing:3px;margin:16px 0 8px}p{col
 <p>Une question, un bug, une idée de mot ? Rejoins la communauté :</p>
 <a class="btn" href="https://discord.gg/GvGbACqWRC" target="_blank" rel="noopener">💬 Nous contacter sur Discord</a>
 <section class="community">
-<h2>🏝️ Les Naufragés Community</h2>
-<p class="tag">Serveur Minecraft semi-factions</p>
-<ul>
-<li>⚔️ Monde survie avec claims &amp; guerres de factions</li>
-<li>💰 Économie, métiers &amp; quêtes</li>
-<li>🎁 Giveaways + pub autorisée</li>
-<li>🎥 Soutien aux créateurs (Twitch / YouTube)</li>
-<li>🛡️ Bots, rôles, sécurité &amp; staff actif</li>
-<li>😎 Ambiance chill, fun garanti !</li>
-</ul>
-<p class="punch">Tu construis, tu combats, tu domines !</p>
-<p class="center"><a class="btn" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">🚀 Rejoindre le serveur</a></p>
+<div class="c-head">
+<span class="c-badge">Minecraft · Semi-Factions</span>
+<h2>Les Naufragés Community</h2>
+<p>Un serveur semi-factions unique, pensé pour les joueurs.</p>
+</div>
+<div class="c-body">
+<div class="c-grid">
+<div class="c-item"><span class="c-ico">⚔️</span><b>Factions &amp; guerres</b><span>Monde survie avec claims et guerres de factions.</span></div>
+<div class="c-item"><span class="c-ico">💰</span><b>Économie complète</b><span>Métiers et quêtes pour progresser.</span></div>
+<div class="c-item"><span class="c-ico">🎁</span><b>Giveaways réguliers</b><span>Des cadeaux pour la communauté, pub autorisée.</span></div>
+<div class="c-item"><span class="c-ico">🎥</span><b>Créateurs soutenus</b><span>Soutien aux créateurs Twitch &amp; YouTube.</span></div>
+<div class="c-item"><span class="c-ico">🛡️</span><b>Serveur sécurisé</b><span>Bots, rôles et staff actif au quotidien.</span></div>
+<div class="c-item"><span class="c-ico">😎</span><b>Ambiance chill</b><span>Une communauté fun et bienveillante.</span></div>
+</div>
+<p class="c-punch">Tu construis. Tu combats. Tu domines.</p>
+<p class="c-sub">Rejoins des joueurs motivés dès maintenant.</p>
+<a class="c-cta" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Rejoindre le Discord →</a>
+</div>
 </section>
 <footer><a href="confidentialite.html">Politique de confidentialité</a></footer>
 </body>

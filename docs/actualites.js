@@ -4,8 +4,20 @@
    - categorie : "discord", "minecraft", "appli", "bot" ou "site"
    - epingle   : true pour la garder tout en haut (facultatif)
    - lien / bouton : un lien et le texte du bouton (facultatifs)
+   - video / image : une vidéo du dossier videos/ et son image d'aperçu (facultatifs)
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
+  {
+    date: "2026-10-25",
+    categorie: "appli",
+    epingle: true,
+    titre: "Le trailer de Mot Mystère est sorti !",
+    texte: "Un mot. Six essais. Le même pour tout le monde. Découvre le jeu en 27 secondes, puis partage la vidéo à tes amis et défie-les sur le mot du jour.",
+    video: "videos/trailer.mp4",
+    image: "videos/trailer.jpg",
+    lien: "jouer/",
+    bouton: "Jouer maintenant"
+  },
   {
     date: "2026-10-25",
     categorie: "minecraft",

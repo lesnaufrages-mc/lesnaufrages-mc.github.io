@@ -48,3 +48,12 @@ Tests de la logique du jeu : `npm test`
    est un vrai mot (dictionnaire).
 3. **Publier** : compte Google Play (25 $ une fois), Apple (99 $/an). `eas build` puis `eas submit`.
 4. **Lien de partage** : acheter un nom de domaine et changer `motmystere.app` dans `src/game.js`.
+
+## Site web (dossier `docs/`)
+- **Ajouter une actualité** : ouvre `docs/actualites.js` sur GitHub (crayon ✏️), copie un bloc `{ ... }`,
+  colle-le en haut de la liste, change la date, la catégorie et le texte, puis « Commit changes ».
+  Les 3 plus récentes s'affichent sur l'accueil, toutes sur `actualites.html`.
+- **Statistiques de visites** : [GoatCounter](https://www.goatcounter.com) (gratuit, sans cookie). Le code du compte
+  est dans `docs/site.js` (`GOATCOUNTER`). Les visites se consultent sur https://lesnaufrages.goatcounter.com.
+- **Si tu refais `expo export -p web`** vers `docs/jouer/`, remets la ligne `<script src="/site.js" defer></script>`
+  dans `docs/jouer/index.html` pour continuer à compter les visites du jeu.

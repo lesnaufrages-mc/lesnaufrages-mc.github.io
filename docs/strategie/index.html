@@ -38,6 +38,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .btn.bleu{background:var(--bleu);border:0}
 .btn.rouge{background:var(--rouge);border:0}
 .btn:active{transform:scale(.98)}
+.pseudoMenu{margin:10px 0 0;font-size:14px;color:var(--muted);min-height:18px}
+.pseudoMenu b{color:var(--or)}
+.champTexte{display:block;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:18px;font-weight:700;margin:4px 0 10px}
+.champTexte:focus{outline:2px solid var(--or)}
+.sousNom{font-size:12px;color:var(--muted);font-weight:600}
 .liens{margin-top:20px;font-size:14px;color:var(--muted)}
 .liens a{color:var(--muted)}
 
@@ -152,6 +157,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   <button class="btn or" id="bNouvelle">📜 Nouvelle campagne (771 – 1800)</button>
   <button class="btn hide" id="bContinuer">▶ Continuer la campagne</button>
   <button class="btn" id="bRegles">📖 Comment jouer</button>
+  <p class="pseudoMenu" id="menuPseudo"></p>
   <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a></div>
 </section>
 
@@ -208,12 +214,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <div id="voile" class="voile hide"><div class="feuille" id="feuille"></div></div>
 
-<script src="monde.js"></script>
-<script src="histoire.js"></script>
-<script src="moteur.js"></script>
+<script src="../supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="monde.js?v=4"></script>
+<script src="histoire.js?v=4"></script>
+<script src="moteur.js?v=4"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js"></script>
-<script src="jeu.js"></script>
+<script src="bataille3d.js?v=4"></script>
+<script src="jeu.js?v=4"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

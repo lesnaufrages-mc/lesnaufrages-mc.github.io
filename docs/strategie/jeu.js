@@ -14,7 +14,58 @@
   }
 
   function coul(f) { return f >= 0 ? etat.factions[f].coul : REBELLES; }
-  function nomF(f) { return f >= 0 ? etat.factions[f].nom : 'Rebelles'; }
+  function nomF(f) { return f >= 0 ? (f === etat.joueur && etat.pseudo ? etat.pseudo + ' (' + etat.factions[f].nom + ')' : etat.factions[f].nom) : 'Rebelles'; }
+
+  // ---------- Pseudo du joueur ----------
+  // 1) pseudo du compte du site (forum) s'il est connecté, 2) pseudo déjà tapé ici, 3) pseudo du mode « entre amis ».
+  var pseudoCompte = null;
+  function nettoyer(t) { return String(t || '').replace(/[^A-Za-z0-9_\-. À-ÖØ-öø-ÿ]/g, '').trim().slice(0, 20); }
+  function pseudoLocal() {
+    try {
+      var p = localStorage.getItem('imperium-pseudo');
+      if (p) return nettoyer(p);
+      var a = JSON.parse(localStorage.getItem('mm-profil'));
+      if (a && a.name) return nettoyer(a.name);
+    } catch (e) {}
+    return '';
+  }
+  function pseudo() { return pseudoCompte || pseudoLocal(); }
+  (function chercherCompte() {
+    var cfg = window.SUPABASE;
+    if (!cfg || !cfg.URL || !window.supabase) return;
+    try {
+      var sb = window.supabase.createClient(cfg.URL, cfg.CLE);
+      sb.auth.getSession().then(function (r) {
+        var u = r.data && r.data.session && r.data.session.user;
+        if (!u) return null;
+        return sb.from('profils').select('pseudo').eq('id', u.id).maybeSingle();
+      }).then(function (r) {
+        if (!r || !r.data || !r.data.pseudo) return;
+        pseudoCompte = nettoyer(r.data.pseudo);
+        $('menuPseudo').innerHTML = '🔑 Connecté : <b>' + pseudoCompte + '</b>';
+        if (etat && !etat.fin && etat.pseudo !== pseudoCompte) { etat.pseudo = pseudoCompte; sauver(); if (!$('campagne').classList.contains('hide')) dessiner(); }
+      }).catch(function () {});
+    } catch (e) {}
+  })();
+
+  // Demande le nom du commandant (sauf si le compte du site le donne déjà).
+  function demanderPseudo(suite, forcer) {
+    if (pseudoCompte && !forcer) { suite(pseudoCompte); return; }
+    var actuel = pseudo();
+    feuille('<h2>🎖️ Ton nom de commandant</h2><p>Il s\'affiche sur la carte, dans les batailles et dans le classement.' +
+      (window.SUPABASE ? ' Si tu as un compte sur le <a href="../forum/" style="color:#fbbf24">forum</a>, connecte-toi et ton pseudo sera repris tout seul.' : '') + '</p>' +
+      '<input id="fPseudo" class="champTexte" maxlength="20" autocomplete="nickname" placeholder="Ton pseudo" value="' + actuel + '">' +
+      '<button class="btn or" id="fPseudoOk">✅ Valider</button>');
+    var ok = function () {
+      var v = nettoyer($('fPseudo').value);
+      if (v.length < 2) { toast('Choisis un pseudo d\'au moins 2 lettres.'); return; }
+      try { localStorage.setItem('imperium-pseudo', v); } catch (e) {}
+      fermer(); suite(v);
+    };
+    $('fPseudoOk').onclick = ok;
+    $('fPseudo').addEventListener('keydown', function (e) { if (e.key === 'Enter') ok(); });
+    setTimeout(function () { try { $('fPseudo').focus(); } catch (e) {} }, 250);
+  }
   function moi() { return etat.joueur; }
   function montrer(id) {
     ['menu', 'campagne', 'bataille'].forEach(function (e) { $(e).classList.toggle('hide', e !== id); });
@@ -38,10 +89,16 @@
   // ---------- Menu : époque puis royaume ----------
   function menu() {
     $('bContinuer').classList.toggle('hide', !charger());
+    if (!pseudoCompte) $('menuPseudo').innerHTML = pseudoLocal() ? '🎖️ Commandant : <b>' + pseudoLocal() + '</b>' : '';
     montrer('menu');
   }
   $('bNouvelle').onclick = choisirEpoque;
-  $('bContinuer').onclick = function () { etat = charger(); choix = null; demarrer(); };
+  $('bContinuer').onclick = function () {
+    etat = charger(); choix = null;
+    if (pseudoCompte) etat.pseudo = pseudoCompte;
+    if (etat.pseudo) { demarrer(); return; }
+    demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); demarrer(); });
+  };
   $('bRegles').onclick = regles;
 
   function choisirEpoque() {
@@ -69,12 +126,17 @@
     $('fRetourEp').onclick = choisirEpoque;
     document.querySelectorAll('[data-f]').forEach(function (b) {
       b.onclick = function () {
-        etat = M.nouvellePartie(epId, b.getAttribute('data-f'));
-        choix = etat.factions[etat.joueur].capitale;
-        sauver(); fermer(); demarrer();
-        var dejaJoue = false;
-        try { dejaJoue = localStorage.getItem('strategie-vu'); localStorage.setItem('strategie-vu', '1'); } catch (e) {}
-        if (!dejaJoue) regles(); else toast(E.annee + ' : tu diriges ' + etat.factions[etat.joueur].nom + ' !');
+        var fid = b.getAttribute('data-f');
+        demanderPseudo(function (nom) {
+          etat = M.nouvellePartie(epId, fid);
+          etat.pseudo = nom;
+          etat.journal[0] = E.annee + ' : ' + E.titre + '. ' + nom + ' prend la tête de ' + etat.factions[etat.joueur].nom + '.';
+          choix = etat.factions[etat.joueur].capitale;
+          sauver(); fermer(); demarrer();
+          var dejaJoue = false;
+          try { dejaJoue = localStorage.getItem('strategie-vu'); localStorage.setItem('strategie-vu', '1'); } catch (e) {}
+          if (!dejaJoue) regles(); else toast(E.annee + ' : commandant ' + nom + ', tu diriges ' + etat.factions[etat.joueur].nom + ' !');
+        });
       };
     });
   }
@@ -101,12 +163,16 @@
   }
 
   $('bMenu').onclick = function () {
-    feuille('<h2>Pause</h2><p>' + etat.factions[moi()].nom + ' · ' + etat.annee + '. Ta campagne est sauvegardée automatiquement.</p>' +
+    feuille('<h2>Pause</h2><p>' + nomF(moi()) + ' · ' + etat.annee + '. Ta campagne est sauvegardée automatiquement.</p>' +
       '<button class="btn" id="fClassement">🏆 Classement des royaumes</button>' +
+      (pseudoCompte ? '' : '<button class="btn" id="fPseudoChg">🎖️ Changer de pseudo</button>') +
       '<button class="btn" id="fRegles">📖 Comment jouer</button>' +
       '<button class="btn" id="fMenu">🏠 Menu principal</button>' +
       '<button class="btn rouge" id="fNouvelle">🔄 Nouvelle campagne</button>');
     $('fClassement').onclick = classement;
+    if ($('fPseudoChg')) $('fPseudoChg').onclick = function () {
+      demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); dessiner(); toast('Tu es maintenant ' + nom + ' !'); }, true);
+    };
     $('fRegles').onclick = regles;
     $('fMenu').onclick = function () { fermer(); menu(); };
     $('fNouvelle').onclick = choisirEpoque;
@@ -118,7 +184,7 @@
   function classement() {
     var c = M.classement(etat);
     feuille('<h2>🏆 Classement en ' + etat.annee + '</h2><ol class="journal">' + c.slice(0, 12).map(function (x) {
-      return '<li><span class="pastille" style="background:' + x.coul + '"></span> ' + (x.i === moi() ? '<b>' + x.nom + ' (toi)</b>' : x.nom) + ' — ' + x.n + ' provinces</li>';
+      return '<li><span class="pastille" style="background:' + x.coul + '"></span> ' + (x.i === moi() ? '<b>' + (etat.pseudo ? '🎖️ ' + etat.pseudo + ' · ' : '') + x.nom + '</b>' : x.nom) + ' — ' + x.n + ' provinces</li>';
     }).join('') + '</ol><button class="btn" data-fermer>Fermer</button>');
   }
 
@@ -286,7 +352,7 @@
   function dessinerPanneau() {
     var el = $('panneau');
     if (choix == null) {
-      el.innerHTML = '<h3><span class="pastille" style="background:' + etat.factions[moi()].coul + '"></span>' + etat.factions[moi()].nom + '</h3>' +
+      el.innerHTML = '<h3><span class="pastille" style="background:' + etat.factions[moi()].coul + '"></span>' + (etat.pseudo ? '🎖️ ' + etat.pseudo + ' <small class="sousNom">' + etat.factions[moi()].nom + '</small>' : etat.factions[moi()].nom) + '</h3>' +
         '<div class="aide">Touche une de tes provinces (couleur vive) pour gérer sa ville et son armée. Fais glisser la carte pour te déplacer. Quand tu as fini, appuie sur <b>Fin du tour</b>.</div>';
       return;
     }
@@ -483,7 +549,7 @@
     var titre, texte, partage;
     if (fin === 'victoire') {
       titre = '👑 Victoire !'; texte = F.nom + ' domine le monde en ' + etat.annee + ' avec ' + n + ' provinces. Un vrai conquérant !';
-      partage = 'J\'ai conquis le monde avec ' + F.nom + ' en ' + etat.annee + ' dans Imperium of Wars ⚔️ Tu fais mieux ?';
+      partage = (etat.pseudo ? etat.pseudo + ' a' : 'J\'ai') + ' conquis le monde avec ' + F.nom + ' en ' + etat.annee + ' dans Imperium of Wars ⚔️ Tu fais mieux ?';
     } else if (fin === 'temps') {
       titre = rang === 1 ? '🏆 Premier royaume du monde !' : '⏳ ' + HIST.FIN + ' : fin de la campagne';
       texte = F.nom + ' finit ' + rang + (rang === 1 ? 'er' : 'e') + ' avec ' + n + ' provinces.';
@@ -492,6 +558,7 @@
       titre = '💀 Défaite...'; texte = F.nom + ' est tombé en ' + etat.annee + '. Retente ta chance !';
       partage = 'Mon royaume ' + F.nom + ' est tombé en ' + etat.annee + ' dans Imperium of Wars 🏰 Tu tiendras plus longtemps ?';
     }
+    if (etat.pseudo) texte = '🎖️ ' + etat.pseudo + ' : ' + texte;
     feuille('<h2>' + titre + '</h2><p>' + texte + '</p>' +
       '<button class="btn or" id="fPartager">📤 Partager mon score</button>' +
       '<button class="btn" id="fRejouer">🔄 Nouvelle campagne</button>');
@@ -560,7 +627,7 @@
     selection = null; vitesse = 1; marques = []; enCours = false;
     $('oVitesse').textContent = '⏩ x1';
     $('oTenir').classList.remove('actif');
-    $('nomMoi').textContent = etat.factions[moi()].nom;
+    $('nomMoi').textContent = etat.pseudo ? '🎖️ ' + etat.pseudo : etat.factions[moi()].nom;
     $('nomEux').textContent = nomF(ennemi);
     $('jMoi').style.background = coul(moi());
     $('jEux').style.background = coul(ennemi);

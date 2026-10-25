@@ -420,7 +420,10 @@
     return gagne;
   }
 
-  function nomF(etat, f) { return f >= 0 ? etat.factions[f].nom : 'des rebelles'; }
+  function nomF(etat, f) {
+    if (f < 0) return 'des rebelles';
+    return f === etat.joueur && etat.pseudo ? etat.pseudo + ' (' + etat.factions[f].nom + ')' : etat.factions[f].nom;
+  }
   function log(etat, txt) {
     etat.journal.unshift(txt);
     if (etat.journal.length > 40) etat.journal.length = 40;

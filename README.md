@@ -49,6 +49,22 @@ Tests de la logique du jeu : `npm test`
 3. **Publier** : compte Google Play (25 $ une fois), Apple (99 $/an). `eas build` puis `eas submit`.
 4. **Lien de partage** : acheter un nom de domaine et changer `motmystere.app` dans `src/game.js`.
 
+## Site web (dossier `docs/`)
+- **Ajouter une actualité** : ouvre `docs/actualites.js` sur GitHub (crayon ✏️), copie un bloc `{ ... }`,
+  colle-le en haut de la liste, change la date, la catégorie et le texte, puis « Commit changes ».
+  Les 3 plus récentes s'affichent sur l'accueil, toutes sur `actualites.html`.
+- **Statistiques de visites** : [GoatCounter](https://www.goatcounter.com) (gratuit, sans cookie). Le code du compte
+  est dans `docs/site.js` (`GOATCOUNTER`). Les visites se consultent sur https://lesnaufrages.goatcounter.com.
+- **Si tu refais `expo export -p web`** vers `docs/jouer/`, remets la ligne `<script src="/site.js" defer></script>`
+  dans `docs/jouer/index.html` pour continuer à compter les visites du jeu.
+- **Pubs du site (Google AdSense)** : le code AdSense est déjà dans le `<head>` de `index.html`, `actualites.html`
+  et `confidentialite.html`, et `docs/ads.txt` est servi sur https://lesnaufrages-mc.github.io/ads.txt.
+  Ce qu'il reste à faire sur https://adsense.google.com (avec le même compte Google que AdMob) :
+  1. Ajouter le site `lesnaufrages-mc.github.io` et demander l'examen (quelques jours à 2-4 semaines).
+  2. Confidentialité et messages > RGPD : créer et publier le message de consentement (gratuit, obligatoire en Europe).
+  3. Une fois accepté : Annonces > Annonces automatiques > activer. Les pubs se placent toutes seules.
+  Le jeu (`docs/jouer/`) n'a pas de pub web pour ne pas gêner le clavier.
+
 ## Jouer entre amis (site web)
 
 Page `docs/amis/` (https://lesnaufrages-mc.github.io/amis/) : pseudo + avatar gardés dans le navigateur, salon avec un code de 5 lettres, jusqu'à 10 joueurs, même mot pour tous, points selon le nombre d'essais et la rapidité.

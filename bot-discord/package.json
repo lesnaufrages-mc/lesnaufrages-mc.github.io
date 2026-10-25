@@ -1,0 +1,16 @@
+{
+  "name": "bot-naufrages",
+  "version": "1.0.0",
+  "description": "Bot Discord des Naufragés Community, relié au jeu Mot Mystère",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --env-file=.env src/index.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "private": true,
+  "engines": { "node": ">=20.6" },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}

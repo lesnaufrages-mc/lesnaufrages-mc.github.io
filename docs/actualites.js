@@ -8,6 +8,15 @@
 var ACTUALITES = [
   {
     date: "2026-10-25",
+    categorie: "minecraft",
+    epingle: true,
+    titre: "Les Naufragés recrutent leur staff !",
+    texte: "On cherche des joueurs motivés : Modo (veiller au respect des règles), Helper (aider et accueillir les nouveaux), Builder (spawns, events, décors), Dev (plugins, site et bot) et Animateur (events, faire vivre la commu). On attend que tu sois actif, respectueux, mature, à l'écoute, et que tu aies un peu de temps chaque semaine. Pour postuler : rejoins le Discord, va dans #recrutement et clique sur Postuler (ou tape /candidature). Le staff te répond en message privé.",
+    lien: "staff/#recrutement",
+    bouton: "Rejoindre le staff"
+  },
+  {
+    date: "2026-10-25",
     categorie: "appli",
     epingle: true,
     titre: "On recherche des testeurs Android",

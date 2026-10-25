@@ -45,23 +45,31 @@ Colle-les dans [`docs/supabase-config.js`](../docs/supabase-config.js) (sur GitH
 2. Retourne dans Supabase → **SQL Editor** → **New query**, colle (en remplaçant le pseudo) puis **Run** :
 
    ```sql
-   update public.profils set role = 'admin' where pseudo = 'TonPseudo';
+   update public.profils set role = 'fondateur' where pseudo = 'TonPseudo';
    ```
 
 3. Recharge le site : ton menu affiche **🛡️ Espace admin** (`/admin/`).
 
-Depuis l'espace admin tu peux ensuite nommer des **modos** sans repasser par Supabase.
+Depuis l'espace admin tu peux ensuite donner les grades du staff sans repasser par Supabase.
 
-## Qui peut faire quoi
+## Mise à jour : grades du staff, photo de profil et bio
 
-| | Visiteur | Membre | Modo | Admin |
-|---|:-:|:-:|:-:|:-:|
-| Lire le forum | ✅ | ✅ | ✅ | ✅ |
-| Créer un sujet, répondre, signaler | | ✅ | ✅ | ✅ |
-| Modifier / supprimer ses messages | | ✅ | ✅ | ✅ |
-| Supprimer n'importe quel message, épingler, verrouiller, voir les signalements | | | ✅ | ✅ |
-| Bannir, nommer modo/admin, publier les actualités | | | | ✅ |
+Si tu as installé le forum avant l'arrivée des grades, lance **une fois** [`mise-a-jour-staff-profils.sql`](mise-a-jour-staff-profils.sql)
+(SQL Editor → New query → colle tout → Run). Désactive la traduction automatique de Chrome avant de copier le code.
 
+## Grades du staff
+
+Les mêmes noms que les rôles du Discord (le bot les crée avec `/staff-setup`).
+
+| Grade | Sur le site |
+|---|---|
+| **Fondateur** | Tout, y compris nommer des admins |
+| **Admin** | Membres, grades (en dessous du sien), actualités, modération |
+| **Responsable**, **Modo** | Supprimer les messages, épingler, verrouiller, voir les signalements |
+| **Helper**, **Builder**, **Dev**, **Animateur** | Badge staff et place sur la page `/staff/` (droits d'un membre) |
+| **Membre** | Lire, créer des sujets, répondre, signaler, modifier sa photo et sa bio |
+
+On ne peut gérer que les membres d'un grade inférieur au sien, et jamais son propre grade.
 Un membre banni peut encore lire mais plus écrire. Anti-spam : 15 secondes minimum entre deux messages.
 
 ## Bon à savoir (offre gratuite)

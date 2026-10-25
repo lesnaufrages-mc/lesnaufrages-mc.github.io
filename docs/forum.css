@@ -160,3 +160,7 @@ img.av-l{object-fit:cover;background:#26262a}
 .etapes{text-align:left;max-width:520px;margin:0 auto 24px;color:var(--txt);line-height:1.9}
 .recrute .cta{margin:0 0 14px}
 .attentes{max-width:560px;margin:0 auto 18px;color:var(--muted)}
+.staff-card.libre{border-style:dashed;cursor:default;opacity:.7}
+a.staff-card.libre{cursor:pointer;opacity:.85}
+a.staff-card.libre:hover{opacity:1}
+.staff-card.libre .av-l{background:#26262a;color:var(--muted)}

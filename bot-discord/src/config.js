@@ -27,7 +27,7 @@ export const config = {
   rappelHeure: Number(env.RAPPEL_HEURE ?? 9),
 };
 
-export const LIEN_JEU = 'https://lordmattstark.github.io/projet-mobille-viral-2-mot-mystere-./jouer/';
+export const LIEN_JEU = 'https://lesnaufrages-mc.github.io/jouer/';
 export const LIEN_DISCORD = 'https://discord.gg/Xdkzj8bZnk';
 
 export function verifierConfig() {

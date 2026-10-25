@@ -47,7 +47,7 @@ const EMOJI = { correct: '🟩', present: '🟨', absent: '⬛' };
 export function shareText(rows, won, day) {
   const score = won ? `${rows.length}/${MAX_TRIES}` : `X/${MAX_TRIES}`;
   const grid = rows.map((r) => r.map((s) => EMOJI[s]).join('')).join('\n');
-  return `Mot Mystère #${day} ${score}\n\n${grid}\n\nTu fais mieux ? 👉 lordmattstark.github.io/projet-mobille-viral-2-mot-mystere-./jouer/`;
+  return `Mot Mystère #${day} ${score}\n\n${grid}\n\nTu fais mieux ? 👉 lesnaufrages-mc.github.io/jouer/`;
 }
 
 // Meilleur état connu de chaque lettre, pour colorer le clavier.

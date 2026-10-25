@@ -11,6 +11,8 @@ Bot Discord pour **Les Naufragés Community**, relié au jeu **Mot Mystère**.
 | 🏆 Classement | Les membres collent leur résultat du jeu (« Mot Mystère #3 4/6 … »), le bot le compte : `/classement` |
 | 🔔 Rôle à la carte | `/roles` poste un bouton pour prendre/enlever le rôle « Mot du jour » |
 | 🛡️ Modération | `/clear` (supprimer des messages), `/mute` (exclusion temporaire) |
+| 👥 Rôles du staff | `/staff-setup` crée les grades (Fondateur, Admin, Responsable, Modo, Helper, Builder, Dev, Animateur), `/staff` affiche qui en fait partie |
+| 📋 Recrutement | `/recrutement` poste un message avec un bouton « Postuler » par poste ; formulaire, puis Accepter/Refuser par le staff dans un salon privé (le bot donne le rôle et prévient en MP). Aussi : `/candidature` |
 | ℹ️ Autres | `/aide`, `/jouer`, `/motdujour`, `/invitation` |
 
 Le bot ne connaît jamais le mot : il ne peut pas spoiler.

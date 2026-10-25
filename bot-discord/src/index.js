@@ -5,6 +5,7 @@ import { config, verifierConfig, LIEN_JEU, LIEN_DISCORD } from './config.js';
 import { commandes } from './commandes.js';
 import { dayNumber, heureParis, parseScore, MAX_TRIES } from './motdujour.js';
 import { enregistrer, classement } from './scores.js';
+import { actionsStaff, interactionStaff } from './staff.js';
 
 verifierConfig();
 
@@ -69,8 +70,9 @@ client.on(Events.MessageCreate, async (message) => {
 client.on(Events.InteractionCreate, async (i) => {
   try {
     if (i.isButton() && i.customId === 'role-notif') return await basculerRoleNotif(i);
+    if (await interactionStaff(i)) return;
     if (!i.isChatInputCommand()) return;
-    const action = actions[i.commandName];
+    const action = actions[i.commandName] ?? actionsStaff[i.commandName];
     if (action) await action(i);
   } catch (e) {
     console.error(e);
@@ -90,7 +92,11 @@ const actions = {
       '`/classement` : top 10 des joueurs',
       "`/invitation` : lien pour inviter tes potes",
       '',
+      '`/staff` : qui fait partie du staff',
+      '`/candidature` : postuler pour rejoindre le staff',
+      '',
       '**Modération** : `/clear`, `/mute`, `/roles`',
+      '**Staff** : `/staff-setup` (crée les rôles), `/recrutement` (ouvre les candidatures)',
       '',
       '💡 Colle ton résultat du Mot Mystère dans un salon : le bot le compte tout seul.',
     ].join('\n'),

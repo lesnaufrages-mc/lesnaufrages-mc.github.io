@@ -1,4 +1,5 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { POSTES } from './staff.js';
 
 // Les commandes "/" que les membres voient en tapant "/" dans Discord.
 export const commandes = [
@@ -23,4 +24,20 @@ export const commandes = [
     .addIntegerOption((o) => o.setName('minutes').setDescription('Durée en minutes').setMinValue(1).setMaxValue(40320).setRequired(true))
     .addStringOption((o) => o.setName('raison').setDescription('Pourquoi ?'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+  new SlashCommandBuilder().setName('staff').setDescription('Liste des membres du staff'),
+  new SlashCommandBuilder()
+    .setName('candidature')
+    .setDescription('Postuler pour rejoindre le staff')
+    .addStringOption((o) => o.setName('poste').setDescription('Quel poste ?').setRequired(true)
+      .addChoices(...POSTES.map((g) => ({ name: `${g.emoji} ${g.nom}`, value: g.nom })))),
+  new SlashCommandBuilder()
+    .setName('staff-setup')
+    .setDescription('Crée les rôles du staff qui manquent (Fondateur, Admin, Modo...)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+  new SlashCommandBuilder()
+    .setName('recrutement')
+    .setDescription('Poste le message de recrutement avec les boutons Postuler dans ce salon')
+    .addChannelOption((o) => o.setName('salon_candidatures').setDescription('Salon privé où le staff reçoit les candidatures')
+      .addChannelTypes(ChannelType.GuildText).setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 ].map((c) => c.toJSON());

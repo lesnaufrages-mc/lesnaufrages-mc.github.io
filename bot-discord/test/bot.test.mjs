@@ -32,3 +32,35 @@ test('points et classement', () => {
   enregistrer('b', 'Bob', 2, 1, data, rien);
   assert.deepEqual(classement(data).map((j) => [j.nom, j.points]), [['Alice', 5], ['Bob', 6]].reverse());
 });
+
+import { GRADES, POSTES, estPoste, ouvrirCandidature, fermerCandidature } from '../src/staff.js';
+import { commandes } from '../src/commandes.js';
+
+test('grades du staff : mêmes noms que le site', () => {
+  assert.deepEqual(GRADES.map((g) => g.nom), ['Fondateur', 'Admin', 'Responsable', 'Modo', 'Helper', 'Builder', 'Dev', 'Animateur']);
+  assert.deepEqual(POSTES.map((g) => g.nom), ['Modo', 'Helper', 'Builder', 'Dev', 'Animateur']);
+  assert.equal(estPoste('Modo'), true);
+  assert.equal(estPoste('Fondateur'), false); // on ne postule pas pour être fondateur
+});
+
+test('une seule candidature en attente par personne', () => {
+  const data = {};
+  const rien = () => {};
+  assert.equal(ouvrirCandidature('u1', 'Modo', data, rien), true);
+  assert.equal(ouvrirCandidature('u1', 'Helper', data, rien), false);
+  fermerCandidature('u1', data, rien);
+  assert.equal(ouvrirCandidature('u1', 'Helper', data, rien), true);
+});
+
+test('commandes "/" valides', () => {
+  const noms = commandes.map((c) => c.name);
+  for (const n of ['staff', 'candidature', 'staff-setup', 'recrutement']) assert.ok(noms.includes(n));
+  assert.equal(new Set(noms).size, noms.length);
+});
+
+test('après 7 jours sans réponse, on peut repostuler', async () => {
+  const { enAttente } = await import('../src/staff.js');
+  const data = { u1: { poste: 'Modo', date: '2026-10-01T00:00:00Z' } };
+  assert.equal(enAttente('u1', data, Date.parse('2026-10-03T00:00:00Z')), true);
+  assert.equal(enAttente('u1', data, Date.parse('2026-10-09T00:00:00Z')), false);
+});

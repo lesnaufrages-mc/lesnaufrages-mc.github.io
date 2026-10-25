@@ -1,8 +1,12 @@
+import fs from 'node:fs';
+
 // Tous les réglages viennent du fichier .env (jamais du code : le dépôt est public).
+// On le charge nous-mêmes pour que "node src/index.js" marche aussi chez un hébergeur.
+if (!process.env.DISCORD_TOKEN && fs.existsSync('.env')) process.loadEnvFile('.env');
 const env = process.env;
 
 export const config = {
-  token: env.DISCORD_TOKEN,
+  token: env.DISCORD_TOKEN?.trim(),
   guildId: env.GUILD_ID,
   salonBienvenue: env.SALON_BIENVENUE_ID || null,
   salonMotDuJour: env.SALON_MOT_DU_JOUR_ID || null,

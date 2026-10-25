@@ -46,13 +46,21 @@ Ensuite, clic droit > **Copier l'identifiant** sur : le serveur, le salon de bie
 
 Le bot reste en ligne tant que le terminal est ouvert.
 
-## 4. L'héberger gratuitement 24 h/24
+## 4. L'héberger gratuitement 24 h/24 (sans carte bancaire)
 
-- **Le plus simple pour commencer** : ton PC (ou un vieux PC / Raspberry Pi qui reste allumé).
-- **Gratuit et en ligne tout le temps** : Oracle Cloud « Always Free » (une petite machine virtuelle gratuite à vie ; ils demandent une carte bancaire pour vérifier, sans rien prélever). On y installe Node.js et on lance `npm start` pareil.
-- Évite les hébergeurs gratuits qui « mettent en veille » le bot : il serait hors ligne la moitié du temps.
+On utilise **bot-hosting.net** (offre gratuite : 256 Mo de RAM, largement assez pour ce bot).
+⚠️ Il faut cliquer **Renouveler** dans leur panneau **tous les 4 jours**, sinon le bot s'arrête.
 
-Le fichier `.env` doit être recréé sur l'hébergeur (il n'est jamais envoyé sur GitHub, voir `.gitignore`).
+1. Va sur <https://bot-hosting.net>, clique **Start free** et crée un compte.
+2. Crée un serveur gratuit de type **Node.js**.
+3. Ouvre le panneau du serveur, onglet **Files** (Fichiers) :
+   - envoie (Upload) le contenu du dossier `bot-discord` : `package.json`, `package-lock.json` et les dossiers `src` et `test` (pas `node_modules`) ;
+   - clique **New File**, nomme-le `.env` et colle dedans les mêmes lignes que sur ton PC.
+4. Onglet **Startup** : mets le fichier principal (main file) sur `src/index.js`.
+5. Onglet **Console** : clique **Start**. Quand tu vois `✅ Connecté`, c'est bon, tu peux éteindre ton PC.
+
+Éteins le bot sur ton PC (ferme la fenêtre noire) : le même bot ne doit tourner qu'à un seul endroit.
+Le fichier `.env` reste privé chez l'hébergeur : il n'est jamais envoyé sur GitHub (voir `.gitignore`).
 
 ## Tests
 

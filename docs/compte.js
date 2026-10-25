@@ -172,7 +172,8 @@
     img.onerror = function () { err.textContent = 'Cette image ne peut pas être lue. Essaie un fichier JPG ou PNG.'; };
     img.src = URL.createObjectURL(e.target.files[0]);
   });
-  document.addEventListener('DOMContentLoaded', function () { C.pret.then(dessineBarre); });
+  document.addEventListener('DOMContentLoaded', function () { C.pret.then(function () { dessineBarre(); proposerProfil(); }); });
+  C.surChangement(function () { setTimeout(proposerProfil, 0); });
 
   /* ---------- Fenêtre connexion / inscription ---------- */
   var modal;
@@ -209,15 +210,13 @@
         '<form data-f="nouveau-mdp"><label>Nouveau mot de passe<input type="password" name="mdp" required minlength="8" autocomplete="new-password"></label>' +
         '<p class="err" data-err></p><button class="btn btn-play full">Enregistrer</button></form>';
     },
+    bienvenue: function () {
+      return '<h2>Bienvenue ' + C.esc(C.profil.pseudo) + ' ! 🎉</h2><p class="muted">Ton compte est prêt. Ajoute une photo de profil et une petite bio pour que la communauté te reconnaisse.</p>' +
+        formProfil('Enregistrer') + '<button type="button" class="btn btn-ghost full plus-tard" data-fermer>Plus tard</button>';
+    },
     'mon-compte': function () {
       var p = C.profil || {};
-      return '<h2>Mon compte</h2>' +
-        '<form data-f="profil"><div class="pp-edit">' + C.avatar(p, true) + '<div>' +
-        '<label class="btn btn-ghost btn-sm">📷 Changer la photo<input type="file" name="photo" accept="image/*" hidden></label>' +
-        (p.avatar ? ' <button type="button" class="btn btn-ghost btn-sm" data-sans-photo>Retirer</button>' : '') +
-        '<p class="small muted">Image carrée conseillée, elle sera réduite automatiquement.</p></div></div>' +
-        '<label>Bio<textarea name="bio" maxlength="300" rows="3" placeholder="Présente-toi en quelques mots (300 caractères max)">' + C.esc(p.bio || '') + '</textarea></label>' +
-        '<p class="err" data-err></p><button class="btn btn-play full">Enregistrer mon profil</button></form>' +
+      return '<h2>Mon compte</h2>' + formProfil('Enregistrer mon profil') +
         '<p class="muted small compte-info">Pseudo : <b>' + C.esc(p.pseudo) + '</b> · E-mail : ' + C.esc(C.user && C.user.email) + '</p>' +
         '<button type="button" class="btn btn-ghost full" data-ouvrir="nouveau-mdp">Changer de mot de passe</button>' +
         '<details class="danger"><summary>Supprimer mon compte</summary>' +
@@ -236,12 +235,30 @@
     info: function (txt) { return txt; }
   };
 
+  function formProfil(bouton) {
+    var p = C.profil || {};
+    return '<form data-f="profil"><div class="pp-edit">' + C.avatar(p, true) + '<div>' +
+      '<label class="btn btn-ghost btn-sm">📷 ' + (p.avatar ? 'Changer la photo' : 'Ajouter une photo') + '<input type="file" name="photo" accept="image/*" hidden></label>' +
+      (p.avatar ? ' <button type="button" class="btn btn-ghost btn-sm" data-sans-photo>Retirer</button>' : '') +
+      '<p class="small muted">Image carrée conseillée, elle sera réduite automatiquement.</p></div></div>' +
+      '<label>Bio<textarea name="bio" maxlength="300" rows="3" placeholder="Présente-toi en quelques mots (300 caractères max)">' + C.esc(p.bio || '') + '</textarea></label>' +
+      '<p class="err" data-err></p><button class="btn btn-play full">' + bouton + '</button></form>';
+  }
+
+  // Nouveau compte (photo et bio vides) : on propose une fois de personnaliser son profil.
+  function proposerProfil() {
+    if (!C.profil || C.profil.avatar || C.profil.bio || modal || !('avatar' in C.profil)) return;
+    var cle = 'profil-propose-' + C.profil.id;
+    try { if (localStorage.getItem(cle)) return; localStorage.setItem(cle, '1'); } catch (e) { return; }
+    C.ouvrir('bienvenue');
+  }
+
   C.ouvrir = function (vue, html) {
     if (!actif) return;
     fermer();
     modal = document.createElement('div');
     modal.className = 'modal';
-    if (vue === 'mon-compte') { photo = null; sansPhoto = false; }
+    if (vue === 'mon-compte' || vue === 'bienvenue') { photo = null; sansPhoto = false; }
     modal.innerHTML = '<div class="modal-in" role="dialog" aria-modal="true"><button type="button" class="x" data-fermer aria-label="Fermer">×</button>' +
       VUES[vue](html) + '</div>';
     document.body.appendChild(modal);
@@ -275,7 +292,7 @@
             options: { data: { pseudo: v('pseudo') }, emailRedirectTo: retour } });
         }).then(function (r) {
           if (r.error) throw r.error;
-          if (r.data.session) fermer();
+          if (r.data.session) { fermer(); setTimeout(function () { chargeProfil().then(proposerProfil); }, 300); }
           else info('Vérifie tes e-mails 📬', 'On t\'a envoyé un lien à <b>' + C.esc(v('email')) + '</b>. Clique dessus pour activer ton compte, puis reviens ici. (Regarde aussi dans les spams.)');
         });
         break;

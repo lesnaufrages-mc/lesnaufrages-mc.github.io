@@ -164,3 +164,6 @@ img.av-l{object-fit:cover;background:#26262a}
 a.staff-card.libre{cursor:pointer;opacity:.85}
 a.staff-card.libre:hover{opacity:1}
 .staff-card.libre .av-l{background:#26262a;color:var(--muted)}
+.plus-tard{margin-top:10px}
+.pp-edit input[type=file]{display:none}
+.pp-edit label.btn{white-space:nowrap}

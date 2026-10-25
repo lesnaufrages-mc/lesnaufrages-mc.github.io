@@ -27,6 +27,14 @@
         }
       ]
     ],
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon.png",
+    "experiments": {
+      "baseUrl": "/projet-mobille-viral-2-mot-mystere-./jouer"
+    },
+    "web": {
+      "name": "Mot Mystère",
+      "favicon": "./assets/icon.png",
+      "backgroundColor": "#121213"
+    }
   }
 }

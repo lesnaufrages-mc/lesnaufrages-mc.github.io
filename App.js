@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Platform, Pressable, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -68,8 +68,29 @@ export default function App() {
 
   async function share() {
     const rows = guesses.map((g) => evaluate(g, answer));
-    await Share.share({ message: shareText(rows, won, day) });
+    const message = shareText(rows, won, day);
+    // Sur ordinateur, le navigateur ne sait souvent pas partager : on copie le texte à la place.
+    if (Platform.OS === 'web' && !navigator.share) {
+      await navigator.clipboard.writeText(message);
+      window.alert('Résultat copié ! Colle-le où tu veux.');
+      return;
+    }
+    await Share.share({ message });
   }
+
+  // Sur le web, on peut aussi jouer avec le clavier de l'ordinateur.
+  const pressRef = useRef(press);
+  pressRef.current = press;
+  useEffect(() => {
+    if (Platform.OS !== 'web') return undefined;
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const key = e.key === 'Enter' ? '↵' : e.key === 'Backspace' ? '⌫' : normalize(e.key);
+      if (key.length === 1) pressRef.current(key);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Partie bonus débloquée par une pub récompensée : c'est la source de revenus principale.
   async function playBonus() {

@@ -119,6 +119,7 @@ h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.5px;margin-bottom:14px}
 .c-punch{text-align:center;font-weight:900;font-size:24px;margin:32px 0 6px}
 .c-sub{text-align:center;color:var(--muted);margin:0 0 22px}
 .c-cta{display:flex;justify-content:center}
+.cta-duo{flex-wrap:wrap;gap:12px}
 
 /* Bot */
 .feat{list-style:none;padding:0;margin:24px 0 0;display:flex;flex-direction:column;gap:16px}

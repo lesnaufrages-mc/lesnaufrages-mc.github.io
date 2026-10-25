@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Naufragés : Conquête – Jeu de stratégie gratuit</title>
+<meta name="description" content="Commande ton armée, conquiers les royaumes et mène tes batailles toi-même. Jeu de stratégie gratuit sur téléphone, sans inscription.">
+<meta name="theme-color" content="#0b1220">
+<link rel="icon" href="../icon.png">
+<meta property="og:title" content="Naufragés : Conquête – Jeu de stratégie">
+<meta property="og:description" content="Recrute, attaque, commande tes troupes en pleine bataille. Tu conquiers le monde en combien de tours ?">
+<meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
+<meta property="og:url" content="https://lesnaufrages-mc.github.io/strategie/">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg:#0b1220;--bg2:#111a2e;--card:#16213a;--line:#25324f;
+  --txt:#f1f5f9;--muted:#94a3b8;--or:#fbbf24;--bleu:#3b82f6;--rouge:#e5484d;--vert:#22c55e;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+body{display:flex;flex-direction:column;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+.hide{display:none!important}
+.ecran{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* Menu */
+#menu{align-items:center;justify-content:center;padding:24px 16px;text-align:center;
+  background:radial-gradient(600px 400px at 50% 0%,rgba(59,130,246,.25),transparent 70%),radial-gradient(500px 400px at 50% 110%,rgba(229,72,77,.18),transparent 70%),var(--bg)}
+#menu h1{font-size:clamp(30px,9vw,52px);margin:0;letter-spacing:1px;font-weight:900;line-height:1.05}
+#menu h1 span{color:var(--or)}
+#menu .sous{color:var(--muted);margin:10px 0 26px;max-width:420px}
+.blason{font-size:64px;margin-bottom:8px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.btn{display:block;width:100%;max-width:320px;margin:8px auto;padding:15px 18px;border-radius:14px;font-weight:800;font-size:17px;background:var(--card);border:1px solid var(--line)}
+.btn.or{background:linear-gradient(180deg,#fbbf24,#d97706);color:#1a1205;border:0;box-shadow:0 6px 20px rgba(217,119,6,.35)}
+.btn.bleu{background:var(--bleu);border:0}
+.btn.rouge{background:var(--rouge);border:0}
+.btn:active{transform:scale(.98)}
+.liens{margin-top:20px;font-size:14px;color:var(--muted)}
+.liens a{color:var(--muted)}
+
+/* Carte */
+.barre{display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--bg2);border-bottom:1px solid var(--line);flex:none}
+.barre .info{display:flex;gap:10px;align-items:center;font-weight:800;font-size:15px;flex:1;min-width:0}
+.barre .or{color:var(--or)}
+.barre .petit{color:var(--muted);font-weight:600;font-size:12px}
+.barre button{padding:9px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:800;font-size:14px;white-space:nowrap}
+.barre button.fin{background:var(--or);color:#1a1205;border:0}
+#zoneCarte{flex:1;min-height:0;position:relative;background:radial-gradient(circle at 50% 40%,#123052,#0a1a30 70%)}
+#carte{width:100%;height:100%;display:block}
+#carte .reg{stroke:#0b1220;stroke-width:2;stroke-linejoin:round;transition:fill-opacity .2s}
+#carte .reg.sel{stroke:#fff;stroke-width:3.5}
+#carte .reg.cible{stroke:#fbbf24;stroke-width:3;stroke-dasharray:6 4;animation:pointille 1s linear infinite}
+@keyframes pointille{to{stroke-dashoffset:-20}}
+#carte text{pointer-events:none;font-family:system-ui,sans-serif}
+#carte .nom{font-size:10px;font-weight:700;fill:#fff;paint-order:stroke;stroke:#0b1220;stroke-width:3px}
+#carte .nb{font-size:11px;font-weight:900;fill:#0b1220}
+.panneau{flex:none;background:var(--bg2);border-top:1px solid var(--line);padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));min-height:132px}
+.panneau h3{margin:0 0 2px;font-size:17px;display:flex;align-items:center;gap:8px}
+.panneau .meta{color:var(--muted);font-size:13px;margin-bottom:8px}
+.pastille{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
+.unites{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.u{display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:9px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:700}
+.u small{color:var(--muted);font-weight:600}
+.u.bouge{opacity:.45}
+.u.choix{border-color:var(--or);background:rgba(251,191,36,.12)}
+.u.off{opacity:.4;border-style:dashed}
+.actions{display:flex;gap:8px}
+.actions .btn{margin:0;padding:11px 10px;font-size:15px;max-width:none}
+.aide{color:var(--muted);font-size:13px}
+
+/* Feuilles (fenêtres du bas) */
+.voile{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.feuille{width:100%;max-width:520px;background:var(--bg2);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 16px;padding-bottom:max(18px,env(safe-area-inset-bottom));max-height:85vh;overflow:auto;animation:monte .2s ease-out}
+@keyframes monte{from{transform:translateY(40px);opacity:0}}
+.feuille h2{margin:0 0 4px;font-size:20px}
+.feuille p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.recrues{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.recrue{text-align:left;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.recrue b{display:block;font-size:15px}
+.recrue .prix{color:var(--or);font-weight:800;font-size:14px}
+.recrue small{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.3}
+.recrue:disabled{opacity:.4}
+.duel{display:flex;align-items:center;gap:10px;margin:6px 0 12px}
+.duel .camp{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.duel .camp b{display:block;font-size:14px;margin-bottom:6px}
+.duel .vs{font-weight:900;color:var(--muted)}
+.chances{font-weight:800;margin-bottom:12px}
+.journal{font-size:14px;line-height:1.5;padding-left:18px;margin:0 0 12px}
+.regles{font-size:14px;line-height:1.55;color:#cbd5e1}
+.regles li{margin-bottom:6px}
+
+/* Bataille */
+#bataille{background:#0f1a10}
+#bataille .barre{justify-content:space-between}
+.forces{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.jauge{height:9px;border-radius:9px;background:#334155;overflow:hidden;display:flex}
+.jauge i{display:block;height:100%;transition:width .3s}
+.forces .noms{display:flex;justify-content:space-between;font-size:12px;font-weight:800}
+#zoneChamp{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+#champ{touch-action:none;border-radius:10px;box-shadow:0 0 0 1px #1e3a1f}
+.ordres{display:flex;gap:6px;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--line);flex:none}
+.ordres button{flex:1;padding:11px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:800;font-size:13px}
+.ordres button.actif{background:var(--bleu);border-color:var(--bleu)}
+#conseil{position:absolute;left:10px;right:10px;top:8px;text-align:center;font-size:13px;font-weight:700;color:#e2e8f0;background:rgba(0,0,0,.45);border-radius:10px;padding:6px 8px;pointer-events:none}
+#debutBataille,#finBataille{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:16px}
+.boite{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:18px;max-width:380px;width:100%;text-align:center}
+.boite h2{margin:0 0 6px;font-size:24px}
+.boite p{color:var(--muted);font-size:14px;margin:0 0 14px}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;z-index:40;max-width:92vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:monte .2s}
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<section id="menu" class="ecran">
+  <div class="blason">🏰</div>
+  <h1>NAUFRAGÉS :<br><span>CONQUÊTE</span></h1>
+  <p class="sous">Recrute ton armée, envahis les royaumes voisins et commande tes troupes toi-même en pleine bataille.</p>
+  <button class="btn or" id="bNouvelle">⚔️ Nouvelle campagne</button>
+  <button class="btn hide" id="bContinuer">▶ Continuer la campagne</button>
+  <button class="btn" id="bRegles">📖 Comment jouer</button>
+  <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a></div>
+</section>
+
+<!-- CARTE DE CAMPAGNE -->
+<section id="campagne" class="ecran hide">
+  <div class="barre">
+    <div class="info">
+      <span>Tour <span id="tTour">1</span></span>
+      <span class="or">💰 <span id="tOr">0</span> <span class="petit">(+<span id="tRev">0</span>)</span></span>
+      <span class="petit">🏴 <span id="tReg">1</span></span>
+    </div>
+    <button id="bJournal" aria-label="Journal">📜</button>
+    <button id="bMenu" aria-label="Menu">☰</button>
+    <button class="fin" id="bFinTour">Fin du tour ⏭</button>
+  </div>
+  <div id="zoneCarte"><svg id="carte" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="panneau" id="panneau"></div>
+</section>
+
+<!-- BATAILLE -->
+<section id="bataille" class="ecran hide">
+  <div class="barre">
+    <div class="forces">
+      <div class="noms"><span id="nomMoi">Toi</span><span id="nomEux">Ennemi</span></div>
+      <div class="jauge"><i id="jMoi" style="background:#3b82f6;width:50%"></i><i id="jEux" style="background:#e5484d;width:50%"></i></div>
+    </div>
+  </div>
+  <div id="zoneChamp">
+    <canvas id="champ"></canvas>
+    <div id="conseil">Touche une de tes unités, puis un ennemi pour l'attaquer (ou le sol pour t'y déplacer).</div>
+    <div id="debutBataille"><div class="boite">
+      <h2 id="titreBataille">Bataille !</h2>
+      <p id="texteBataille"></p>
+      <button class="btn or" id="bLancer">⚔️ Lancer la bataille</button>
+      <button class="btn" id="bAutoAvant">⚡ Résolution automatique</button>
+    </div></div>
+    <div id="finBataille" class="hide"><div class="boite">
+      <h2 id="titreFin"></h2>
+      <p id="texteFin"></p>
+      <button class="btn or" id="bRetourCarte">Retour à la carte</button>
+    </div></div>
+  </div>
+  <div class="ordres">
+    <button id="oCharge">⚔️ Charge !</button>
+    <button id="oTenir">🛡️ Tenir</button>
+    <button id="oVitesse">⏩ x1</button>
+    <button id="oAuto">⚡ Auto</button>
+  </div>
+</section>
+
+<div id="voile" class="voile hide"><div class="feuille" id="feuille"></div></div>
+
+<script src="moteur.js"></script>
+<script src="jeu.js"></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Mot Mystère – Jouer entre amis</title>
+<meta name="description" content="Crée un salon, envoie le code à tes amis et trouvez le mot mystère avant les autres. Gratuit, sans inscription.">
+<meta name="theme-color" content="#0f0f10">
+<link rel="icon" href="../icon.png">
+<meta property="og:title" content="Mot Mystère – Jouer entre amis">
+<meta property="og:description" content="Rejoins mon salon et trouve le mot avant moi !">
+<meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
+<style>
+:root{
+  --bg:#0f0f10;--bg2:#161618;--card:#1c1c1f;--line:#2a2a2e;
+  --txt:#f4f4f5;--muted:#a1a1aa;
+  --green:#3aa757;--green2:#2f8c48;--yellow:#e2b93b;--grey:#3a3a3c;--red:#e5484d;
+  --discord:#5865F2;--r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:radial-gradient(800px 400px at 85% -10%,rgba(58,167,87,.16),transparent 60%),radial-gradient(600px 400px at 0% 110%,rgba(88,101,242,.14),transparent 60%),var(--bg)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+.hide{display:none!important}
+
+.top{position:sticky;top:0;z-index:10;background:rgba(15,15,16,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1000px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:900;letter-spacing:2px;white-space:nowrap;font-size:15px}
+.brand img{width:30px;height:30px;border-radius:8px}
+.me{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 4px}
+.me .av{width:28px;height:28px;font-size:16px}
+
+main{max-width:1000px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:clamp(28px,6vw,44px);font-weight:900;letter-spacing:-1px;margin:0 0 8px;text-align:center}
+h1 span{color:var(--green)}
+h2{font-size:20px;margin:0 0 14px}
+.lead{color:var(--muted);text-align:center;margin:0 auto 28px;max-width:520px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.narrow{max-width:460px;margin:0 auto}
+label{display:block;font-weight:700;font-size:14px;margin:0 0 8px;color:var(--muted)}
+input[type=text]{width:100%;background:#111113;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:17px;color:var(--txt);outline:none}
+input[type=text]:focus{border-color:var(--green)}
+.code-in{text-transform:uppercase;letter-spacing:6px;font-weight:900;text-align:center;font-size:24px!important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:14px 22px;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;transition:transform .12s,background .12s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-play{background:var(--green);color:#fff}.btn-play:hover:not(:disabled){background:var(--green2)}
+.btn-ghost{background:transparent;border:1px solid var(--line)}.btn-ghost:hover{border-color:#555}
+.btn-blue{background:var(--discord);color:#fff}
+.full{width:100%}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sep{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:20px 0}
+.sep:before,.sep:after{content:"";flex:1;height:1px;background:var(--line)}
+.err{color:var(--red);font-weight:700;font-size:14px;min-height:20px;margin:10px 0 0;text-align:center}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* Avatars */
+.avatars{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:0 0 18px}
+.avatars button{aspect-ratio:1;border-radius:12px;border:2px solid transparent;background:#26262a;font-size:22px;cursor:pointer;padding:0}
+.avatars button.on{border-color:var(--green);background:#21352a}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;background:#26262a;flex-shrink:0}
+
+/* Salon */
+.room-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.code{font-size:34px;font-weight:900;letter-spacing:8px;color:var(--green)}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 20px}
+.player{display:flex;align-items:center;gap:10px;background:#26262a;border-radius:14px;padding:10px;min-width:0}
+.player b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.player small{color:var(--muted)}
+.player.off{opacity:.4}
+.crown{color:var(--yellow)}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 18px}
+.opts select{background:#111113;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
+
+/* Jeu */
+.game{display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start}
+@media(max-width:760px){.game{grid-template-columns:1fr}}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-weight:800}
+.timer{font-variant-numeric:tabular-nums;background:#26262a;border-radius:999px;padding:4px 12px}
+.timer.low{background:var(--red);color:#fff}
+.board{display:grid;gap:6px;max-width:330px;margin:0 auto 16px}
+.r{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.t{aspect-ratio:1;border:2px solid #3a3a3c;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:clamp(20px,6vw,30px);border-radius:4px}
+.t.full{border-color:#666}
+.t.correct,.t.present,.t.absent{border-color:transparent;animation:flip .45s both}
+.correct{background:var(--green)}.present{background:var(--yellow)}.absent{background:var(--grey)}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.kb{display:flex;flex-direction:column;gap:6px;max-width:500px;margin:0 auto}
+.kb div{display:flex;gap:5px;justify-content:center}
+.kb button{flex:1;min-width:0;height:54px;border:0;border-radius:6px;background:#818384;font-weight:800;font-size:15px;cursor:pointer;padding:0;touch-action:manipulation}
+.kb button.wide{flex:1.6;font-size:12px}
+.kb button.correct{background:var(--green)}.kb button.present{background:var(--yellow)}.kb button.absent{background:var(--grey)}
+.status{text-align:center;font-weight:800;min-height:26px;margin:0 0 10px}
+
+/* Les autres joueurs */
+.side h2{font-size:16px}
+.others{display:flex;flex-direction:column;gap:10px}
+.other{background:#26262a;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center}
+.other .av{width:34px;height:34px;font-size:18px}
+.other .nm{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini{display:grid;gap:2px;margin-left:auto}
+.mini .r{grid-template-columns:repeat(5,9px);gap:2px}
+.mini i{width:9px;height:9px;border-radius:2px;background:#1c1c1f}
+.done{color:var(--green);font-size:12px;font-weight:800}
+@media(max-width:760px){
+  main{padding-top:14px}
+  .side{order:-1;padding:10px}.side h2{display:none}
+  .others{flex-direction:row;overflow-x:auto;gap:8px}
+  .other{flex-shrink:0;padding:6px 10px}
+  .board{max-width:280px}
+}
+
+/* Scores */
+.reveal{text-align:center;margin:0 0 20px}
+.reveal .word{display:inline-flex;gap:6px;margin:10px 0}
+.reveal .word .t{width:52px}
+.rank{display:flex;flex-direction:column;gap:8px;margin:0 0 20px}
+.rank .line{display:flex;align-items:center;gap:12px;background:#26262a;border-radius:12px;padding:10px 14px}
+.rank .pos{font-weight:900;width:28px;text-align:center}
+.rank .nm{flex:1;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .pts{font-weight:900}
+.rank .plus{color:var(--green);font-size:13px;font-weight:800;margin-left:6px}
+.podium .line:first-child{background:linear-gradient(90deg,rgba(226,185,59,.35),#26262a)}
+
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#fff;color:#000;font-weight:800;padding:10px 18px;border-radius:10px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px}
+.how div{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:14px;color:var(--muted)}
+.how b{color:var(--txt);display:block;margin-bottom:4px;font-size:15px}
+@media(max-width:640px){.how{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <a class="brand" href="../"><img src="../icon.png" alt="">MOT MYSTÈRE</a>
+  <button class="me hide" id="me" title="Changer de pseudo"><span class="av" id="me-av"></span><span id="me-name"></span></button>
+</div></header>
+
+<main>
+  <!-- 1. Profil -->
+  <section id="v-profil" class="hide">
+    <h1>Jouer <span>entre amis</span></h1>
+    <p class="lead">Choisis ton pseudo et ton avatar. Pas d'inscription, pas de mot de passe : c'est gardé sur ton appareil.</p>
+    <div class="card narrow">
+      <label for="pseudo">Ton pseudo</label>
+      <input type="text" id="pseudo" maxlength="16" placeholder="Ex : Naufragé_42" autocomplete="nickname">
+      <div style="height:18px"></div>
+      <label>Ton avatar</label>
+      <div class="avatars" id="avatars"></div>
+      <button class="btn btn-play full" id="save-profil">C'est parti →</button>
+      <p class="err" id="err-profil"></p>
+    </div>
+  </section>
+
+  <!-- 2. Accueil multijoueur -->
+  <section id="v-accueil" class="hide">
+    <h1>Jouer <span>entre amis</span></h1>
+    <p class="lead">Crée un salon, envoie le code à tes potes, et le premier qui trouve le mot gagne le plus de points.</p>
+    <div class="card narrow">
+      <button class="btn btn-play full" id="creer">➕ Créer un salon</button>
+      <div class="sep">ou rejoindre</div>
+      <input type="text" class="code-in" id="code" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters">
+      <div style="height:12px"></div>
+      <button class="btn btn-blue full" id="rejoindre">Rejoindre</button>
+      <p class="err" id="err-accueil"></p>
+    </div>
+    <div class="how">
+      <div><b>1. Crée un salon</b>Tu reçois un code de 5 lettres et un lien à partager.</div>
+      <div><b>2. Invite tes amis</b>Jusqu'à 10 joueurs, sur téléphone ou ordi, sans rien installer.</div>
+      <div><b>3. Trouvez le mot</b>Même mot pour tous. Moins d'essais et plus vite = plus de points.</div>
+    </div>
+  </section>
+
+  <!-- 3. Salle d'attente -->
+  <section id="v-salon" class="hide">
+    <div class="card">
+      <div class="room-head">
+        <div><div class="muted small">Code du salon</div><div class="code" id="salon-code"></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="copier">🔗 Copier le lien</button>
+          <button class="btn btn-ghost" id="partager">📤 Inviter</button>
+        </div>
+      </div>
+      <h2>Joueurs (<span id="nb"></span>/10)</h2>
+      <div class="players" id="players"></div>
+      <div id="host-zone">
+        <div class="opts">
+          <label for="manches" style="margin:0">Manches</label>
+          <select id="manches"><option>3</option><option selected>5</option><option>10</option></select>
+          <label for="duree" style="margin:0 0 0 8px">Temps</label>
+          <select id="duree"><option value="60">1 min</option><option value="120" selected>2 min</option><option value="180">3 min</option></select>
+        </div>
+        <button class="btn btn-play full" id="lancer">▶ Lancer la partie</button>
+      </div>
+      <p class="muted center small" id="wait-host" style="text-align:center">En attente que l'hôte lance la partie…</p>
+      <p class="err" id="err-salon"></p>
+    </div>
+    <p style="text-align:center;margin-top:16px"><button class="btn btn-ghost" id="quitter">Quitter le salon</button></p>
+  </section>
+
+  <!-- 4. Partie -->
+  <section id="v-jeu" class="hide">
+    <div class="game">
+      <div>
+        <div class="bar"><span id="manche"></span><span class="timer" id="timer"></span></div>
+        <p class="status" id="status"></p>
+        <div class="board" id="board"></div>
+        <div class="kb" id="kb"></div>
+      </div>
+      <aside class="side card">
+        <h2>Les autres</h2>
+        <div class="others" id="others"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 5. Résultats -->
+  <section id="v-scores" class="hide">
+    <div class="card narrow">
+      <div class="reveal">
+        <div class="muted" id="res-titre"></div>
+        <div class="word" id="res-mot"></div>
+      </div>
+      <h2 id="res-classement">Classement</h2>
+      <div class="rank" id="rank"></div>
+      <button class="btn btn-play full" id="suivant">Manche suivante →</button>
+      <p class="muted small" id="res-wait" style="text-align:center"></p>
+      <div id="fin-zone" class="hide">
+        <button class="btn btn-play full" id="rejouer">🔁 Rejouer</button>
+        <div style="height:10px"></div>
+        <a class="btn btn-blue full" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">💬 Défier le Discord</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="module" src="amis.js"></script>
+</body>
+</html>

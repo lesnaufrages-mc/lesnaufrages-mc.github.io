@@ -48,3 +48,9 @@ Tests de la logique du jeu : `npm test`
    est un vrai mot (dictionnaire).
 3. **Publier** : compte Google Play (25 $ une fois), Apple (99 $/an). `eas build` puis `eas submit`.
 4. **Lien de partage** : acheter un nom de domaine et changer `motmystere.app` dans `src/game.js`.
+
+## Jouer entre amis (site web)
+
+Page `docs/amis/` (https://lesnaufrages-mc.github.io/amis/) : pseudo + avatar gardés dans le navigateur, salon avec un code de 5 lettres, jusqu'à 10 joueurs, même mot pour tous, points selon le nombre d'essais et la rapidité.
+Pas de serveur à gérer : les navigateurs se connectent entre eux (WebRTC) avec [PeerJS](https://peerjs.com/) et son serveur gratuit. Le créateur du salon (l'hôte) choisit le mot et compte les points, il doit donc garder la page ouverte.
+La liste de mots `docs/amis/mots.js` est une copie de `src/words.js` : pense à la mettre à jour aussi.

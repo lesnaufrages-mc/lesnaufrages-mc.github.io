@@ -4,7 +4,7 @@
   var box = document.getElementById('admin');
   var esc = C.esc;
   var onglet = 'signalements';
-  var PROFIL = 'profil:profils!auteur(pseudo, role)';
+  var PROFIL = 'profil:profils!auteur(*)';
   var CATS = { site: '🌐 Site', appli: '📱 Appli', discord: '💬 Discord', minecraft: '⛏️ Minecraft', bot: '🤖 Bot' };
 
   function verifie(r) { if (r.error) throw r.error; return r; }
@@ -78,20 +78,25 @@
   /* ---------- Membres ---------- */
   var recherche = '';
   function membres() {
-    var q = C.sb.from('profils').select('id, pseudo, role, banni, cree_le').order('cree_le', { ascending: false }).limit(100);
+    var q = C.sb.from('profils').select('*').order('cree_le', { ascending: false }).limit(100);
     if (recherche) q = q.ilike('pseudo', '%' + recherche.replace(/[%_\\]/g, '\\$&') + '%');
     q.then(verifie).then(function (r) {
       panneau('<form class="search" data-recherche><input name="q" placeholder="Chercher un pseudo…" value="' + esc(recherche) + '"><button class="btn btn-ghost btn-sm">Chercher</button></form>' +
-        '<p class="small muted">Modo = peut supprimer les messages, épingler et verrouiller les sujets. Admin = tout, y compris les membres et les actus.</p>' +
-        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Rôle</th><th>Statut</th></tr></thead><tbody>' +
+        '<p class="small muted"><b>Modo / Responsable</b> : suppriment les messages, épinglent et verrouillent les sujets. <b>Admin / Fondateur</b> : tout, y compris les membres, les grades et les actus. ' +
+        '<b>Helper, Builder, Dev, Animateur</b> : badge staff (mêmes droits qu\'un membre sur le site). Tu ne peux gérer que les grades inférieurs au tien.</p>' +
+        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Grade</th><th>Statut</th></tr></thead><tbody>' +
         r.data.map(function (p) {
           var moi = p.id === C.user.id;
-          return '<tr data-membre="' + p.id + '"><td><b>' + esc(p.pseudo) + '</b>' + (moi ? ' <span class="small muted">(toi)</span>' : '') + '</td>' +
+          var monRang = C.rang(), fondateur = C.profil.role === 'fondateur';
+          var gerable = !moi && C.grade(p.role).rang < monRang;
+          return '<tr data-membre="' + p.id + '"><td><div class="m-nom">' + C.avatar(p) + '<b>' + esc(p.pseudo) + '</b>' + (moi ? ' <span class="small muted">(toi)</span>' : '') + '</div></td>' +
             '<td>' + C.quand(p.cree_le) + '</td>' +
-            '<td><select data-role' + (moi ? ' disabled' : '') + '>' + ['membre', 'modo', 'admin'].map(function (r) {
-              return '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' + r.charAt(0).toUpperCase() + r.slice(1) + '</option>';
+            '<td><select data-role' + (gerable ? '' : ' disabled') + '>' + C.GRADES.filter(function (g) {
+              return g.id === p.role || g.rang < monRang || fondateur;
+            }).map(function (g) {
+              return '<option value="' + g.id + '"' + (p.role === g.id ? ' selected' : '') + '>' + g.nom + '</option>';
             }).join('') + '</select></td>' +
-            '<td>' + (moi ? '—' : '<button type="button" class="btn btn-sm ' + (p.banni ? 'btn-ghost' : 'btn-danger') + '" data-ban="' + !p.banni + '">' +
+            '<td>' + (!gerable ? '—' : '<button type="button" class="btn btn-sm ' + (p.banni ? 'btn-ghost' : 'btn-danger') + '" data-ban="' + !p.banni + '">' +
               (p.banni ? 'Débannir' : 'Bannir') + '</button>' + (p.banni ? ' <span class="role ban">Banni</span>' : '')) + '</td></tr>';
         }).join('') + '</tbody></table></div>');
     }).catch(function (x) { panneau('<p class="err">' + esc(C.erreur(x)) + '</p>'); });
@@ -153,7 +158,8 @@
   box.addEventListener('change', function (e) {
     if (!e.target.hasAttribute('data-role')) return;
     var tr = e.target.closest('tr');
-    C.sb.from('profils').update({ role: e.target.value }).eq('id', tr.getAttribute('data-membre')).then(verifie).then(affiche).catch(oups);
+    C.sb.from('profils').update({ role: e.target.value }).eq('id', tr.getAttribute('data-membre')).then(verifie).then(affiche)
+      .catch(function (x) { oups(x); affiche(); });
   });
   box.addEventListener('submit', function (e) {
     var f = e.target;

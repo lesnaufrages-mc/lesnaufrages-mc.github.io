@@ -46,13 +46,21 @@ Ensuite, clic droit > **Copier l'identifiant** sur : le serveur, le salon de bie
 
 Le bot reste en ligne tant que le terminal est ouvert.
 
-## 4. L'héberger gratuitement 24 h/24
+## 4. L'héberger gratuitement 24 h/24 (sans carte bancaire)
 
-- **Le plus simple pour commencer** : ton PC (ou un vieux PC / Raspberry Pi qui reste allumé).
-- **Gratuit et en ligne tout le temps** : Oracle Cloud « Always Free » (une petite machine virtuelle gratuite à vie ; ils demandent une carte bancaire pour vérifier, sans rien prélever). On y installe Node.js et on lance `npm start` pareil.
-- Évite les hébergeurs gratuits qui « mettent en veille » le bot : il serait hors ligne la moitié du temps.
+On utilise **Daki** (<https://free.daki.cc>) : gratuit, connexion avec Discord, 512 Mo de RAM.
+Le bot a un compteur de jours : chaque pub regardée ajoute 3 jours (2 pubs max par jour, jusqu'à 30 jours d'avance).
+Si le compteur tombe à zéro, le bot s'arrête. Guide officiel : <https://daki.cc/wiki/guides/free-tier>
 
-Le fichier `.env` doit être recréé sur l'hébergeur (il n'est jamais envoyé sur GitHub, voir `.gitignore`).
+1. Connecte-toi sur <https://free.daki.cc> avec ton compte Discord.
+2. Crée un serveur gratuit de type **Node.js**.
+3. Dans **Files** : envoie `package.json`, `package-lock.json` et les dossiers `src` et `test` (pas `node_modules`),
+   puis crée un fichier `.env` avec les mêmes lignes que sur ton PC.
+4. Dans **Startup** : le fichier principal peut rester `index.js` (il lance `src/index.js`).
+5. **Console** > **Start**. Quand tu vois `✅ Connecté`, c'est bon.
+
+Éteins le bot sur ton PC (ferme la fenêtre noire) : le même bot ne doit tourner qu'à un seul endroit.
+Le fichier `.env` reste privé chez l'hébergeur : il n'est jamais envoyé sur GitHub (voir `.gitignore`).
 
 ## Tests
 

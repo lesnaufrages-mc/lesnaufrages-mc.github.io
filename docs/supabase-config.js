@@ -6,6 +6,6 @@
    par les règles de supabase/forum.sql. Ne mets JAMAIS ici la clé « secret » ou « service_role ».
    Tant que c'est vide, le forum affiche « bientôt disponible ». */
 var SUPABASE = {
-  URL: '',
-  CLE: ''
+  URL: 'https://updqdvsigqtsjddeshvi.supabase.co',
+  CLE: 'sb_publishable_wvxRoVPpFIvPPrB9GTqsLQ_Q8LUArgH'
 };

@@ -57,3 +57,10 @@ Tests de la logique du jeu : `npm test`
   est dans `docs/site.js` (`GOATCOUNTER`). Les visites se consultent sur https://lesnaufrages.goatcounter.com.
 - **Si tu refais `expo export -p web`** vers `docs/jouer/`, remets la ligne `<script src="/site.js" defer></script>`
   dans `docs/jouer/index.html` pour continuer à compter les visites du jeu.
+- **Pubs du site (Google AdSense)** : le code AdSense est déjà dans le `<head>` de `index.html`, `actualites.html`
+  et `confidentialite.html`, et `docs/ads.txt` est servi sur https://lesnaufrages-mc.github.io/ads.txt.
+  Ce qu'il reste à faire sur https://adsense.google.com (avec le même compte Google que AdMob) :
+  1. Ajouter le site `lesnaufrages-mc.github.io` et demander l'examen (quelques jours à 2-4 semaines).
+  2. Confidentialité et messages > RGPD : créer et publier le message de consentement (gratuit, obligatoire en Europe).
+  3. Une fois accepté : Annonces > Annonces automatiques > activer. Les pubs se placent toutes seules.
+  Le jeu (`docs/jouer/`) n'a pas de pub web pour ne pas gêner le clavier.

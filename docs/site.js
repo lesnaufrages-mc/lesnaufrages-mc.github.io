@@ -52,9 +52,12 @@ var SITE = {
         .catch(function () {});
     }
 
-    // Actualités (la liste est dans actualites.js).
+    // Actualités : la liste de actualites.js + celles publiées depuis l'espace admin.
     var box = document.querySelector('[data-news]');
-    if (box && window.ACTUALITES) afficherActus(box);
+    if (box && window.ACTUALITES) {
+      var dessine = afficherActus(box, window.ACTUALITES);
+      actusAdmin(function (liste) { dessine(liste.concat(window.ACTUALITES)); });
+    }
   });
 
   var NOMS = { discord: 'Discord', minecraft: 'Minecraft', appli: 'Appli', bot: 'Bot', site: 'Site' };
@@ -69,19 +72,38 @@ var SITE = {
     return new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  function afficherActus(box) {
-    var max = Number(box.getAttribute('data-news')) || 0;
-    var tri = window.ACTUALITES.slice().sort(function (a, b) {
-      if (!!b.epingle !== !!a.epingle) return b.epingle ? 1 : -1;
-      return b.date < a.date ? -1 : b.date > a.date ? 1 : 0;
-    });
+  // Actus publiées depuis l'espace admin (table « actualites » de Supabase, lecture publique).
+  function actusAdmin(fin) {
+    var sb = window.SUPABASE;
+    if (!sb || !sb.URL || !sb.CLE) return;
+    var h = { apikey: sb.CLE };
+    if (/^eyJ/.test(sb.CLE)) h.Authorization = 'Bearer ' + sb.CLE;
+    fetch(sb.URL.replace(/\/$/, '') + '/rest/v1/actualites?select=date,categorie,titre,texte,lien,bouton,epingle&order=date.desc&limit=50', { headers: h })
+      .then(function (r) { if (!r.ok) throw r; return r.json(); })
+      .then(fin)
+      .catch(function () {});
+  }
+  // Un lien d'actu : https://… ou une page du site, jamais « javascript: ».
+  function lienSur(l) { return /^https?:\/\//i.test(l) || !/^[a-z][a-z0-9+.-]*:/i.test(l); }
 
-    function dessine(cat) {
+  function afficherActus(box, actus) {
+    var max = Number(box.getAttribute('data-news')) || 0;
+    var cat = '';
+    var tri = [];
+
+    function trie(liste) {
+      tri = liste.slice().sort(function (a, b) {
+        if (!!b.epingle !== !!a.epingle) return b.epingle ? 1 : -1;
+        return b.date < a.date ? -1 : b.date > a.date ? 1 : 0;
+      });
+    }
+
+    function dessine() {
       var liste = tri.filter(function (a) { return !cat || a.categorie === cat; });
       if (max) liste = liste.slice(0, max);
       box.innerHTML = liste.map(function (a) {
         var c = NOMS[a.categorie] ? a.categorie : 'site';
-        var lien = a.lien
+        var lien = a.lien && lienSur(a.lien)
           ? '<a class="more" href="' + esc(a.lien) + '"' + (/^https?:/.test(a.lien) ? ' target="_blank" rel="noopener"' : '') + '>' + esc(a.bouton || 'En savoir plus') + ' →</a>'
           : '';
         return '<article class="post' + (a.epingle ? ' pin' : '') + '">' +
@@ -95,9 +117,12 @@ var SITE = {
     $('[data-filtre]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         $('[data-filtre]').forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
-        dessine(btn.getAttribute('data-filtre'));
+        cat = btn.getAttribute('data-filtre');
+        dessine();
       });
     });
-    dessine('');
+    trie(actus);
+    dessine();
+    return function (liste) { trie(liste); dessine(); };
   }
 })();

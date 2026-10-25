@@ -22,6 +22,7 @@
       <a href="./#comment-jouer">Comment jouer</a>
       <a href="./#communaute">Communauté</a>
       <a href="actualites.html">Actualités</a>
+      <a href="forum/">Forum</a>
       <a href="./#faq">FAQ</a>
       <a class="btn btn-play" href="jouer/">▶ Jouer</a>
     </div>
@@ -44,7 +45,7 @@ Cette page explique quelles données sont utilisées, sur l'application et sur c
 
 <h2>1. Données de jeu</h2>
 <p>Tes parties, ta série et tes statistiques sont enregistrées <strong>uniquement sur ton appareil</strong>.
-Nous n'avons pas de serveur et ne recevons pas ces données. Elles sont effacées si tu désinstalles l'application
+Elles ne sont envoyées à aucun serveur. Elles sont effacées si tu désinstalles l'application
 (ou si tu vides les données du site dans ton navigateur).</p>
 
 <h2>2. Mesure d'audience du site (GoatCounter)</h2>
@@ -91,16 +92,33 @@ autres joueurs du salon (connexion WebRTC). Pour que les joueurs se trouvent gr�
 gratuit <a href="https://peerjs.com/">PeerJS</a> voit passer ton adresse IP et l'identifiant technique de la
 connexion. Rien n'est conservé par nous : quand le salon est fermé, tout disparaît.</p>
 
-<h2>8. Enfants</h2>
+<h2 id="forum">8. Forum et comptes (site web)</h2>
+<p>Le forum est facultatif : tu peux le lire sans compte. Pour écrire, tu crées un compte avec un <strong>pseudo</strong>,
+une <strong>adresse e-mail</strong> et un <strong>mot de passe</strong>.</p>
+<ul>
+<li><strong>Visible par tous :</strong> ton pseudo, ton rôle (membre, modo, admin), la date de ton inscription, et les
+sujets et réponses que tu publies.</li>
+<li><strong>Privé :</strong> ton e-mail (il sert uniquement à te connecter, confirmer ton compte et réinitialiser ton
+mot de passe ; il n'est jamais affiché, ni aux autres membres, ni aux modérateurs) et ton mot de passe (stocké chiffré,
+personne ne peut le lire). Les signalements que tu envoies ne sont vus que par les modérateurs.</li>
+<li><strong>Sur ton appareil :</strong> pour rester connecté, ton navigateur garde un jeton de connexion (stockage local).
+C'est nécessaire au fonctionnement du compte, ce n'est pas un cookie publicitaire.</li>
+</ul>
+<p>Ces données sont hébergées par <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a>, notre
+prestataire de base de données, qui voit aussi ton adresse IP lors des connexions. Elles sont gardées tant que ton compte existe.
+Tu peux <strong>supprimer ton compte à tout moment</strong> (menu « Mon compte » sur le forum) : ton compte, tes sujets et tes
+réponses sont alors effacés. Les modérateurs peuvent supprimer les messages qui ne respectent pas les règles et bannir un compte.</p>
+
+<h2>9. Enfants</h2>
 <p>L'application ne s'adresse pas spécifiquement aux enfants de moins de 13 ans et ne collecte pas sciemment
 leurs données.</p>
 
-<h2>9. Tes droits</h2>
-<p>Conformément au RGPD, tu peux demander l'accès, la rectification ou l'effacement de tes données, et retirer ton
+<h2>10. Tes droits</h2>
+<p>Conformément au RGPD, tu peux demander l'accès, la rectification ou l'effacement de tes données (pour le forum, la suppression du compte est directe depuis le menu « Mon compte »), et retirer ton
 consentement à tout moment dans les réglages de ton téléphone (identifiant publicitaire). Pour les données
 publicitaires, tu peux aussi t'adresser directement à Google.</p>
 
-<h2>10. Contact</h2>
+<h2>11. Contact</h2>
 <p>Pour toute question : <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">notre serveur Discord</a>.</p>
     </div>
   </div>
@@ -112,6 +130,7 @@ publicitaires, tu peux aussi t'adresser directement à Google.</p>
     <div class="flinks">
       <a href="jouer/">Jouer</a>
       <a href="actualites.html">Actualités</a>
+      <a href="forum/">Forum</a>
       <a href="./#faq">FAQ</a>
       <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
       <a href="confidentialite.html">Politique de confidentialité</a>

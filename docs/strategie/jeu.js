@@ -19,6 +19,12 @@
   // ---------- Pseudo du joueur ----------
   // 1) pseudo du compte du site (forum) s'il est connecté, 2) pseudo déjà tapé ici, 3) pseudo du mode « entre amis ».
   var pseudoCompte = null;
+  function assombrir(hex) {
+    var n = parseInt(String(hex).slice(1), 16);
+    if (isNaN(n)) return '#333';
+    var f = function (v) { return Math.round(v * 0.45); };
+    return 'rgb(' + f((n >> 16) & 255) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
+  }
   function nettoyer(t) { return String(t || '').replace(/[^A-Za-z0-9_\-. À-ÖØ-öø-ÿ]/g, '').trim().slice(0, 20); }
   function pseudoLocal() {
     try {
@@ -96,6 +102,7 @@
   $('bContinuer').onclick = function () {
     etat = charger(); choix = null;
     M.assurerDiplo(etat);
+    M.assurerCour(etat);
     if (pseudoCompte) etat.pseudo = pseudoCompte;
     if (etat.pseudo) { demarrer(); return; }
     demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); demarrer(); });
@@ -200,14 +207,29 @@
 
   function construireCarte() {
     if (calqueProv) return;
+    var L = MONDE.largeur + 1000, H = MONDE.hauteur + 1000;
     svg.innerHTML =
-      '<defs><radialGradient id="mer" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#1d4e7a"/><stop offset="1" stop-color="#0c2643"/></radialGradient>' +
-      '<pattern id="vagues" width="24" height="12" patternUnits="userSpaceOnUse"><path d="M0 6q6-4 12 0t12 0" fill="none" stroke="#ffffff" stroke-opacity=".05"/></pattern></defs>' +
-      '<rect x="-500" y="-500" width="' + (MONDE.largeur + 1000) + '" height="' + (MONDE.hauteur + 1000) + '" fill="url(#mer)"/>' +
-      '<rect x="-500" y="-500" width="' + (MONDE.largeur + 1000) + '" height="' + (MONDE.hauteur + 1000) + '" fill="url(#vagues)"/>' +
-      '<path d="' + MONDE.terre + '" fill="#cdbf98" stroke="#8b7d5a" stroke-width=".6"/>' +
-      '<g id="cProv"></g><g id="cBord"></g><g id="cTexte"></g>';
+      '<defs><radialGradient id="mer" cx="45%" cy="40%" r="80%"><stop offset="0" stop-color="#2a5d82"/><stop offset=".6" stop-color="#173f62"/><stop offset="1" stop-color="#0b2240"/></radialGradient>' +
+      '<pattern id="vagues" width="28" height="14" patternUnits="userSpaceOnUse"><path d="M0 7q7-4.5 14 0t14 0" fill="none" stroke="#cfe3f2" stroke-opacity=".09" stroke-width=".8"/></pattern>' +
+      '<pattern id="papier" width="40" height="40" patternUnits="userSpaceOnUse">' + grain() + '</pattern>' +
+      '<clipPath id="clipTerre"><path d="' + MONDE.terre + '"/></clipPath>' +
+      '<symbol id="chateau" viewBox="-7 -7 14 14" overflow="visible"><path d="M-6 6V-1h2v-3h2v3h4v-3h2v3h2v7z"/><path d="M-1 6V3a1 1 0 0 1 2 0v3" fill="#3b2a16"/></symbol>' +
+      '<symbol id="citadelle" viewBox="-8 -8 16 16" overflow="visible"><path d="M-7 7V0h2v-3h2v3h1v-6h1v-2h2v2h1v6h1v-3h2v3h2v7z"/><path d="M-1 7V4a1 1 0 0 1 2 0v3" fill="#3b2a16"/><path d="M0 -8v-4l3 1.5-3 1.5" fill="#c81e3a" stroke="none"/></symbol>' +
+      '<symbol id="village" viewBox="-5 -5 10 10" overflow="visible"><path d="M-4 4V-0.5L0-4 4-0.5V4z"/></symbol>' +
+      '<symbol id="mont" viewBox="-6 -6 12 12" overflow="visible"><path d="M-6 4L-1-5 1.5-1.5 2.5-3 6 4z" fill="#8a7a5c"/><path d="M-1-5L0.6 4H-6z" fill="#b8a782"/><path d="M-1-5L-2.4-2.4-1-3 0-1.6z" fill="#f5f1e6"/></symbol>' +
+      '</defs>' +
+      '<rect x="-500" y="-500" width="' + L + '" height="' + H + '" fill="url(#mer)"/>' +
+      '<rect x="-500" y="-500" width="' + L + '" height="' + H + '" fill="url(#vagues)"/>' +
+      '<path d="' + MONDE.terre + '" fill="none" stroke="#7fb2d1" stroke-opacity=".22" stroke-width="9" stroke-linejoin="round"/>' +
+      '<path d="' + MONDE.terre + '" fill="none" stroke="#a9d0e6" stroke-opacity=".3" stroke-width="3.5" stroke-linejoin="round"/>' +
+      '<path d="' + MONDE.terre + '" fill="#d8c9a0"/>' +
+      '<g id="cProv"></g>' +
+      '<g clip-path="url(#clipTerre)" pointer-events="none"><rect x="0" y="0" width="' + MONDE.largeur + '" height="' + MONDE.hauteur + '" fill="url(#papier)"/>' + montagnes() + '</g>' +
+      '<path id="cFront" class="frontiere" d=""/>' +
+      '<path d="' + MONDE.terre + '" fill="none" stroke="#3b2f1c" stroke-width=".9" stroke-linejoin="round" pointer-events="none"/>' +
+      '<g id="cRoyaumes"></g><g id="cBord"></g><g id="cTexte"></g>';
     calqueProv = $('cProv'); calqueBord = $('cBord'); calqueTexte = $('cTexte');
+    preparerAretes();
     PROV.forEach(function (p, i) {
       var el = document.createElementNS(NS, 'path');
       el.setAttribute('d', p.d);
@@ -215,6 +237,82 @@
       el.setAttribute('class', 'prov');
       calqueProv.appendChild(el);
     });
+  }
+
+  // Texture de vieux papier (petits points répartis au hasard, toujours les mêmes).
+  function grain() {
+    var g = '', a = 7;
+    for (var i = 0; i < 70; i++) {
+      a = (a * 9301 + 49297) % 233280;
+      var x = (a / 233280) * 40; a = (a * 9301 + 49297) % 233280;
+      var y = (a / 233280) * 40; a = (a * 9301 + 49297) % 233280;
+      g += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (0.3 + (a / 233280) * 0.7).toFixed(2) + '" fill="' + (i % 3 ? '#3b2a12' : '#fff8e6') + '" opacity="' + (i % 3 ? 0.13 : 0.18) + '"/>';
+    }
+    return g;
+  }
+  // Grandes chaînes de montagnes (longitude, latitude), dessinées sur la carte.
+  var MONTAGNES = [
+    [6.6, 45.2], [7.4, 45.9], [8.4, 46.4], [9.6, 46.5], [10.9, 46.8], [12.2, 46.9], [13.5, 46.5], [6.9, 44.4],
+    [-1.3, 42.95], [0, 42.75], [1.2, 42.6], [2.2, 42.45], [-5.8, 43.05], [-4.3, 43.1], [-3.3, 37.1], [-5.3, 40.3], [-2.2, 37.9],
+    [10.3, 44.3], [12.2, 43.5], [13.6, 42.3], [15, 41.1], [16.1, 39.6], [2.8, 45.2],
+    [19.4, 49.4], [21.4, 49.2], [23.4, 48.4], [24.9, 47.4], [25.7, 46.1], [24.2, 45.5], [22.6, 45.3],
+    [16.6, 44.2], [18.2, 43.3], [19.7, 42.5], [21, 41.7], [24.5, 42.7], [23.2, 42.4], [21.3, 39.8], [22.1, 38.7],
+    [40.2, 43.5], [42, 43], [44, 42.6], [46, 42], [47.6, 41.5],
+    [31.8, 37.1], [33.8, 37.3], [35.8, 37.8], [38.3, 38.3], [40.8, 39.1], [42.8, 39.4], [37.2, 40.6], [39.8, 40.5],
+    [46.2, 35], [47.8, 33.6], [49.6, 32.2], [36.1, 34.1],
+    [-8, 31.1], [-6.2, 32], [-4.6, 33], [-2.3, 34.2], [0.8, 35.1], [3.8, 35.5], [6.3, 35.4], [8.3, 35.1],
+    [8.2, 61.2], [9.2, 60.2], [7.4, 59.6], [12.6, 61.6], [-4.6, 57.1], [-5.2, 56.6], [13.2, 50.4], [15.6, 50.7]
+  ];
+  function montagnes() {
+    var K = 22.8, COS = Math.cos(46 * Math.PI / 180), h = '';
+    MONTAGNES.forEach(function (m, i) {
+      var x = (m[0] + 11) * K * COS, y = (62 - m[1]) * K;
+      [[0, 0, 1.15], [-6, 3, 0.8], [6, 2.5, 0.9]].forEach(function (o, k) {
+        if (k && (i + k) % 3 === 0) return;
+        h += '<use href="#mont" x="' + (x + o[0] - 6) + '" y="' + (y + o[1] - 6) + '" width="' + 12 * o[2] + '" height="' + 12 * o[2] + '" opacity=".75"/>';
+      });
+    });
+    return h;
+  }
+  // Arêtes partagées entre deux provinces voisines (pour tracer les frontières des royaumes).
+  var aretes = [];
+  function preparerAretes() {
+    var vu = {};
+    PROV.forEach(function (P, i) {
+      var pts = [];
+      P.d.replace(/([ML])\s*(-?[\d.]+)[ ,](-?[\d.]+)/g, function (m, c, x, y) { pts.push({ m: c === 'M', k: x + ',' + y }); });
+      for (var j = 1; j < pts.length; j++) {
+        if (pts[j].m) continue;
+        var a = pts[j - 1].k, b = pts[j].k, cle = a < b ? a + '|' + b : b + '|' + a;
+        if (vu[cle] != null && vu[cle] !== i) aretes.push({ a: vu[cle], b: i, d: 'M' + a + 'L' + b });
+        else vu[cle] = i;
+      }
+    });
+  }
+  function dessinerFrontieres() {
+    var d = '';
+    aretes.forEach(function (e) { if (etat.provinces[e.a].proprio !== etat.provinces[e.b].proprio) d += e.d; });
+    $('cFront').setAttribute('d', d);
+  }
+  // Grands noms des royaumes, comme sur les cartes anciennes.
+  function dessinerRoyaumes() {
+    var h = '';
+    etat.factions.forEach(function (F, f) {
+      var miennes = [];
+      etat.provinces.forEach(function (p, i) { if (p.proprio === f) miennes.push(i); });
+      if (miennes.length < 2) return;
+      var sx = 0, sy = 0;
+      miennes.forEach(function (i) { sx += PROV[i].x; sy += PROV[i].y; });
+      sx /= miennes.length; sy /= miennes.length;
+      // Se poser sur la province la plus proche du centre (pour ne pas tomber dans la mer).
+      var best = miennes[0], dmin = 1e9;
+      miennes.forEach(function (i) { var d = Math.pow(PROV[i].x - sx, 2) + Math.pow(PROV[i].y - sy, 2); if (d < dmin) { dmin = d; best = i; } });
+      var x = (PROV[best].x * 2 + sx) / 3, y = (PROV[best].y * 2 + sy) / 3;
+      var nom = F.nom.replace(/^(Royaume|Empire|Duché|Principauté|République|Sultanat|Califat|Émirat|Khanat|Couronne|Régences) (de |d'|des |du )?/, '').replace(/ (de Pierre le Grand|des Habsbourg|des Médicis|\(Saladin\))$/, '').toUpperCase();
+      var taille = Math.min(26, 8 + Math.sqrt(miennes.length) * 4.2) * (nom.length > 14 ? 0.8 : 1);
+      h += '<text class="royaume" x="' + x.toFixed(1) + '" y="' + (y + 14).toFixed(1) + '" text-anchor="middle" style="--t:' + taille.toFixed(1) + '"' + (f === moi() ? ' data-moi="1"' : '') + '>' + nom + '</text>';
+    });
+    $('cRoyaumes').innerHTML = h;
   }
 
   function appliquerVue() {
@@ -335,9 +433,10 @@
     PROV.forEach(function (P, i) {
       var p = etat.provinces[i], cap = etat.factions.some(function (f, fi) { return f.capitale === i && p.proprio === fi; });
       var x = P.x, y = P.y;
-      var taille = 2 + p.bat.murs * 0.9 + (cap ? 1 : 0);
-      t += '<rect class="ville" x="' + (x - taille) + '" y="' + (y - taille) + '" width="' + taille * 2 + '" height="' + taille * 2 + '" rx="' + (p.bat.murs ? 0.6 : taille) + '" fill="' + (p.proprio === moi() ? '#fff' : '#f1f5f9') + '" stroke="' + coul(p.proprio) + '" stroke-width="1.2"/>';
-      if (cap) t += '<text class="cour" x="' + x + '" y="' + (y - taille - 1.5) + '" text-anchor="middle">👑</text>';
+      var taille = cap ? 7 : p.bat.murs ? 4.5 + p.bat.murs : 3.2;
+      var sym = cap ? 'citadelle' : p.bat.murs ? 'chateau' : 'village';
+      t += '<use class="ville" href="#' + sym + '" x="' + (x - taille) + '" y="' + (y - taille) + '" width="' + taille * 2 + '" height="' + taille * 2 + '" fill="' + (p.proprio === moi() ? '#fffdf5' : '#efe8d8') + '" stroke="' + (p.proprio >= 0 ? assombrir(coul(p.proprio)) : '#555') + '" stroke-width="1.1" stroke-linejoin="round"/>';
+      if (cap) t += '<text class="cour" x="' + x + '" y="' + (y - taille - 3) + '" text-anchor="middle">👑</text>';
       var rel = p.proprio >= 0 && p.proprio !== moi() ? M.relation(etat, p.proprio) : '';
       if (rel === 'alliance') t += '<text class="cour" x="' + (x - 9) + '" y="' + (y + 2) + '" text-anchor="middle">🤝</text>';
       t += '<text class="nom" x="' + x + '" y="' + (y + taille + 7) + '" text-anchor="middle">' + P.nom + '</text>';
@@ -347,10 +446,14 @@
       }
     });
     calqueTexte.innerHTML = t;
+    dessinerFrontieres();
+    dessinerRoyaumes();
     var F = etat.factions[moi()];
     $('tAnnee').textContent = etat.annee;
     $('tOr').textContent = F.or;
-    $('tRev').textContent = M.revenu(etat, moi());
+    var net = M.revenu(etat, moi()) - M.entretien(etat, moi());
+    $('tRev').textContent = (net >= 0 ? '+' : '') + net;
+    $('tTour').textContent = 'Tour ' + etat.tour;
     $('tReg').textContent = M.nbProvinces(etat, moi()) + '/' + HIST.OBJECTIF;
     $('tFaction').style.background = F.coul;
     dessinerPanneau();
@@ -359,14 +462,31 @@
   function dessinerPanneau() {
     var el = $('panneau');
     if (choix == null) {
-      el.innerHTML = '<h3><span class="pastille" style="background:' + etat.factions[moi()].coul + '"></span>' + (etat.pseudo ? '🎖️ ' + etat.pseudo + ' <small class="sousNom">' + etat.factions[moi()].nom + '</small>' : etat.factions[moi()].nom) + '</h3>' +
-        '<div class="aide">Touche une de tes provinces (couleur vive) pour gérer sa ville et son armée. Quand tu as fini, appuie sur <b>Fin du tour</b>.</div>' +
+      var J = etat.factions[moi()], h0 = M.heritier(J);
+      el.innerHTML = '<div class="carteRoi">' + portrait(J.roi, moi(), 58) + '<div class="infoRoi">' +
+        '<b>' + J.roi.nom + '</b><small>' + M.age(etat, J.roi) + ' ans · ' + J.cour.dyn + ' · ' + J.nom + '</small>' +
+        '<small>' + (J.conj ? '💍 ' + J.conj.nom : J.cour.elu ? '🗳️ Souverain élu' : '💍 Pas marié(e)') + (h0 ? ' · 👑 Héritier : ' + h0.nom : J.cour.elu ? '' : ' · ⚠️ Pas d\'héritier') + '</small>' +
+        (etat.pseudo ? '<small>🎖️ Joué par ' + etat.pseudo + '</small>' : '') + '</div></div>' +
+        '<div class="actions"><button class="btn" id="pCour">👑 Ma cour</button><button class="btn" id="pRoyaume">🏛️ Royaume</button>' + (M.quetes(etat, moi()).length ? '<button class="btn" id="pQuetes">📜 Quêtes</button>' : '') + '</div>' +
+        resumeQuete() +
         '<div class="conseil">🧙 <b>Conseiller :</b> ' + conseil() + '</div>';
+      $('pCour').onclick = function () { cour(); };
+      $('pRoyaume').onclick = royaume;
+      if ($('pQuetes')) $('pQuetes').onclick = ecranQuetes;
+      if ($('pQuete1')) $('pQuete1').onclick = ecranQuetes;
       return;
     }
     var p = etat.provinces[choix], P = PROV[choix], mien = p.proprio === moi();
     var h = '<h3><span class="pastille" style="background:' + coul(p.proprio) + '"></span>' + P.nom + '</h3>' +
       '<div class="meta">' + nomF(p.proprio) + ' · 💰 +' + M.revenuProvince(p) + '/tour · ' + p.armee.length + '/' + M.MAX_UNITES + ' unités</div>';
+    var qProv = M.quetes(etat, moi()).filter(function (x) { return x.faite == null && x.q.provinces.indexOf(P.id) >= 0; });
+    if (qProv.length) h += '<div class="tagQuete">' + qProv.map(function (x) { return x.q.ico + ' ' + (mien ? 'Fait partie de' : 'À prendre pour') + ' : <b>' + x.q.titre + '</b>'; }).join('<br>') + '</div>';
+    if (mien) {
+      var ordre = Math.round(p.ordre == null ? 60 : p.ordre), cible = M.cibleOrdre(etat, choix);
+      h += '<div class="gestion"><button class="ordre" id="pOrdre"><span>' + humeurOrdre(ordre) + ' Ordre public <b>' + ordre + '</b>' + (cible !== ordre ? ' <small>' + (cible > ordre ? '↗' : '↘') + ' ' + cible + '</small>' : '') + '</span>' +
+        '<i class="barreOrdre"><i style="width:' + ordre + '%;background:' + couleurOrdre(ordre) + '"></i></i></button>' +
+        '<div class="impots">' + M.IMPOTS.map(function (I, k) { return '<button data-imp="' + k + '"' + ((p.impots == null ? 1 : p.impots) === k ? ' class="on"' : '') + '>' + I.ico + ' ' + I.nom + '</button>'; }).join('') + '</div></div>';
+    }
     h += '<div class="bats">' + Object.keys(M.BATIMENTS).map(function (b) {
       var B = M.BATIMENTS[b], n = p.bat[b];
       if (!mien && b !== 'murs') return '';
@@ -389,6 +509,10 @@
     el.innerHTML = h;
     if ($('pNegocier')) $('pNegocier').onclick = function () { negocier(p.proprio); };
     if (mien) {
+      document.querySelectorAll('[data-imp]').forEach(function (b) {
+        b.onclick = function () { M.changerImpots(etat, choix, +b.getAttribute('data-imp')); sauver(); dessiner(); };
+      });
+      $('pOrdre').onclick = function () { detailOrdre(choix); };
       $('pRecruter').onclick = function () { recrutement(choix); };
       $('pConstruire').onclick = function () { chantier(choix); };
     }
@@ -532,21 +656,185 @@
     var avant = etat.factions[moi()].or;
     var defenses = M.finDuTour(etat);
     choix = null; sauver(); dessiner();
-    toast('📅 ' + etat.annee + ' · 💰 +' + (etat.factions[moi()].or - avant) + ' or');
     var suite = function () { traiterPropositions(function () { traiterDefenses(defenses); }); };
-    if (etat.nouvelles.length) {
-      feuille('<h2>📜 Nouvelles de ' + etat.annee + '</h2><ul class="journal">' + etat.nouvelles.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ul><button class="btn or" id="fOk">Continuer</button>');
-      $('fOk').onclick = function () { fermer(); suite(); };
-    } else suite();
+    rapport(etat.factions[moi()].or - avant, suite);
   };
+
+  // Rapport du royaume au début de chaque tour, comme dans les jeux de gestion.
+  function rapport(gain, suite) {
+    var R = etat.rapport || {}, J = etat.factions[moi()];
+    var risques = etat.provinces.map(function (p, i) { return p.proprio === moi() && p.ordre < 35 ? i : -1; }).filter(function (i) { return i >= 0; });
+    var h = '<h2>📜 Rapport du royaume</h2><p class="sousTitre">An ' + etat.annee + ' · Tour ' + etat.tour + ' · ' + J.nom + '</p>';
+    h += '<div class="rapport"><section><h4>💰 Trésor</h4><div class="lignes">' +
+      '<span>Impôts des provinces</span><b class="plus">+' + (R.revenu || 0) + '</b>' +
+      '<span>Entretien des armées</span><b class="moins">−' + (R.entretien || 0) + '</b>' +
+      '<span>Bilan du tour</span><b class="' + (gain >= 0 ? 'plus' : 'moins') + '">' + (gain >= 0 ? '+' : '') + gain + '</b>' +
+      '<span>Trésor</span><b>' + J.or + ' or</b></div></section>';
+    h += '<section><h4>👑 Cour</h4>' + (R.cour && R.cour.length ? '<ul>' + R.cour.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' :
+      '<p class="calme">Rien à signaler. ' + J.roi.nom + ' a ' + M.age(etat, J.roi) + ' ans.</p>') + '</section>';
+    if (R.quetes && R.quetes.length) h += '<section class="quete"><h4>📜 Quêtes</h4><ul>' + R.quetes.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></section>';
+    h += '<section><h4>🌍 Nouvelles du monde</h4>' + (etat.nouvelles.length ? '<ul>' + etat.nouvelles.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' : '<p class="calme">Le monde est calme.</p>') + '</section>';
+    if (risques.length) h += '<section class="alerte"><h4>⚠️ Ordre public</h4><p>Risque de révolte à ' + risques.map(function (i) { return '<button class="lienProv" data-prov="' + i + '">' + PROV[i].nom + '</button>'; }).join(', ') + '. Baisse les impôts ou place une garnison.</p></section>';
+    if (etat.propositions && etat.propositions.length) h += '<p class="calme">✉️ ' + etat.propositions.length + ' messager(s) attendent ta réponse.</p>';
+    h += '</div><button class="btn or" id="fOk">▶ Commencer le tour</button>';
+    feuille(h);
+    document.querySelectorAll('[data-prov]').forEach(function (b) { b.onclick = function () { fermer(); allerA(+b.getAttribute('data-prov')); suite(); }; });
+    $('fOk').onclick = function () { fermer(); suite(); };
+  }
+  function allerA(i) { choix = i; var P = PROV[i]; centrer(P.x, P.y, Math.min(vb.w, 400)); dessiner(); }
+  function humeurOrdre(o) { return o >= 70 ? '😊' : o >= 45 ? '🙂' : o >= 25 ? '😠' : '🔥'; }
+  function couleurOrdre(o) { return o >= 60 ? '#22c55e' : o >= 35 ? '#fbbf24' : '#e5484d'; }
+  function detailOrdre(i) {
+    var p = etat.provinces[i], d = M.detailOrdre(etat, i), cible = M.cibleOrdre(etat, i);
+    feuille('<h2>' + humeurOrdre(p.ordre) + ' Ordre public à ' + PROV[i].nom + '</h2><p>Actuel : <b>' + Math.round(p.ordre) + '</b> / 100. Il évolue de 10 points par tour vers <b>' + cible + '</b>. En dessous de 25, la province peut se révolter.</p>' +
+      '<div class="lignes">' + d.map(function (x) { return '<span>' + x[0] + '</span><b class="' + (x[1] >= 0 ? 'plus' : 'moins') + '">' + (x[1] >= 0 ? '+' : '') + x[1] + '</b>'; }).join('') + '</div>' +
+      '<p class="petitTxt">Pour l\'améliorer : impôts bas, garnison, remparts. Une province conquise reste agitée quelques tours.</p><button class="btn or" data-fermer>OK</button>');
+  }
+  // Vue d'ensemble du royaume : toutes tes provinces.
+  function royaume() {
+    var J = etat.factions[moi()], rev = M.revenu(etat, moi()), ent = M.entretien(etat, moi());
+    var liste = etat.provinces.map(function (p, i) { return p.proprio === moi() ? i : -1; }).filter(function (i) { return i >= 0; })
+      .sort(function (a, b) { return etat.provinces[a].ordre - etat.provinces[b].ordre; });
+    var h = '<h2>🏛️ ' + J.nom + '</h2><div class="lignes"><span>Revenus par tour</span><b class="plus">+' + rev + '</b><span>Entretien des armées</span><b class="moins">−' + ent + '</b><span>Solde</span><b class="' + (rev - ent >= 0 ? 'plus' : 'moins') + '">' + (rev - ent >= 0 ? '+' : '') + (rev - ent) + '</b><span>Trésor</span><b>' + J.or + ' or</b></div>' +
+      '<table class="tabRoyaume"><thead><tr><th>Province</th><th>💰</th><th>Ordre</th><th>Impôts</th><th>⚔️</th></tr></thead><tbody>';
+    liste.forEach(function (i) {
+      var p = etat.provinces[i];
+      h += '<tr data-prov="' + i + '"><td>' + (M.estCapitale(etat, i) ? '👑 ' : '') + PROV[i].nom + '</td><td>+' + M.revenuProvince(p) + '</td><td style="color:' + couleurOrdre(p.ordre) + '">' + humeurOrdre(p.ordre) + ' ' + Math.round(p.ordre) + '</td><td>' + M.IMPOTS[p.impots == null ? 1 : p.impots].ico + '</td><td>' + p.armee.length + '</td></tr>';
+    });
+    h += '</tbody></table><p class="petitTxt">Touche une province pour la voir sur la carte.</p><button class="btn" data-fermer>Fermer</button>';
+    feuille(h);
+    document.querySelectorAll('tr[data-prov]').forEach(function (b) { b.onclick = function () { fermer(); allerA(+b.getAttribute('data-prov')); }; });
+  }
+
+  // ---------- Quêtes : restaurer un empire historique ----------
+  function resumeQuete() {
+    var x = M.quetes(etat, moi()).filter(function (x) { return x.faite == null; }).sort(function (a, b) { return b.tenues / b.total - a.tenues / a.total; })[0];
+    if (!x) return '';
+    return '<button class="resumeQuete" id="pQuete1"><span>' + x.q.ico + ' <b>' + x.q.titre + '</b> <small>' + x.tenues + '/' + x.total + '</small></span><i class="barreOrdre"><i style="width:' + Math.round(100 * x.tenues / x.total) + '%;background:var(--or)"></i></i></button>';
+  }
+  function ecranQuetes() {
+    var liste = M.quetes(etat, moi());
+    var h = '<h2>📜 Quêtes impériales</h2><p>Reprends toutes les provinces d\'un empire historique pour le restaurer : ton royaume prend son nom, reçoit de l\'or et un bonus d\'ordre public permanent.</p>';
+    liste.forEach(function (x) {
+      var q = x.q, fait = x.faite != null, parMoi = x.faite === moi();
+      h += '<section class="carteQuete' + (fait ? ' faite' : '') + '"><h4>' + q.ico + ' ' + q.titre + '</h4><p class="petitTxt">' + q.texte + '</p>';
+      if (fait) h += '<p><b>' + (parMoi ? '✅ Accomplie : tu règnes sur l\'' + q.nom + ' !' : '❌ ' + etat.factions[x.faite].nom + ' l\'a restauré avant toi.') + '</b></p>';
+      else {
+        h += '<div class="progQuete"><i class="barreOrdre"><i style="width:' + Math.round(100 * x.tenues / x.total) + '%;background:var(--or)"></i></i><b>' + x.tenues + ' / ' + x.total + '</b></div>' +
+          '<div class="provsQuete">' + q.provinces.map(function (id) {
+            var i = M.PROV.findIndex(function (P) { return P.id === id; }), p = etat.provinces[i], mienP = p.proprio === moi();
+            return '<button class="lienProv' + (mienP ? ' tenue' : '') + '" data-prov="' + i + '" title="' + (p.proprio >= 0 ? etat.factions[p.proprio].nom : 'Rebelles') + '">' + (mienP ? '✅ ' : '<span class="pastille" style="background:' + coul(p.proprio) + '"></span>') + M.PROV[i].nom + '</button>';
+          }).join('') + '</div>' +
+          '<p class="petitTxt">🏆 Récompense : ton royaume devient l\'<b>' + q.nom + '</b>, +' + q.or + ' or, ordre public +15 partout et +5 pour toujours.</p>';
+      }
+      h += '</section>';
+    });
+    h += '<button class="btn" data-fermer>Fermer</button>';
+    feuille(h);
+    document.querySelectorAll('[data-prov]').forEach(function (b) { b.onclick = function () { fermer(); allerA(+b.getAttribute('data-prov')); }; });
+  }
+
+  // ---------- Cour, dynastie et mariages ----------
+  function portrait(p, f, taille) {
+    var F = etat.factions[f];
+    return window.Portrait ? Portrait.svg(p, { coul: F.coul, culture: F.cour && F.cour.c, age: M.age(etat, p), taille: taille }) : '';
+  }
+  function looksMembre(m, F) {
+    // Les membres de la famille n'ont pas d'apparence enregistrée : on la tire du souverain.
+    return { nom: m.nom, ne: m.ne, sexe: m.sexe, look: m.look || { barbe: m.sexe === 'm' ? (F.roi.look.barbe === 'rase' ? 'courte' : F.roi.look.barbe) : 'rase', ch: F.roi.look.ch === 'perruque' ? 'perruque' : F.roi.look.ch, tete: m.sexe === 'f' ? (F.roi.look.tete === 'turban' ? 'voile' : 'aucun') : (F.roi.look.tete === 'turban' ? 'turban' : 'aucun') } };
+  }
+  function ligneMembre(m, f, extra) {
+    var F = etat.factions[f], h = M.heritier(F);
+    return '<div class="membre">' + portrait(looksMembre(m, F), f, 40) + '<div><b>' + m.nom + (h === m ? ' <span class="tag">👑 Héritier</span>' : '') + '</b><small>' +
+      m.lien + (m.parent ? ' de ' + m.parent : '') + ' · ' + M.age(etat, m) + ' ans' + (m.epoux ? ' · 💍 ' + m.epoux.nom + (m.epoux.f >= 0 && m.epoux.f !== f ? ' (' + etat.factions[m.epoux.f].nom + ')' : '') + (m.epoux.matri ? ' · <span class="tag">♀ matrilinéaire</span>' : '') : '') + '</small></div>' + (extra || '') + '</div>';
+  }
+  function cour(fid) {
+    var f = fid == null ? moi() : fid, F = etat.factions[f], mien = f === moi();
+    var h = '<h2>👑 ' + (mien ? 'Ta cour' : 'Cour de ' + F.nom) + '</h2>' +
+      '<div class="trone">' + portrait(F.roi, f, 110) + '<div><b>' + F.roi.nom + '</b><small>' + (F.roi.sexe === 'f' ? 'Reine' : F.cour.elu ? 'Souverain élu' : 'Roi') + ' · ' + M.age(etat, F.roi) + ' ans</small><small>Dynastie : ' + F.cour.dyn + '</small>' +
+      (F.conj ? '<small>💍 ' + F.conj.nom + (F.conj.de >= 0 ? ' (' + (F.conj.de === moi() ? 'ta famille' : etat.factions[F.conj.de].nom) + ')' : '') + ', ' + M.age(etat, F.conj) + ' ans' + (F.roi.sexe === 'f' && F.conj.matri ? ' · ♀ matrilinéaire' : '') + '</small>' : '') +
+      (F.roi.sexe === 'f' && F.cour.dynEnfants ? '<small>⚠️ Mariage patrilinéaire : ses enfants seront de la maison ' + F.cour.dynEnfants + '</small>' : '') + '</div>' +
+      (F.conj ? portrait(looksMembre(F.conj, F), f, 64) : '') + '</div>';
+    h += '<h4 class="titreFam">Famille</h4>' + (F.cour.fam.length ? F.cour.fam.slice().sort(function (a, b) { return a.ne - b.ne; }).map(function (m) { return ligneMembre(m, f); }).join('') :
+      '<p class="calme">' + (F.cour.elu ? 'Un souverain élu n\'a pas d\'héritier : son successeur sera élu.' : 'Aucun parent proche. Sans héritier, la mort du souverain déclenchera une crise de succession !') + '</p>');
+    if (mien && !F.cour.elu) h += '<p class="petitTxt">💡 Marie ta famille à d\'autres dynasties : leur humeur monte, l\'alliance devient plus facile, et si l\'héritier d\'un royaume épouse l\'un des tiens, son royaume peut te revenir en héritage !</p><button class="btn or" id="fMarier">💍 Arranger un mariage</button>';
+    h += mien ? '<button class="btn" data-fermer>Fermer</button>' : '<button class="btn" id="fRetourNego">← Négocier</button>';
+    feuille(h);
+    if ($('fMarier')) $('fMarier').onclick = choisirMariage;
+    if ($('fRetourNego')) $('fRetourNego').onclick = function () { negocier(f); };
+  }
+  function choisirMariage() {
+    var liste = M.diplomatie(etat).filter(function (d) { return d.rel !== 'guerre' && !etat.factions[d.f].cour.elu; });
+    var h = '<h2>💍 Avec quelle famille ?</h2><p>Les royaumes en guerre avec toi refusent tout mariage.</p><div class="diplo">';
+    liste.forEach(function (d) {
+      var F = etat.factions[d.f];
+      h += '<button class="ligneDiplo" data-mf="' + d.f + '">' + portrait(F.roi, d.f, 34) + '<span class="dNom"><b>' + d.nom + '</b><small>' + F.roi.nom + ' · ' + d.humeur + (d.sang ? ' · 🩸 déjà parents' : '') + '</small></span>' + badge(d.rel) + '</button>';
+    });
+    h += '</div><button class="btn" id="fRetourCour">← Ma cour</button>';
+    feuille(h);
+    document.querySelectorAll('[data-mf]').forEach(function (b) { b.onclick = function () { mariage(+b.getAttribute('data-mf')); }; });
+    $('fRetourCour').onclick = function () { cour(); };
+  }
+  function mariage(f, choixA, choixB, choixMatri) {
+    var F = etat.factions[f], J = etat.factions[moi()];
+    var miens = M.membresLibres(etat, moi()), leurs = M.membresLibres(etat, f);
+    var a = choixA != null ? choixA : miens.length ? miens[0].k : null;
+    var pa = a != null ? M.membre(J, a) : null;
+    var compat = leurs.filter(function (x) { return pa && x.p.sexe !== pa.sexe && !(a < 0 && x.k < 0); });
+    var b = choixB != null && compat.some(function (x) { return x.k === choixB; }) ? choixB : compat.length ? compat[0].k : null;
+    var peutMatri = pa && pa.sexe === 'f' && b != null && b >= 0;
+    var matri = peutMatri && (choixMatri != null ? choixMatri : a < 0);
+    var h = '<h2>💍 Mariage avec ' + F.nom + '</h2>';
+    if (!miens.length) { feuille(h + '<p>Personne de ta famille n\'est libre pour un mariage.</p><button class="btn" id="fRetourM">← Retour</button>'); $('fRetourM').onclick = choisirMariage; return; }
+    h += '<h4 class="titreFam">De ta famille</h4><div class="choixM">' + miens.map(function (x) {
+      return '<button class="carteM' + (x.k === a ? ' on' : '') + '" data-ma="' + x.k + '">' + portrait(x.k < 0 ? x.p : looksMembre(x.p, J), moi(), 44) + '<b>' + x.p.nom + '</b><small>' + (x.k < 0 ? 'Souverain' : x.p.lien) + ', ' + M.age(etat, x.p) + ' ans</small></button>';
+    }).join('') + '</div>';
+    h += '<h4 class="titreFam">De la famille de ' + F.roi.nom + '</h4>';
+    if (!compat.length) h += '<p class="calme">Personne de compatible chez eux.</p>';
+    else h += '<div class="choixM">' + compat.map(function (x) {
+      return '<button class="carteM' + (x.k === b ? ' on' : '') + '" data-mb="' + x.k + '">' + portrait(x.k < 0 ? x.p : looksMembre(x.p, F), f, 44) + '<b>' + x.p.nom + (M.heritier(F) === x.p ? ' 👑' : '') + '</b><small>' + (x.k < 0 ? 'Souverain' : x.p.lien) + ', ' + M.age(etat, x.p) + ' ans</small></button>';
+    }).join('') + '</div>';
+    if (b != null) {
+      if (peutMatri) h += '<h4 class="titreFam">Type de mariage</h4><div class="choixLignee">' +
+        '<button class="carteM' + (!matri ? ' on' : '') + '" data-mt="0"><b>♂ Patrilinéaire</b><small>' + pa.nom + ' rejoint la famille de son mari : les enfants seront de la maison ' + F.cour.dyn + '.</small></button>' +
+        '<button class="carteM' + (matri ? ' on' : '') + '" data-mt="1"><b>♀ Matrilinéaire</b><small>' + M.membre(F, b).nom + ' rejoint ta cour : les enfants seront de ta dynastie (' + J.cour.dyn + '). Plus dur à faire accepter.</small></button></div>';
+      var c = M.chanceMariage(etat, f, b, matri);
+      h += '<div class="chances" style="color:' + (c >= 35 ? '#22c55e' : c >= 15 ? '#fbbf24' : '#e5484d') + '">' + (c >= 35 ? '🟢 Ils accepteront sûrement' : c >= 15 ? '🟡 Ils devraient accepter' : '🔴 Ils vont refuser : offre d\'abord des cadeaux') + '</div>' +
+        (M.heritier(F) === M.membre(F, b) ? '<p class="petitTxt">' + (matri ? '👑 C\'est leur héritier : en venant à ta cour, il renonce à leur trône.' : '👑 C\'est leur héritier : si ' + M.membre(F, b).nom + ' monte sur le trône, son royaume rejoindra le tien !') + '</p>' : '') +
+        '<button class="btn or" id="fMarierOk">💍 Proposer ce mariage</button>';
+    }
+    h += '<button class="btn" id="fRetourM">← Autre famille</button>';
+    feuille(h);
+    document.querySelectorAll('[data-ma]').forEach(function (x) { x.onclick = function () { mariage(f, +x.getAttribute('data-ma'), b); }; });
+    document.querySelectorAll('[data-mb]').forEach(function (x) { x.onclick = function () { mariage(f, a, +x.getAttribute('data-mb'), matri); }; });
+    document.querySelectorAll('[data-mt]').forEach(function (x) { x.onclick = function () { mariage(f, a, b, x.getAttribute('data-mt') === '1'); }; });
+    $('fRetourM').onclick = choisirMariage;
+    if ($('fMarierOk')) $('fMarierOk').onclick = function () {
+      var r = M.proposer(etat, f, 'mariage', { a: a, b: b, matri: matri });
+      toast((r.ok ? '' : '❌ ') + r.msg);
+      sauver(); dessiner();
+      if (r.ok) cour(); else negocier(f);
+    };
+  }
 
   // Les royaumes te proposent la paix ou une alliance.
   function traiterPropositions(ensuite) {
     if (etat.fin || !etat.propositions || !etat.propositions.length) { ensuite(); return; }
     var P = etat.propositions[0], F = etat.factions[P.f], D = etat.diplo[P.f];
     var paix = P.type === 'paix';
+    if (P.type === 'mariage') {
+      var pa = M.membre(etat.factions[moi()], P.a), pb = M.membre(F, P.b);
+      feuille('<h2>💍 Un messager de ' + F.nom + '</h2><div class="duoM">' + (pa ? portrait(P.a < 0 ? pa : looksMembre(pa, etat.factions[moi()]), moi(), 70) : '') + '<span>💍</span>' + (pb ? portrait(looksMembre(pb, F), P.f, 70) : '') + '</div>' +
+        '<p><b>' + F.roi.nom + '</b> propose d\'unir vos familles : <b>' + P.noms[0] + '</b> épouserait <b>' + P.noms[1] + '</b>' + (M.heritier(F) === pb ? ', son héritier !' : '.') + ' Vos royaumes deviendraient parents (humeur en hausse, alliance plus facile).</p>' +
+        '<button class="btn or" id="fOui">✅ Accepter</button><button class="btn" id="fNon">❌ Refuser</button>');
+      var repM = function (oui) { var msg = M.repondre(etat, 0, oui); fermer(); if (msg) toast(msg); sauver(); dessiner(); traiterPropositions(ensuite); };
+      $('fOui').onclick = function () { repM(true); };
+      $('fNon').onclick = function () { repM(false); };
+      return;
+    }
     feuille('<h2>' + (paix ? '🕊️' : '🤝') + ' Un messager de ' + F.nom + '</h2>' +
-      '<p><span class="pastille" style="background:' + F.coul + '"></span> <b>' + F.nom + '</b> (' + M.nbProvinces(etat, P.f) + ' provinces, ' + M.humeur(D.att) + ') ' +
+      '<div class="roiNego">' + portrait(F.roi, P.f, 56) + '<span><b>' + F.roi.nom + '</b><small>' + F.nom + ' · ' + M.nbProvinces(etat, P.f) + ' prov. · ' + M.humeur(D.att) + '</small></span></div>' +
+      '<p><b>' + F.roi.nom + '</b> ' +
       (paix ? 'est las de la guerre et te propose la <b>paix</b>.' : 'te propose une <b>alliance</b> : vous ne vous attaquerez plus, il défendra tes villes voisines et tu pourras lui demander de l\'or ou des troupes.') + '</p>' +
       '<button class="btn or" id="fOui">✅ Accepter</button><button class="btn" id="fNon">❌ Refuser</button>');
     var rep = function (oui) { var msg = M.repondre(etat, 0, oui); fermer(); if (msg) toast(msg); sauver(); dessiner(); traiterPropositions(ensuite); };
@@ -590,8 +878,8 @@
     liste.forEach(function (d) { if (n[d.rel] != null) n[d.rel]++; });
     var h = '<h2>🤝 Diplomatie</h2><p>' + n.alliance + ' allié(s) · ' + n.guerre + ' guerre(s). Touche un royaume pour négocier. Les voisins sont en haut.</p><div class="diplo">';
     liste.forEach(function (d) {
-      h += '<button class="ligneDiplo" data-df="' + d.f + '"><span class="pastille" style="background:' + d.coul + '"></span>' +
-        '<span class="dNom"><b>' + d.nom + '</b><small>' + d.n + ' prov. · ' + d.humeur + (d.voisin ? ' · voisin' : '') + '</small></span>' + badge(d.rel) + '</button>';
+      h += '<button class="ligneDiplo" data-df="' + d.f + '">' + portrait(etat.factions[d.f].roi, d.f, 34) +
+        '<span class="dNom"><b><span class="pastille" style="background:' + d.coul + '"></span> ' + d.nom + '</b><small>' + etat.factions[d.f].roi.nom + ' · ' + d.n + ' prov. · ' + d.humeur + (d.sang ? ' · 🩸' : '') + (d.voisin ? ' · voisin' : '') + '</small></span>' + badge(d.rel) + '</button>';
     });
     h += '</div><button class="btn" id="fAideDiplo">❓ Comment marche la diplomatie ?</button><button class="btn" data-fermer>Fermer</button>';
     feuille(h);
@@ -601,9 +889,10 @@
   function negocier(f) {
     var F = etat.factions[f], D = etat.diplo[f], rel = D.rel, J = etat.factions[moi()];
     var h = '<h2><span class="pastille" style="background:' + F.coul + '"></span> ' + F.nom + '</h2>' +
-      '<div class="relLigne">' + badge(rel) + ' <span>' + M.humeur(D.att) + '</span></div>' +
+      '<button class="roiNego" id="fVoirCour">' + portrait(F.roi, f, 56) + '<span><b>' + F.roi.nom + '</b><small>' + M.age(etat, F.roi) + ' ans · ' + F.cour.dyn + '</small><small>Voir sa cour ›</small></span></button>' +
+      '<div class="relLigne">' + badge(rel) + ' <span>' + M.humeur(D.att) + '</span>' + (D.sang ? '<span class="rel sang">🩸 Familles unies</span>' : '') + '</div>' +
       '<div class="humeurJauge"><i style="left:' + (D.att + 100) / 2 + '%"></i></div>' +
-      '<p class="petitTxt">Humeur envers toi : ' + D.att + ' / 100. ' + M.nbProvinces(etat, f) + ' provinces, 💰 ' + F.or + ' or.</p>';
+      '<p class="petitTxt">Humeur envers toi : ' + D.att + ' / 100. ' + M.nbProvinces(etat, f) + ' province' + (M.nbProvinces(etat, f) > 1 ? 's' : '') + ', 💰 ' + F.or + ' or.</p>';
     if (rel === 'guerre') h += '<button class="btn or" data-act="paix">🕊️ Proposer la paix</button>';
     if (rel === 'paix') h += '<button class="btn or" data-act="alliance">🤝 Proposer une alliance' + (D.att < 40 ? ' (humeur 40 requise)' : '') + '</button>';
     if (rel === 'alliance') {
@@ -612,6 +901,7 @@
         (D.aideT > etat.tour ? '<p class="petitTxt">Ton allié pourra t\'aider de nouveau dans ' + (D.aideT - etat.tour) + ' tour(s).</p>' : '');
     }
     h += '<button class="btn" data-act="cadeau"' + (J.or < 100 ? ' disabled' : '') + '>🎁 Offrir 100 or (humeur +15)</button>';
+    if (rel !== 'guerre' && !F.cour.elu && !J.cour.elu) h += '<button class="btn" id="fMariage">💍 Proposer un mariage</button>';
     if (rel === 'alliance') h += '<button class="btn" data-act="rompre">💔 Rompre l\'alliance</button>';
     if (rel !== 'guerre') h += '<button class="btn rouge" data-act="guerre">⚔️ Déclarer la guerre</button>';
     h += '<button class="btn" id="fRetourDiplo">← Tous les royaumes</button>';
@@ -626,6 +916,8 @@
       };
     });
     $('fRetourDiplo').onclick = diplomatie;
+    $('fVoirCour').onclick = function () { cour(f); };
+    if ($('fMariage')) $('fMariage').onclick = function () { mariage(f); };
   }
   $('bDiplo').onclick = diplomatie;
 
@@ -657,6 +949,27 @@
       'Avec une humeur « Amical » (40+), propose une <b>alliance</b>. Un allié défend tes villes voisines quand on les attaque, et tu peux lui demander 💰 de l\'or ou 🛡️ des renforts (puis il faut attendre quelques tours).',
       'Les royaumes t\'écrivent aussi : propositions de paix ou d\'alliance à la fin du tour. Attention, un voisin hostile peut te déclarer la guerre !',
       'Trahir un allié (lui déclarer la guerre) fâche tous les autres royaumes.']],
+    cour: ['👑 Dynastie et mariages', [
+      'Chaque royaume est dirigé par son vrai souverain historique : Charlemagne, Saladin, Louis XIV… Ils vieillissent, ont des enfants et meurent.',
+      'À la mort de ton souverain, l\'héritier (👑) monte sur le trône. Sans héritier, c\'est la <b>crise de succession</b> : un cousin prend le pouvoir et une province peut faire sécession.',
+      'Bouton <b>👑 Ma cour</b> : ta famille, ton conjoint et ton héritier. <b>💍 Arranger un mariage</b> pour unir ta famille à une autre dynastie.',
+      'Un mariage fait monter l\'humeur (+20), rend l\'alliance plus facile et calme les envies de guerre. Les royaumes te proposeront aussi des mariages.',
+      '💍👑 <b>Union des couronnes</b> : si l\'héritier d\'un royaume a épousé l\'un des tiens, à la mort de son père il apporte tout son royaume au tien !',
+      '♀ <b>Mariage matrilinéaire</b> : quand une femme de ta famille se marie, choisis « matrilinéaire ». Son mari quitte sa cour pour la tienne et leurs enfants sont de <b>ta</b> dynastie (et peuvent hériter de ton trône). Plus dur à faire accepter.',
+      '♂ En mariage patrilinéaire, les enfants d\'une reine appartiennent à la maison de leur père : à sa mort, la dynastie change sur le trône !',
+      'Les papes, doges et républiques élisent leur chef : pas de mariage possible avec eux.']],
+    quetes: ['📜 Quêtes impériales', [
+      'Certains royaumes peuvent <b>restaurer un empire historique</b> : l\'Empire romain, l\'empire de Charlemagne, le grand Califat, l\'Empire perse, la Rus, l\'Empire angevin…',
+      'Bouton <b>📜 Quêtes</b> : la liste des provinces à posséder. Celles que tu tiens sont cochées ✅, touche les autres pour les voir sur la carte.',
+      'Quand tu les possèdes toutes à la fin d\'un tour, ton royaume prend le nom de l\'empire, gagne de l\'or et l\'ordre public monte pour toujours.',
+      'Attention : les autres royaumes peuvent mener la même quête, et un empire qui renaît inquiète ses voisins.']],
+    gestion: ['🏛️ Gestion du royaume', [
+      'Chaque tour commence par le <b>📜 Rapport du royaume</b> : trésor, cour, nouvelles du monde et provinces à surveiller.',
+      'En haut : 💰 ton or et (entre parenthèses) ton bilan par tour, revenus moins l\'entretien des armées.',
+      'Chaque unité coûte de l\'or à entretenir à chaque tour. Si les caisses sont vides, des soldats désertent !',
+      'Dans chaque province, choisis les <b>impôts</b> : 🪶 bas (−40 % d\'or, +15 d\'ordre), ⚖️ normal, 💰 élevé (+40 % d\'or, −20 d\'ordre).',
+      'L\'<b>ordre public</b> (0 à 100) monte avec une garnison, des remparts et des impôts bas. Il baisse avec la taille du royaume et après une conquête. Sous 25 : révolte !',
+      'Le bouton <b>🏛️ Royaume</b> résume toutes tes provinces : revenus, ordre public, impôts et garnisons.']],
     faq: ['💬 FAQ', null]
   };
   var FAQ = [
@@ -665,6 +978,10 @@
     ['Faut-il un compte ?', 'Non. Tu peux jouer avec un simple pseudo. Si tu es connecté à ton compte du forum, ton pseudo est repris automatiquement.'],
     ['Comment gagner ?', 'Possède ' + HIST.OBJECTIF + ' provinces avant ' + HIST.FIN + '. Sinon, en ' + HIST.FIN + ', le classement des royaumes décide du vainqueur.'],
     ['Quelles époques ?', HIST.EPOQUES.map(function (e) { return e.annee + ' ' + e.titre; }).join(', ') + '. Les unités évoluent avec le temps, des chevaliers aux mousquetaires.'],
+    ['Les personnages sont-ils réels ?', 'Oui : chaque royaume commence avec son vrai souverain, sa dynastie, son conjoint et ses enfants (Charlemagne, Richard Cœur de Lion, Saladin, Mehmed II, Louis XIV…). Ensuite, l\'histoire, c\'est toi qui l\'écris.'],
+    ['Comment marchent les mariages ?', 'Touche 👑 Ma cour puis 💍 Arranger un mariage. Un mariage rapproche deux royaumes, et si l\'héritier d\'un royaume épouse l\'un des tiens, tu peux hériter de tout son royaume.'],
+    ['C\'est quoi un mariage matrilinéaire ?', 'Quand une princesse (ou ta reine) se marie, les enfants sont normalement de la maison de leur père. En mariage matrilinéaire, le mari rejoint ta cour et les enfants restent de ta dynastie : pratique pour garder ton trône dans la famille quand tu n\'as que des filles.'],
+    ['C\'est quoi les quêtes ?', 'Selon ton royaume, tu peux restaurer un empire historique (Empire romain, Charlemagne, Califat, Rus, Reconquista…). Touche 📜 Quêtes pour voir les provinces à conquérir et la récompense.'],
     ['Ma partie est-elle sauvegardée ?', 'Oui, automatiquement sur ton appareil, à chaque action. Reviens quand tu veux avec « Continuer la campagne ».'],
     ['Peut-on le télécharger ?', 'Oui ! Bouton « 📲 Installer le jeu » sur le menu : il s\'ajoute sur ton écran d\'accueil comme une vraie appli et marche même sans internet (sauf la 3D la toute première fois). Sur iPhone : bouton Partager de Safari puis « Sur l\'écran d\'accueil ».'],
     ['Mon téléphone rame en bataille', 'Touche le bouton 🗺️ 2D pendant la bataille : la vue 2D est beaucoup plus légère.'],

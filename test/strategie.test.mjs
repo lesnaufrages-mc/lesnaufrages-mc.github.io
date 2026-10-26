@@ -106,3 +106,139 @@ test('diplomatie : paix, alliance, aide et guerre', () => {
     e2.diplo.forEach((d) => { if (d) { d.rel = d.rel === 'guerre' ? 'paix' : d.rel; d.att = 90; } });
   }
 });
+
+test('chaque royaume a son souverain historique', () => {
+  const P = require('../docs/strategie/personnages.js');
+  H.EPOQUES.forEach((e) => e.factions.forEach((f) => {
+    const d = P.EPOQUES[e.id][f[0]];
+    assert.ok(d, e.id + ' : ' + f[0]);
+    assert.ok(d.roi[1] < e.annee && e.annee - d.roi[1] < 95, d.roi[0]);
+    assert.ok(P.NOMS[d.c], d.c);
+  }));
+  const e = M.nouvellePartie('rois', 'france', 1);
+  const F = e.factions[e.joueur];
+  assert.equal(F.roi.nom, 'Louis XIV');
+  assert.equal(M.heritier(F).nom, 'Louis, le Grand Dauphin');
+});
+
+test('succession, mariage et union des couronnes', () => {
+  const e = M.nouvellePartie('croisades', 'castille', 5);
+  const J = e.factions[e.joueur];
+  const f = e.factions.findIndex((F) => F.id === 'portugal');
+  const P = e.factions[f];
+  // Le mariage demande une bonne entente.
+  e.diplo[f].att = -20;
+  const blanche = J.cour.fam.findIndex((m) => m.nom === 'Blanche de Castille');
+  const alphonse = P.cour.fam.findIndex((m) => m.nom === 'Alphonse');
+  assert.equal(M.proposer(e, f, 'mariage', { a: blanche, b: alphonse }).ok, false);
+  e.tour++;
+  e.diplo[f].att = 80;
+  const r = M.proposer(e, f, 'mariage', { a: blanche, b: alphonse });
+  assert.ok(r.ok, r.msg);
+  assert.ok(e.diplo[f].sang);
+  // Deux personnes du même sexe ou déjà mariées : refus.
+  assert.ok(M.verifMariage(e, f, blanche, alphonse));
+  // Le roi de Portugal meurt : son héritier, marié à une Castillane, apporte le royaume.
+  const avant = M.nbProvinces(e, e.joueur);
+  P.roi.ne = e.annee - 200; P.roi.fragile = true;
+  for (let t = 0; t < 6 && M.nbProvinces(e, f) > 0; t++) M.finDuTour(e);
+  assert.equal(M.nbProvinces(e, f), 0);
+  assert.ok(M.nbProvinces(e, e.joueur) > avant);
+  // Un pape mort laisse la place à un pape élu.
+  const e2 = M.nouvellePartie('conquete', 'france', 3);
+  const pape = e2.factions.find((F) => F.id === 'papaute');
+  pape.roi.ne = e2.annee - 200; pape.roi.fragile = true;
+  M.finDuTour(e2);
+  assert.notEqual(pape.roi.nom, 'Alexandre II');
+});
+
+test('impôts, ordre public, entretien et révoltes', () => {
+  const e = M.nouvellePartie('rois', 'france', 2);
+  const cap = e.factions[e.joueur].capitale;
+  const p = e.provinces[cap];
+  const normal = M.revenuProvince(p);
+  assert.equal(M.changerImpots(e, cap, 2), null);
+  assert.ok(M.revenuProvince(p) > normal);
+  assert.ok(M.cibleOrdre(e, cap) < 100);
+  assert.ok(M.entretien(e, e.joueur) > 0);
+  // Une province pressurée, sans garnison, finit par se révolter.
+  const autre = e.provinces.findIndex((q, i) => q.proprio === e.joueur && i !== cap);
+  const q = e.provinces[autre];
+  q.armee = []; q.impots = 2; q.ordre = 0; q.agit = 60;
+  let revolte = false;
+  for (let t = 0; t < 10 && !revolte; t++) { M.finDuTour(e); revolte = q.proprio !== e.joueur; q.ordre = Math.min(q.ordre, 5); q.armee = []; }
+  assert.ok(revolte);
+});
+
+test('mariage matrilinéaire : le mari rejoint la cour, les enfants restent de la dynastie', () => {
+  const e = M.nouvellePartie('rois', 'france', 4);
+  const J = e.factions[e.joueur];
+  J.cour.fam.push({ nom: 'Princesse Test', ne: e.annee - 18, sexe: 'f', lien: 'fille' });
+  const a = J.cour.fam.length - 1;
+  let f = -1, b = -1;
+  e.factions.forEach((F, k) => {
+    if (f >= 0 || k === e.joueur || F.cour.elu || !M.nbProvinces(e, k)) return;
+    const i = F.cour.fam.findIndex((m) => m.sexe === 'm' && !m.epoux);
+    if (i >= 0) { f = k; b = i; }
+  });
+  assert.ok(f >= 0);
+  const F = e.factions[f], mari = F.cour.fam[b].nom, nbAvant = F.cour.fam.length;
+  e.diplo[f].att = 100; e.diplo[f].rel = 'paix';
+  assert.equal(M.verifMariage(e, f, a, -1, true) !== null, true); // pas avec un souverain
+  const r = M.proposer(e, f, 'mariage', { a, b, matri: true });
+  assert.ok(r.ok, r.msg);
+  assert.equal(F.cour.fam.length, nbAvant - 1);
+  const princesse = J.cour.fam[a];
+  assert.equal(princesse.epoux.nom, mari);
+  assert.ok(princesse.epoux.matri);
+  let enfant = null;
+  for (let t = 0; t < 40 && !enfant; t++) {
+    princesse.ne = e.annee - 20; J.roi.ne = e.annee - 40; J.roi.fragile = false;
+    M.finDuTour(e);
+    enfant = J.cour.fam.find((m) => m.parent === 'Princesse Test');
+  }
+  assert.ok(enfant, 'un enfant est né');
+  assert.ok(/^petit/.test(enfant.lien));
+});
+
+test('les enfants d\'une reine mariée de façon patrilinéaire changent la dynastie', () => {
+  const e = M.nouvellePartie('rois', 'france', 5);
+  const J = e.factions[e.joueur];
+  J.roi = { nom: 'Reine Test', ne: e.annee - 25, sexe: 'f', look: J.roi.look };
+  J.conj = null; J.cour.fam = [];
+  let f = -1, b = -1;
+  e.factions.forEach((F, k) => {
+    if (f >= 0 || k === e.joueur || F.cour.elu || !M.nbProvinces(e, k)) return;
+    const i = F.cour.fam.findIndex((m) => m.sexe === 'm' && !m.epoux);
+    if (i >= 0) { f = k; b = i; }
+  });
+  const F = e.factions[f], dynAvant = J.cour.dyn;
+  e.diplo[f].att = 100; e.diplo[f].rel = 'paix';
+  assert.ok(M.proposer(e, f, 'mariage', { a: -1, b, matri: false }).ok);
+  assert.equal(J.cour.dynEnfants, F.cour.dyn);
+  J.cour.fam.push({ nom: 'Prince Test', ne: e.annee - 5, sexe: 'm', lien: 'fils' });
+  J.roi.ne = e.annee - 200; J.roi.fragile = true;
+  M.finDuTour(e);
+  assert.equal(J.roi.nom, 'Prince Test');
+  assert.notEqual(J.cour.dyn, dynAvant);
+  assert.equal(J.cour.dyn, F.cour.dyn);
+});
+
+test('quêtes : aucune n\'est finie au départ, et restaurer un empire renomme le royaume', () => {
+  H.EPOQUES.forEach((E) => {
+    const e = M.nouvellePartie(E.id, E.factions[0][0], 1);
+    e.factions.forEach((F, f) => M.quetes(e, f).forEach((x) => assert.ok(x.manque.length > 0, E.id + ' ' + F.id + ' ' + x.q.id)));
+  });
+  const e = M.nouvellePartie('croisades', 'georgie', 1);
+  const J = e.factions[e.joueur];
+  M.assurerCour(e);
+  const x = M.quetes(e, e.joueur).find((y) => y.q.id === 'georgie');
+  assert.ok(x && x.manque.length);
+  x.manque.forEach((i) => { e.provinces[i].proprio = e.joueur; });
+  const or = J.or;
+  M.tourQuetes(e);
+  assert.equal(J.nom, 'Grande Géorgie');
+  assert.equal(e.quetes.georgie, e.joueur);
+  assert.ok(J.or > or);
+  assert.equal(M.quetes(e, e.joueur).find((y) => y.q.id === 'georgie').faite, e.joueur);
+});

@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Mot Mystère – Jouer entre amis</title>
 <meta name="description" content="Crée un salon, envoie le code à tes amis et trouvez le mot mystère avant les autres. Gratuit, sans inscription.">
@@ -237,7 +238,7 @@ input[type=text]:focus{border-color:var(--green)}
   </section>
 </main>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script type="module" src="amis.js"></script>
 <script src="../site.js" defer></script>
 </body>

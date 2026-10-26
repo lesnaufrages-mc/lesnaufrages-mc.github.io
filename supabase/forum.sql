@@ -2,6 +2,7 @@
 --  FORUM + COMPTES — Les Naufragés · Mot Mystère
 --  À coller UNE FOIS dans Supabase : SQL Editor > New query > Run.
 --  (Tu peux le relancer sans risque : il ne supprime aucune donnée.)
+--  Puis lance aussi securite.sql (protections en plus).
 --
 --  Ensuite, pour devenir fondateur (tous les droits) : inscris-toi sur le site, puis lance
 --     update public.profils set role = 'fondateur' where pseudo = 'TonPseudo';

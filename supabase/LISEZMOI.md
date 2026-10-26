@@ -57,6 +57,12 @@ Depuis l'espace admin tu peux ensuite donner les grades du staff sans repasser p
 Si tu as installé le forum avant l'arrivée des grades, lance **une fois** [`mise-a-jour-staff-profils.sql`](mise-a-jour-staff-profils.sql)
 (SQL Editor → New query → colle tout → Run). Désactive la traduction automatique de Chrome avant de copier le code.
 
+## Mise à jour : sécurité (à faire une fois)
+
+Lance **une fois** [`securite.sql`](securite.sql) (SQL Editor → New query → colle tout → Run).
+Ça renforce l'anti-spam, protège les photos et bios, verrouille les liens des actus.
+Le reste des réglages de sécurité (2FA, e-mails, mots de passe) est expliqué dans [`SECURITE.md`](../SECURITE.md).
+
 ## Grades du staff
 
 Les mêmes noms que les rôles du Discord (le bot les crée avec `/staff-setup`).
@@ -70,7 +76,7 @@ Les mêmes noms que les rôles du Discord (le bot les crée avec `/staff-setup`)
 | **Membre** | Lire, créer des sujets, répondre, signaler, modifier sa photo et sa bio |
 
 On ne peut gérer que les membres d'un grade inférieur au sien, et jamais son propre grade.
-Un membre banni peut encore lire mais plus écrire. Anti-spam : 15 secondes minimum entre deux messages.
+Un membre banni peut encore lire mais plus écrire. Anti-spam : 15 secondes minimum entre deux messages, 10 sujets et 60 messages par heure au maximum.
 
 ## Bon à savoir (offre gratuite)
 

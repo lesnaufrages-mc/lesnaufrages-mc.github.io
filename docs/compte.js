@@ -1,6 +1,12 @@
 /* Comptes du site (forum + admin), via Supabase.
    Utilisé par forum/ et admin/. Les réglages sont dans supabase-config.js. */
 (function () {
+  // Anti « clickjacking » : le forum et l'admin refusent d'être affichés dans le cadre d'un autre site.
+  if (window.top !== window.self) {
+    document.documentElement.style.display = 'none';
+    try { window.top.location = window.location.href; } catch (e) {}
+    return;
+  }
   var cfg = window.SUPABASE || {};
   var actif = !!(cfg.URL && cfg.CLE && window.supabase);
   var sb = actif ? window.supabase.createClient(cfg.URL, cfg.CLE) : null;

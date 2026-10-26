@@ -20,6 +20,12 @@ for (const f of fs.readdirSync(SOURCE)) {
   if (!IGNORES.includes(f)) fs.copyFileSync(path.join(SOURCE, f), path.join(APP, f));
 }
 fs.copyFileSync(path.join(ICI, 'pc.js'), path.join(APP, 'pc.js'));
+// Sous Windows, git peut fournir des fins de ligne \r\n : on remet des \n pour que
+// les remplacements ci-dessous trouvent leurs lignes partout.
+for (const f of ['index.html', 'jeu.js']) {
+  const p = path.join(APP, f);
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n'));
+}
 
 // 2. Bibliothèques incluses dans le jeu au lieu d'être chargées sur internet.
 const mod = (p) => require.resolve(p, { paths: [ICI] });

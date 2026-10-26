@@ -26,6 +26,9 @@ h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.5px;margin-bottom:14px}
 .btn-play:hover{background:var(--green2)}
 .btn-discord{background:var(--discord);color:#fff}
 .btn-discord:hover{background:var(--discord2)}
+.btn-x{background:#000;color:#fff;border:1px solid #333}
+.btn-x:hover{background:#1a1a1a}
+.btn-x .ico-x{width:18px;height:18px}
 .btn-ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
 .btn-ghost:hover{border-color:#555}
 

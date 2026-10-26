@@ -84,7 +84,8 @@ var SITE = {
       .catch(function () {});
   }
   // Un lien d'actu : https://… ou une page du site, jamais « javascript: ».
-  function lienSur(l) { return /^https?:\/\//i.test(l) || !/^[a-z][a-z0-9+.-]*:/i.test(l); }
+  // Lien web ou page du site seulement : pas de « javascript: » (même caché par un espace ou une tabulation).
+  function lienSur(l) { return !/[\s\\\x00-\x1f]/.test(l) && (/^https?:\/\//i.test(l) || !/^[^\/?#]*:/.test(l)); }
 
   function afficherActus(box, actus) {
     var max = Number(box.getAttribute('data-news')) || 0;

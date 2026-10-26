@@ -29,5 +29,25 @@
     });
   }
 
+  // L'équipe du Discord (liste dans equipe-discord.js) : affichée même sans Supabase.
+  var COULEURS = {
+    'fondateur': 'fondateur', 'co-fondateur': 'fondateur', 'gérant serveur': 'responsable', 'directeur': 'responsable', 'admin': 'admin',
+    'resp staff': 'responsable', 'resp modo': 'responsable', 'super modo': 'modo', 'modérateur': 'modo',
+    'modo yt/twitch': 'modo', 'cm': 'animateur', 'dev bot discord': 'dev', 'helpeur': 'helper'
+  };
+  function equipeDiscord() {
+    var zone = document.getElementById('equipe-discord');
+    var liste = window.STAFF_DISCORD || [];
+    if (!zone || !liste.length) return;
+    zone.innerHTML = '<div class="staff-grid">' + liste.map(function (m) {
+      var roles = (m.roles && m.roles.length ? m.roles : ['Staff']).map(function (r) {
+        return '<span class="role ' + (COULEURS[String(r).toLowerCase()] || 'staff') + '">' + esc(r) + '</span>';
+      }).join('');
+      return '<div class="staff-card discord"><span class="av-l av-xl">' + esc(Array.from(String(m.nom))[0] || '?').toUpperCase() + '</span>' +
+        '<b dir="auto">' + esc(m.nom) + '</b><div class="roles">' + roles + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  equipeDiscord();
   C.pret.then(affiche);
 })();

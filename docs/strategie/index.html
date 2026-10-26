@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b1220">
@@ -293,7 +294,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   <button class="btn" id="bRegles">📖 Comment jouer</button>
   <div class="duo"><button class="btn" id="bFAQ">💬 FAQ</button><button class="btn bleu" id="bInstaller">📲 Installer le jeu</button></div>
   <p class="pseudoMenu" id="menuPseudo"></p>
-  <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a></div>
+  <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a> · <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X</a></div>
 </section>
 
 <!-- CARTE DE CAMPAGNE -->
@@ -352,16 +353,16 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 <div id="voile" class="voile hide"><div class="feuille" id="feuille"></div></div>
 
 <script src="../supabase-config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="monde.js?v=10"></script>
-<script src="histoire.js?v=10"></script>
-<script src="personnages.js?v=10"></script>
-<script src="moteur.js?v=10"></script>
-<script src="tableaux.js?v=10"></script>
-<script src="portraits.js?v=10"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script src="monde.js?v=12"></script>
+<script src="histoire.js?v=12"></script>
+<script src="personnages.js?v=12"></script>
+<script src="moteur.js?v=12"></script>
+<script src="tableaux.js?v=12"></script>
+<script src="portraits.js?v=12"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js?v=10"></script>
-<script src="jeu.js?v=10"></script>
+<script src="bataille3d.js?v=12"></script>
+<script src="jeu.js?v=12"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

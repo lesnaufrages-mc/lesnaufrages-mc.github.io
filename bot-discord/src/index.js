@@ -5,6 +5,8 @@ import { config, verifierConfig, LIEN_JEU, LIEN_DISCORD } from './config.js';
 import { commandes } from './commandes.js';
 import { dayNumber, heureParis, parseScore, MAX_TRIES } from './motdujour.js';
 import { enregistrer, classement } from './scores.js';
+import { actionsStaff, interactionStaff } from './staff.js';
+import { verifierActus, commandeActus } from './actus.js';
 
 verifierConfig();
 
@@ -29,6 +31,9 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Connecté en tant que ${c.user.tag} sur « ${guild.name} »`);
   c.user.setActivity(`Mot Mystère #${dayNumber()}`);
   setInterval(verifierRappel, 60_000);
+  // Actus du site : vérifiées toutes les 5 minutes.
+  setInterval(() => verifierActus(c, config.salonActus), 5 * 60_000);
+  verifierActus(c, config.salonActus);
   verifierRappel();
 });
 
@@ -69,8 +74,9 @@ client.on(Events.MessageCreate, async (message) => {
 client.on(Events.InteractionCreate, async (i) => {
   try {
     if (i.isButton() && i.customId === 'role-notif') return await basculerRoleNotif(i);
+    if (await interactionStaff(i)) return;
     if (!i.isChatInputCommand()) return;
-    const action = actions[i.commandName];
+    const action = actions[i.commandName] ?? actionsStaff[i.commandName] ?? (i.commandName === 'actus' ? commandeActus : null);
     if (action) await action(i);
   } catch (e) {
     console.error(e);
@@ -90,7 +96,11 @@ const actions = {
       '`/classement` : top 10 des joueurs',
       "`/invitation` : lien pour inviter tes potes",
       '',
+      '`/staff` : qui fait partie du staff',
+      '`/candidature` : postuler pour rejoindre le staff',
+      '',
       '**Modération** : `/clear`, `/mute`, `/roles`',
+      '**Staff** : `/staff-setup` (crée les rôles), `/recrutement` (ouvre les candidatures), `/actus` (poste la dernière actu du site)',
       '',
       '💡 Colle ton résultat du Mot Mystère dans un salon : le bot le compte tout seul.',
     ].join('\n'),

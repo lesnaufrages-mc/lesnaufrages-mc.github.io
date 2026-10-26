@@ -1,8 +1,8 @@
 // Imperium of Wars : le jeu marche hors ligne une fois installé.
 // Change VERSION à chaque mise à jour du jeu pour que les joueurs reçoivent la nouvelle version.
-var VERSION = 'imperium-v7';
+var VERSION = 'imperium-v8';
 var FICHIERS = [
-  './', 'index.html', 'monde.js?v=7', 'histoire.js?v=7', 'personnages.js?v=7', 'moteur.js?v=7', 'portraits.js?v=7', 'bataille3d.js?v=7', 'jeu.js?v=7',
+  './', 'index.html', 'monde.js?v=8', 'histoire.js?v=8', 'personnages.js?v=8', 'moteur.js?v=8', 'portraits.js?v=8', 'bataille3d.js?v=8', 'jeu.js?v=8',
   'manifest.webmanifest', 'icone-192.png', 'icone-512.png', '../supabase-config.js', '../site.js',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
 ];

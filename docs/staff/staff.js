@@ -31,7 +31,7 @@
 
   // L'équipe du Discord (liste dans equipe-discord.js) : affichée même sans Supabase.
   var COULEURS = {
-    'co-fondateur': 'fondateur', 'gérant serveur': 'responsable', 'directeur': 'responsable', 'admin': 'admin',
+    'fondateur': 'fondateur', 'co-fondateur': 'fondateur', 'gérant serveur': 'responsable', 'directeur': 'responsable', 'admin': 'admin',
     'resp staff': 'responsable', 'resp modo': 'responsable', 'super modo': 'modo', 'modérateur': 'modo',
     'modo yt/twitch': 'modo', 'cm': 'animateur', 'dev bot discord': 'dev', 'helpeur': 'helper'
   };

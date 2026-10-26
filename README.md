@@ -56,7 +56,8 @@ Tests de la logique du jeu : `npm test`
 - **Statistiques de visites** : [GoatCounter](https://www.goatcounter.com) (gratuit, sans cookie). Le code du compte
   est dans `docs/site.js` (`GOATCOUNTER`). Les visites se consultent sur https://lesnaufrages.goatcounter.com.
 - **Si tu refais `expo export -p web`** vers `docs/jouer/`, remets la ligne `<script src="/site.js" defer></script>`
-  dans `docs/jouer/index.html` pour continuer à compter les visites du jeu.
+  dans `docs/jouer/index.html` pour continuer à compter les visites du jeu., ainsi que les lignes du bouton Installer
+  (`manifest`, `theme-color`, `apple-touch-icon` et `<script src="/jouer/installer.js" defer></script>`).
 - **Pubs du site (Google AdSense)** : le code AdSense est déjà dans le `<head>` de `index.html`, `actualites.html`
   et `confidentialite.html`, et `docs/ads.txt` est servi sur https://lesnaufrages-mc.github.io/ads.txt.
   Ce qu'il reste à faire sur https://adsense.google.com (avec le même compte Google que AdMob) :

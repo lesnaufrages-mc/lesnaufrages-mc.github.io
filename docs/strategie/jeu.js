@@ -92,6 +92,24 @@
   }
   function icones(armee) { return armee.map(function (u) { return U[u.t].ico; }).join(' ') || 'Personne'; }
 
+  // Dessin d'un navire (40×30) : coque, mâts et voiles aux couleurs du royaume.
+  function coqueNavire(t, c) {
+    var bois = '<path d="M3 19H37L32 26H8Z" fill="#6b4423" stroke="#2a1a0c" stroke-width=".8"/>';
+    var mat = function (x, h) { return '<path d="M' + x + ' 20V' + h + '" stroke="#3b2a1a" stroke-width="1.3"/>'; };
+    var carree = function (x, y, w, hh) { return '<path d="M' + (x - w) + ' ' + y + 'Q' + x + ' ' + (y + 2.5) + ' ' + (x + w) + ' ' + y + 'V' + (y + hh) + 'Q' + x + ' ' + (y + hh + 2) + ' ' + (x - w) + ' ' + (y + hh) + 'Z" fill="' + c + '" stroke="#1f2937" stroke-width=".5"/>'; };
+    var latine = function (x, y) { return '<path d="M' + x + ' ' + y + 'L' + (x + 10) + ' 17H' + (x - 5) + 'Z" fill="#f5efe0" stroke="#1f2937" stroke-width=".5"/>'; };
+    if (t === 'galere') return mat(19, 4) + latine(19, 4) + bois + '<path d="M9 25l-3 4M14 25l-3 4M19 25l-3 4M24 25l-3 4M29 25l-3 4" stroke="#3b2a1a" stroke-width=".9"/>' + '<path d="M3 19l-2-2" stroke="' + c + '" stroke-width="2"/>';
+    if (t === 'cogue') return mat(20, 3) + carree(20, 5, 7, 11) + bois + '<path d="M5 19V15H11V19M29 19V14H35V19" fill="#7c5230" stroke="#2a1a0c" stroke-width=".6"/>';
+    if (t === 'caraque') return mat(16, 2) + mat(28, 8) + carree(16, 4, 7, 12) + latine(28, 8) + bois + '<path d="M4 19V14H10V19M30 19V13H36V19" fill="#7c5230" stroke="#2a1a0c" stroke-width=".6"/>';
+    var h = mat(11, 6) + mat(20, 1) + mat(29, 6) + carree(11, 7, 5, 9) + carree(20, 3, 6, 12) + carree(29, 7, 5, 9) + bois;
+    return t === 'vaisseau' ? h + '<path d="M7 22H33" stroke="#e8d9a8" stroke-width="1.6" stroke-dasharray="1.6 1.4"/>' + '<path d="M20 1l4 1.5-4 1.5" fill="' + c + '"/>' : h + '<path d="M31 19V13H37V19" fill="#7c5230" stroke="#2a1a0c" stroke-width=".6"/>';
+  }
+  function navireSVG(t, c, taille) { return '<svg class="nav" viewBox="0 0 40 30" width="' + (taille || 26) + '" height="' + Math.round((taille || 26) * 0.75) + '">' + coqueNavire(t, c) + '</svg>'; }
+  function puceNavire(n, f, extra) {
+    var N = M.NAVIRES[n.t];
+    return '<span class="u navire ' + (extra || '') + '">' + navireSVG(n.t, coul(f)) + N.nom + ' <small>' + Math.round(100 * n.hp / N.pv) + '%</small></span>';
+  }
+
   // ---------- Menu : époque puis royaume ----------
   function menu() {
     $('bContinuer').classList.toggle('hide', !charger());
@@ -215,6 +233,7 @@
       '<clipPath id="clipTerre"><path d="' + MONDE.terre + '"/></clipPath>' +
       '<symbol id="chateau" viewBox="-7 -7 14 14" overflow="visible"><path d="M-6 6V-1h2v-3h2v3h4v-3h2v3h2v7z"/><path d="M-1 6V3a1 1 0 0 1 2 0v3" fill="#3b2a16"/></symbol>' +
       '<symbol id="citadelle" viewBox="-8 -8 16 16" overflow="visible"><path d="M-7 7V0h2v-3h2v3h1v-6h1v-2h2v2h1v6h1v-3h2v3h2v7z"/><path d="M-1 7V4a1 1 0 0 1 2 0v3" fill="#3b2a16"/><path d="M0 -8v-4l3 1.5-3 1.5" fill="#c81e3a" stroke="none"/></symbol>' +
+      '<symbol id="navire" viewBox="0 0 40 30"><path d="M20 20V3" stroke="#3b2a1a" stroke-width="2"/><path d="M12 5Q20 8 28 5V16Q20 18 12 16Z" fill="#f5efe0" stroke="#1f2937"/><path d="M3 19H37L32 26H8Z" fill="#6b4423" stroke="#2a1a0c"/></symbol>' +
       '<symbol id="village" viewBox="-5 -5 10 10" overflow="visible"><path d="M-4 4V-0.5L0-4 4-0.5V4z"/></symbol>' +
       '<symbol id="mont" viewBox="-6 -6 12 12" overflow="visible"><path d="M-6 4L-1-5 1.5-1.5 2.5-3 6 4z" fill="#8a7a5c"/><path d="M-1-5L0.6 4H-6z" fill="#b8a782"/><path d="M-1-5L-2.4-2.4-1-3 0-1.6z" fill="#f5f1e6"/></symbol>' +
       '</defs>' +
@@ -407,16 +426,32 @@
       envoyer(choix, id);
       return;
     }
+    if (choix != null && choix !== id && ciblesNavales(choix).indexOf(id) >= 0) {
+      envoyerMer(choix, id);
+      return;
+    }
     choix = id;
     dessiner();
   }
 
+  // Côtes qu'on peut atteindre par la mer depuis la province choisie (contour bleu).
+  function ciblesNavales(id) {
+    if (id == null) return [];
+    var p = etat.provinces[id];
+    if (p.proprio !== moi() || !p.flotte || !p.flotte.some(function (n) { return !n.bouge; })) return [];
+    return M.PORTEE[id].filter(function (v) {
+      if (PROV[id].voisins.indexOf(v) >= 0) return false;
+      var o = etat.provinces[v].proprio;
+      return o === moi() || mobiles(id).length > 0;
+    });
+  }
   function mobiles(id) {
     return etat.provinces[id].armee.map(function (u, i) { return u.bouge ? -1 : i; }).filter(function (i) { return i >= 0; });
   }
 
   function dessiner() {
     var cibles = choix != null && etat.provinces[choix].proprio === moi() && mobiles(choix).length ? PROV[choix].voisins : [];
+    var ciblesMer = ciblesNavales(choix);
     var els = calqueProv.children;
     for (var i = 0; i < els.length; i++) {
       var p = etat.provinces[i];
@@ -427,6 +462,7 @@
     var h = '';
     if (choix != null) h += '<path class="bord sel" d="' + PROV[choix].d + '"/>';
     cibles.forEach(function (v) { h += '<path class="bord cible" d="' + PROV[v].d + '"/>'; });
+    ciblesMer.forEach(function (v) { h += '<path class="bord mer" d="' + PROV[v].d + '"/>'; });
     calqueBord.innerHTML = h;
     // Villes, noms et armées.
     var t = '';
@@ -444,6 +480,10 @@
         t += '<g class="armee"><circle cx="' + (x + 9) + '" cy="' + (y - 5) + '" r="5" fill="' + (p.proprio === moi() ? '#fbbf24' : '#f8fafc') + '" stroke="' + coul(p.proprio) + '" stroke-width="1.4"/>' +
           '<text x="' + (x + 9) + '" y="' + (y - 3) + '" text-anchor="middle">' + p.armee.length + '</text></g>';
       }
+      if (p.flotte && p.flotte.length) {
+        t += '<g class="armee flotteM"><use href="#navire" x="' + (x - 21) + '" y="' + (y - 11) + '" width="13" height="10"/>' +
+          '<text x="' + (x - 9) + '" y="' + (y - 3) + '" text-anchor="middle">' + p.flotte.length + '</text></g>';
+      }
     });
     calqueTexte.innerHTML = t;
     dessinerFrontieres();
@@ -451,7 +491,7 @@
     var F = etat.factions[moi()];
     $('tAnnee').textContent = etat.annee;
     $('tOr').textContent = F.or;
-    var net = M.revenu(etat, moi()) - M.entretien(etat, moi());
+    var net = soldeTour();
     $('tRev').textContent = (net >= 0 ? '+' : '') + net;
     $('tTour').textContent = 'Tour ' + etat.tour;
     $('tReg').textContent = M.nbProvinces(etat, moi()) + '/' + HIST.OBJECTIF;
@@ -459,6 +499,7 @@
     dessinerPanneau();
   }
 
+  function soldeTour() { return M.revenu(etat, moi()) + M.revenuCommerce(etat) - M.entretien(etat, moi()) - M.salaires(etat); }
   function dessinerPanneau() {
     var el = $('panneau');
     if (choix == null) {
@@ -467,18 +508,20 @@
         '<b>' + J.roi.nom + '</b><small>' + M.age(etat, J.roi) + ' ans · ' + J.cour.dyn + ' · ' + J.nom + '</small>' +
         '<small>' + (J.conj ? '💍 ' + J.conj.nom : J.cour.elu ? '🗳️ Souverain élu' : '💍 Pas marié(e)') + (h0 ? ' · 👑 Héritier : ' + h0.nom : J.cour.elu ? '' : ' · ⚠️ Pas d\'héritier') + '</small>' +
         (etat.pseudo ? '<small>🎖️ Joué par ' + etat.pseudo + '</small>' : '') + '</div></div>' +
-        '<div class="actions"><button class="btn" id="pCour">👑 Ma cour</button><button class="btn" id="pRoyaume">🏛️ Royaume</button>' + (M.quetes(etat, moi()).length ? '<button class="btn" id="pQuetes">📜 Quêtes</button>' : '') + '</div>' +
+        '<div class="actions wrap"><button class="btn" id="pCour">👑 Ma cour</button><button class="btn" id="pRoyaume">🏛️ Royaume</button><button class="btn" id="pCommerce">📦 Commerce</button>' + (M.quetes(etat, moi()).length ? '<button class="btn" id="pQuetes">📜 Quêtes</button>' : '') + '</div>' +
         resumeQuete() +
         '<div class="conseil">🧙 <b>Conseiller :</b> ' + conseil() + '</div>';
       $('pCour').onclick = function () { cour(); };
       $('pRoyaume').onclick = royaume;
+      $('pCommerce').onclick = commerce;
       if ($('pQuetes')) $('pQuetes').onclick = ecranQuetes;
       if ($('pQuete1')) $('pQuete1').onclick = ecranQuetes;
       return;
     }
     var p = etat.provinces[choix], P = PROV[choix], mien = p.proprio === moi();
     var h = '<h3><span class="pastille" style="background:' + coul(p.proprio) + '"></span>' + P.nom + '</h3>' +
-      '<div class="meta">' + nomF(p.proprio) + ' · 💰 +' + M.revenuProvince(p) + '/tour · ' + p.armee.length + '/' + M.MAX_UNITES + ' unités</div>';
+      '<div class="meta">' + nomF(p.proprio) + ' · 💰 +' + M.revenuProvince(p) + '/tour · ' + p.armee.length + '/' + M.MAX_UNITES + ' unités' +
+      (M.PRODUIT_DE[choix] ? ' · ' + M.PRODUITS[M.PRODUIT_DE[choix]].ico + ' ' + M.PRODUITS[M.PRODUIT_DE[choix]].nom : '') + (M.estCotiere(choix) ? ' · 🌊 côte' : '') + '</div>';
     var qProv = M.quetes(etat, moi()).filter(function (x) { return x.faite == null && x.q.provinces.indexOf(P.id) >= 0; });
     if (qProv.length) h += '<div class="tagQuete">' + qProv.map(function (x) { return x.q.ico + ' ' + (mien ? 'Fait partie de' : 'À prendre pour') + ' : <b>' + x.q.titre + '</b>'; }).join('<br>') + '</div>';
     if (mien) {
@@ -489,13 +532,17 @@
     }
     h += '<div class="bats">' + Object.keys(M.BATIMENTS).map(function (b) {
       var B = M.BATIMENTS[b], n = p.bat[b];
-      if (!mien && b !== 'murs') return '';
+      if (!mien && b !== 'murs' && !(b === 'port' && n)) return '';
+      if (b === 'port' && !M.estCotiere(choix)) return '';
       return '<span class="bat' + (n ? '' : ' vide') + '">' + B.ico + ' ' + (n ? B.niveaux[n - 1] : 'Pas de ' + B.nom.toLowerCase()) + '</span>';
     }).join('') + '</div>';
     h += '<div class="unites">' + (p.armee.length ? p.armee.map(function (u) { return puceUnite(u, mien && u.bouge ? 'bouge' : ''); }).join('') : '<span class="aide">Aucune armée ici.</span>') + '</div>';
+    if (p.flotte && p.flotte.length) h += '<div class="unites flotte">' + p.flotte.map(function (n) { return puceNavire(n, p.proprio, mien && n.bouge ? 'bouge' : ''); }).join('') + '</div>';
     if (mien) {
-      h += '<div class="actions"><button class="btn or" id="pRecruter">➕ Recruter</button><button class="btn" id="pConstruire">🏗️ Construire' + (p.construit ? ' ✓' : '') + '</button></div>';
-      h += '<div class="aide" style="margin-top:6px">' + (mobiles(choix).length ? 'Touche une province au contour jaune pour y envoyer tes troupes.' : 'Ces troupes ont déjà bougé ce tour-ci.') + '</div>';
+      h += '<div class="actions"><button class="btn or" id="pRecruter">➕ Recruter</button><button class="btn" id="pConstruire">🏗️ Construire' + (p.construit ? ' ✓' : '') + '</button>' +
+        (p.bat.port ? '<button class="btn bleu" id="pNavires">⛵ Navires</button>' : '') + '</div>';
+      h += '<div class="aide" style="margin-top:6px">' + (mobiles(choix).length ? 'Touche une province au contour jaune pour y envoyer tes troupes.' : 'Ces troupes ont déjà bougé ce tour-ci.') +
+        (ciblesNavales(choix).length ? ' Contour bleu : destinations par la mer (' + M.capacite(p.flotte) + ' unités transportables).' : M.estCotiere(choix) && !p.bat.port ? ' Construis un ⚓ port pour avoir une flotte.' : '') + '</div>';
     } else {
       var voisin = P.voisins.some(function (v) { return etat.provinces[v].proprio === moi(); });
       var rel = p.proprio >= 0 ? M.relation(etat, p.proprio) : 'guerre';
@@ -515,6 +562,7 @@
       $('pOrdre').onclick = function () { detailOrdre(choix); };
       $('pRecruter').onclick = function () { recrutement(choix); };
       $('pConstruire').onclick = function () { chantier(choix); };
+      if ($('pNavires')) $('pNavires').onclick = function () { chantierNaval(choix); };
     }
   }
 
@@ -558,7 +606,8 @@
     var p = etat.provinces[id], F = etat.factions[moi()];
     var h = '<h2>🏗️ Construire à ' + PROV[id].nom + '</h2><p>💰 <b style="color:#fbbf24">' + F.or + '</b> or. ' + (p.construit ? '<b>Chantier déjà lancé ce tour-ci.</b>' : 'Un seul chantier par ville et par tour.') + '</p><div class="recrues">';
     Object.keys(M.BATIMENTS).forEach(function (b) {
-      var B = M.BATIMENTS[b], n = p.bat[b], max = n >= B.niveaux.length;
+      if (b === 'port' && !M.estCotiere(id)) return;
+      var B = M.BATIMENTS[b], n = p.bat[b] || 0, max = n >= B.niveaux.length;
       var ok = !max && !p.construit && F.or >= B.couts[n];
       h += '<button class="recrue" data-b="' + b + '"' + (ok ? '' : ' disabled') + '><b>' + B.ico + ' ' + (max ? B.niveaux[n - 1] : B.niveaux[n]) + '</b>' +
         '<span class="prix">' + (max ? '✓ Maximum' : '💰 ' + B.couts[n]) + '</span><small>Niveau ' + n + '/' + B.niveaux.length + ' · ' + B.effet + '</small></button>';
@@ -573,6 +622,156 @@
         sauver(); dessiner(); chantier(id);
       };
     });
+  }
+
+  // ---------- Marine ----------
+  var DESC_NAV = {
+    galere: 'Rapide et pas chère. Porte 2 unités.',
+    cogue: 'Navire de la Hanse, solide. Porte 3 unités.',
+    caraque: 'Grand navire armé. Porte 4 unités.',
+    galion: 'Puissant et spacieux. Porte 5 unités.',
+    vaisseau: 'Le roi des mers : 70 canons. Porte 4 unités.'
+  };
+  function chantierNaval(id) {
+    var p = etat.provinces[id], F = etat.factions[moi()];
+    var h = '<h2>⛵ Chantier naval à ' + PROV[id].nom + '</h2><p>💰 <b style="color:#fbbf24">' + F.or + '</b> or · ' + p.flotte.length + '/' + M.MAX_NAVIRES + ' navires · ⚓ ' + M.BATIMENTS.port.niveaux[p.bat.port - 1] + '. Les navires neufs prendront la mer au prochain tour.</p><div class="recrues">';
+    M.TYPES_NAV.forEach(function (t) {
+      var N = M.NAVIRES[t], bloc = M.blocageNavire(etat, id, t);
+      if (bloc && N.annee > etat.annee + 250) return;
+      var ok = !bloc && F.or >= N.cout && p.flotte.length < M.MAX_NAVIRES;
+      h += '<button class="recrue" data-n="' + t + '"' + (ok ? '' : ' disabled') + '><b>' + navireSVG(t, F.coul, 30) + ' ' + N.nom + '</b><span class="prix">💰 ' + N.cout + '</span>' +
+        '<small>' + (bloc ? '🔒 ' + bloc : DESC_NAV[t] + ' ⚔️ ' + N.atq + ' · 🛡️ ' + N.pv) + '</small></button>';
+    });
+    h += '</div><p class="petitTxt">Une flotte transporte tes troupes vers les côtes de la même mer ou d\'une mer voisine, et garde tes côtes : un ennemi qui veut débarquer devra d\'abord la battre.</p><button class="btn" data-fermer>Terminé</button>';
+    feuille(h);
+    document.querySelectorAll('[data-n]').forEach(function (b) {
+      b.onclick = function () {
+        var err = M.construireNavire(etat, id, b.getAttribute('data-n'));
+        if (err) { toast(err); return; }
+        toast('⛵ Navire mis à l\'eau !');
+        sauver(); dessiner(); chantierNaval(id);
+      };
+    });
+  }
+  function envoyerMer(de, vers) {
+    var a = etat.provinces[de], c = etat.provinces[vers], ami = c.proprio === moi();
+    if (!ami && c.proprio >= 0 && M.relation(etat, c.proprio) !== 'guerre') {
+      feuille('<h2>⚔️ Déclarer la guerre ?</h2><p>Tu es en <b>' + M.relation(etat, c.proprio) + '</b> avec <b>' + etat.factions[c.proprio].nom + '</b>. Pour débarquer à ' + PROV[vers].nom + ', tu dois lui déclarer la guerre.</p>' +
+        '<button class="btn rouge" id="fGuerre">⚔️ Déclarer la guerre</button><button class="btn" data-fermer>Garder la paix</button>');
+      $('fGuerre').onclick = function () { var r = M.proposer(etat, c.proprio, 'guerre'); toast(r.msg); sauver(); dessiner(); envoyerMer(de, vers); };
+      return;
+    }
+    var navires = a.flotte.filter(function (n) { return !n.bouge; }), cap = M.capacite(a.flotte);
+    var dispo = mobiles(de), pris = dispo.slice(0, cap);
+    function rendu() {
+      var h = '<h2>' + (ami ? '⛵ Naviguer vers ' : '⚓ Débarquer à ') + PROV[vers].nom + '</h2><p>Par ' + M.nomMer(de, vers) + '. Tes ' + navires.length + ' navire(s) portent <b>' + cap + '</b> unité(s).</p>' +
+        '<div class="unites flotte">' + navires.map(function (n) { return puceNavire(n, moi()); }).join('') + '</div>';
+      if (dispo.length) h += '<p>Touche une unité pour l\'embarquer ou la laisser à quai (' + pris.length + '/' + cap + ').</p><div class="unites">' + dispo.map(function (i) {
+        return '<button class="u ' + (pris.indexOf(i) >= 0 ? 'choix' : 'off') + '" data-i="' + i + '">' + U[a.armee[i].t].ico + ' ' + U[a.armee[i].t].nom + ' <small>' + M.hommes(a.armee[i]) + '</small></button>';
+      }).join('') + '</div>';
+      if (ami) h += '<button class="btn bleu" id="fNav">⛵ ' + (pris.length ? 'Transporter ' + pris.length + ' unité(s)' : 'Déplacer la flotte seule') + '</button>';
+      else {
+        var gardes = M.flotteDefense(etat, vers), def = [];
+        gardes.forEach(function (j) { def = def.concat(etat.provinces[j].flotte); });
+        var fa = M.forceFlotte(navires), fd = M.forceFlotte(def) * (1 + 0.1 * (c.bat.port || 0));
+        h += '<div class="duel"><div class="camp"><b style="color:' + coul(moi()) + '">Ta flotte</b>' + navires.map(function (n) { return navireSVG(n.t, coul(moi()), 22); }).join('') + '</div><div class="vs">⚓</div><div class="camp"><b style="color:' + coul(c.proprio) + '">' + (def.length ? 'Flotte de ' + nomF(c.proprio) : 'Aucune flotte') + '</b>' +
+          (def.length ? def.map(function (n) { return navireSVG(n.t, coul(c.proprio), 22); }).join('') : '<small>La côte est libre !</small>') + '</div></div>';
+        if (def.length) h += '<div class="chances" style="color:' + (fa > fd * 1.3 ? '#22c55e' : fa > fd ? '#fbbf24' : '#e5484d') + '">' + (fa > fd * 1.3 ? '🟢 Ta flotte domine la mer' : fa > fd ? '🟠 Bataille navale serrée' : '🔴 Leur flotte est plus forte : ton débarquement risque d\'échouer') + '</div>';
+        var unites = pris.map(function (i) { return a.armee[i]; });
+        if (c.armee.length) { var ch = chances(unites, c); h += '<p class="petitTxt">À terre : ' + icones(c.armee) + ' — <span style="color:' + ch.c + '">' + ch.txt + '</span></p>'; }
+        if (!pris.length) h += '<button class="btn" disabled>Embarque au moins une unité</button>';
+        else if (!c.armee.length) h += '<button class="btn or" id="fDebPrendre">⚓ Débarquer et prendre la province</button>';
+        else h += '<button class="btn or" id="fDebCmd">⚓ Débarquer et commander la bataille</button><button class="btn" id="fDebAuto">⚡ Débarquer (résolution automatique)</button>';
+      }
+      h += '<button class="btn" data-fermer>Annuler</button>';
+      feuille(h);
+      document.querySelectorAll('#feuille .u[data-i]').forEach(function (b) {
+        b.onclick = function () {
+          var i = +b.getAttribute('data-i'), k = pris.indexOf(i);
+          if (k >= 0) pris.splice(k, 1); else if (pris.length < cap) pris.push(i); else toast('Tes navires sont pleins.');
+          rendu();
+        };
+      });
+      if ($('fNav')) $('fNav').onclick = function () {
+        var err = M.naviguer(etat, de, vers, pris);
+        fermer();
+        if (err) { toast(err); return; }
+        toast('⛵ La flotte arrive à ' + PROV[vers].nom + '.');
+        choix = vers; sauver(); dessiner();
+      };
+      function go(mode) {
+        var att = M.preparerDebarquement(etat, de, vers, pris);
+        fermer();
+        if (att.erreur) { toast(att.erreur); return; }
+        var suite = function () {
+          if (att.echec) { toast('⚓ Ta flotte est repoussée : tes troupes rentrent au port, éprouvées.'); finAction(de); return; }
+          if (!c.armee.length) { M.appliquerBataille(etat, att, null); finAction(vers); return; }
+          lancerBataille(att, mode === 'auto', function () { finAction(vers); });
+        };
+        sauver();
+        if (att.naval) batailleNavale(att, suite); else suite();
+      }
+      if ($('fDebPrendre')) $('fDebPrendre').onclick = function () { go('prendre'); };
+      if ($('fDebCmd')) $('fDebCmd').onclick = function () { go('commander'); };
+      if ($('fDebAuto')) $('fDebAuto').onclick = function () { go('auto'); };
+    }
+    rendu();
+  }
+  // Bataille navale animée : bordées, coques endommagées, navires qui sombrent.
+  function batailleNavale(att, suite) {
+    var N = att.naval, W = 340, H = 200, ca = coul(att.camp), cd = coul(N.campD);
+    var pos = function (k, gauche) { var col = Math.floor(k / 3), row = k % 3; return { x: gauche ? 52 + col * 46 + (row === 1 ? 12 : 0) : W - 52 - col * 46 - (row === 1 ? 12 : 0), y: 48 + row * 52 }; };
+    var navire = function (t, k, gauche, c) {
+      var q = pos(k, gauche);
+      return '<g class="nb" id="nb' + (gauche ? 'a' : 'd') + k + '" transform="translate(' + (q.x - 28) + ' ' + (q.y - 25) + ') scale(1.4)"><g' + (gauche ? '' : ' transform="translate(40 0) scale(-1 1)"') + '>' + coqueNavire(t, c) + '</g>' +
+        '<rect x="6" y="31" width="28" height="3" rx="1.5" fill="#00000066"/><rect class="pv" x="6" y="31" width="28" height="3" rx="1.5" fill="#22c55e"/></g>';
+    };
+    var a = N.a.slice(0, 9), d = N.d.slice(0, 9);
+    var h = '<h2>⚓ Bataille navale</h2><p class="sousTitre">' + N.mer + ' · ' + nomF(att.camp) + ' contre ' + nomF(N.campD) + '</p>' +
+      '<svg class="sceneNav" id="sceneNav" viewBox="0 0 ' + W + ' ' + H + '"><defs><linearGradient id="merNav" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e4f78"/><stop offset="1" stop-color="#0b2440"/></linearGradient></defs>' +
+      '<rect width="' + W + '" height="' + H + '" fill="url(#merNav)"/>' +
+      '<path d="M0 30q20-6 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0 40 0M0 90q20-6 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0 40 0M0 150q20-6 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0 40 0" fill="none" stroke="#9cc6e6" stroke-opacity=".18"/>' +
+      a.map(function (t, k) { return navire(t, k, true, ca); }).join('') + d.map(function (t, k) { return navire(t, k, false, cd); }).join('') +
+      '<g id="feuxNav"></g><text id="roundNav" x="' + W / 2 + '" y="18" text-anchor="middle">Les flottes se rapprochent…</text></svg>' +
+      '<div id="resNav" class="chances"></div><button class="btn or hide" id="fNavOk">Continuer</button>';
+    feuille(h);
+    var r = 0, tours = N.tours;
+    var maj = function (vie, types, cote) {
+      vie.slice(0, 9).forEach(function (hp, k) {
+        var g = $('nb' + cote + k);
+        if (!g) return;
+        var pct = hp / M.NAVIRES[types[k]].pv;
+        g.querySelector('.pv').setAttribute('width', Math.max(0, 28 * pct));
+        g.querySelector('.pv').setAttribute('fill', pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#fbbf24' : '#e5484d');
+        if (hp <= 0 && !g.classList.contains('coule')) g.classList.add('coule');
+      });
+    };
+    var feux = function (vie, gauche) {
+      var html = '';
+      vie.slice(0, 9).forEach(function (hp, k) {
+        if (hp <= 0) return;
+        var q = pos(k, gauche);
+        html += '<circle class="feu" cx="' + (q.x + (gauche ? 18 : -18)) + '" cy="' + (q.y + 2) + '" r="5"/><circle class="fumee" cx="' + (q.x + (gauche ? 24 : -24)) + '" cy="' + q.y + '" r="7"/>';
+      });
+      return html;
+    };
+    var pas = function () {
+      r++;
+      if (r >= tours.length) {
+        var gagne = N.gagnant === 0, moiGagne = (att.camp === moi()) === gagne;
+        $('roundNav').textContent = gagne ? 'Victoire de ' + nomF(att.camp) : 'Victoire de ' + nomF(N.campD);
+        $('resNav').innerHTML = (moiGagne ? '🏆 Victoire navale !' : '💀 Défaite en mer…') + '<br><small>Navires coulés : ' + N.coules[0] + ' (attaquant) · ' + N.coules[1] + ' (défenseur)</small>';
+        $('resNav').style.color = moiGagne ? '#22c55e' : '#e5484d';
+        $('fNavOk').classList.remove('hide');
+        return;
+      }
+      $('roundNav').textContent = 'Bordée ' + r + ' !';
+      $('feuxNav').innerHTML = feux(tours[r - 1].a, true) + feux(tours[r - 1].d, false);
+      setTimeout(function () { maj(tours[r].a, N.a, 'a'); maj(tours[r].d, N.d, 'd'); $('feuxNav').innerHTML = ''; }, 350);
+      setTimeout(pas, 900);
+    };
+    setTimeout(pas, 700);
+    $('fNavOk').onclick = function () { fermer(); suite(); };
   }
 
   // ---------- Envoi de troupes / attaque ----------
@@ -656,7 +855,7 @@
     var avant = etat.factions[moi()].or;
     var defenses = M.finDuTour(etat);
     choix = null; sauver(); dessiner();
-    var suite = function () { traiterPropositions(function () { traiterDefenses(defenses); }); };
+    var suite = function () { traiterEvenements(function () { traiterPropositions(function () { traiterDefenses(defenses); }); }); };
     rapport(etat.factions[moi()].or - avant, suite);
   };
 
@@ -667,7 +866,9 @@
     var h = '<h2>📜 Rapport du royaume</h2><p class="sousTitre">An ' + etat.annee + ' · Tour ' + etat.tour + ' · ' + J.nom + '</p>';
     h += '<div class="rapport"><section><h4>💰 Trésor</h4><div class="lignes">' +
       '<span>Impôts des provinces</span><b class="plus">+' + (R.revenu || 0) + '</b>' +
+      (R.commerce ? '<span>📦 Commerce</span><b class="plus">+' + R.commerce + '</b>' : '') +
       '<span>Entretien des armées</span><b class="moins">−' + (R.entretien || 0) + '</b>' +
+      (R.salaires ? '<span>🏛️ Salaires du conseil</span><b class="moins">−' + R.salaires + '</b>' : '') +
       '<span>Bilan du tour</span><b class="' + (gain >= 0 ? 'plus' : 'moins') + '">' + (gain >= 0 ? '+' : '') + gain + '</b>' +
       '<span>Trésor</span><b>' + J.or + ' or</b></div></section>';
     h += '<section><h4>👑 Cour</h4>' + (R.cour && R.cour.length ? '<ul>' + R.cour.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' :
@@ -692,10 +893,10 @@
   }
   // Vue d'ensemble du royaume : toutes tes provinces.
   function royaume() {
-    var J = etat.factions[moi()], rev = M.revenu(etat, moi()), ent = M.entretien(etat, moi());
+    var J = etat.factions[moi()], rev = M.revenu(etat, moi()), ent = M.entretien(etat, moi()), com = M.revenuCommerce(etat), sal = M.salaires(etat);
     var liste = etat.provinces.map(function (p, i) { return p.proprio === moi() ? i : -1; }).filter(function (i) { return i >= 0; })
       .sort(function (a, b) { return etat.provinces[a].ordre - etat.provinces[b].ordre; });
-    var h = '<h2>🏛️ ' + J.nom + '</h2><div class="lignes"><span>Revenus par tour</span><b class="plus">+' + rev + '</b><span>Entretien des armées</span><b class="moins">−' + ent + '</b><span>Solde</span><b class="' + (rev - ent >= 0 ? 'plus' : 'moins') + '">' + (rev - ent >= 0 ? '+' : '') + (rev - ent) + '</b><span>Trésor</span><b>' + J.or + ' or</b></div>' +
+    var h = '<h2>🏛️ ' + J.nom + '</h2><div class="lignes"><span>Impôts par tour</span><b class="plus">+' + rev + '</b><span>📦 Commerce</span><b class="plus">+' + com + '</b><span>Entretien armées et flottes</span><b class="moins">−' + ent + '</b><span>🏛️ Salaires du conseil</span><b class="moins">−' + sal + '</b><span>Solde</span><b class="' + (soldeTour() >= 0 ? 'plus' : 'moins') + '">' + (soldeTour() >= 0 ? '+' : '') + soldeTour() + '</b><span>Trésor</span><b>' + J.or + ' or</b></div>' +
       '<table class="tabRoyaume"><thead><tr><th>Province</th><th>💰</th><th>Ordre</th><th>Impôts</th><th>⚔️</th></tr></thead><tbody>';
     liste.forEach(function (i) {
       var p = etat.provinces[i];
@@ -748,13 +949,26 @@
     return '<div class="membre">' + portrait(looksMembre(m, F), f, 40) + '<div><b>' + m.nom + (h === m ? ' <span class="tag">👑 Héritier</span>' : '') + '</b><small>' +
       m.lien + (m.parent ? ' de ' + m.parent : '') + ' · ' + M.age(etat, m) + ' ans' + (m.epoux ? ' · 💍 ' + m.epoux.nom + (m.epoux.f >= 0 && m.epoux.f !== f ? ' (' + etat.factions[m.epoux.f].nom + ')' : '') + (m.epoux.matri ? ' · <span class="tag">♀ matrilinéaire</span>' : '') : '') + '</small></div>' + (extra || '') + '</div>';
   }
-  function cour(fid) {
+  function cour(fid, onglet) {
     var f = fid == null ? moi() : fid, F = etat.factions[f], mien = f === moi();
+    onglet = mien && F.cour.conseil ? onglet || 'famille' : 'famille';
     var h = '<h2>👑 ' + (mien ? 'Ta cour' : 'Cour de ' + F.nom) + '</h2>' +
       '<div class="trone">' + portrait(F.roi, f, 110) + '<div><b>' + F.roi.nom + '</b><small>' + (F.roi.sexe === 'f' ? 'Reine' : F.cour.elu ? 'Souverain élu' : 'Roi') + ' · ' + M.age(etat, F.roi) + ' ans</small><small>Dynastie : ' + F.cour.dyn + '</small>' +
       (F.conj ? '<small>💍 ' + F.conj.nom + (F.conj.de >= 0 ? ' (' + (F.conj.de === moi() ? 'ta famille' : etat.factions[F.conj.de].nom) + ')' : '') + ', ' + M.age(etat, F.conj) + ' ans' + (F.roi.sexe === 'f' && F.conj.matri ? ' · ♀ matrilinéaire' : '') + '</small>' : '') +
       (F.roi.sexe === 'f' && F.cour.dynEnfants ? '<small>⚠️ Mariage patrilinéaire : ses enfants seront de la maison ' + F.cour.dynEnfants + '</small>' : '') + '</div>' +
       (F.conj ? portrait(looksMembre(F.conj, F), f, 64) : '') + '</div>';
+    if (mien && F.cour.conseil) {
+      h += '<div class="onglets">' + [['famille', '👨‍👩‍👧 Famille'], ['conseil', '🏛️ Conseil'], ['nobles', '🎩 Courtisans']].map(function (o) {
+        return '<button data-og="' + o[0] + '"' + (o[0] === onglet ? ' class="on"' : '') + '>' + o[1] + '</button>';
+      }).join('') + '</div>';
+      if (onglet !== 'famille') {
+        h += onglet === 'conseil' ? ecranConseil(F) : ecranNobles(F);
+        h += '<button class="btn" data-fermer>Fermer</button>';
+        feuille(h);
+        brancherCour();
+        return;
+      }
+    }
     h += '<h4 class="titreFam">Famille</h4>' + (F.cour.fam.length ? F.cour.fam.slice().sort(function (a, b) { return a.ne - b.ne; }).map(function (m) { return ligneMembre(m, f); }).join('') :
       '<p class="calme">' + (F.cour.elu ? 'Un souverain élu n\'a pas d\'héritier : son successeur sera élu.' : 'Aucun parent proche. Sans héritier, la mort du souverain déclenchera une crise de succession !') + '</p>');
     if (mien && !F.cour.elu) h += '<p class="petitTxt">💡 Marie ta famille à d\'autres dynasties : leur humeur monte, l\'alliance devient plus facile, et si l\'héritier d\'un royaume épouse l\'un des tiens, son royaume peut te revenir en héritage !</p><button class="btn or" id="fMarier">💍 Arranger un mariage</button>';
@@ -762,6 +976,80 @@
     feuille(h);
     if ($('fMarier')) $('fMarier').onclick = choisirMariage;
     if ($('fRetourNego')) $('fRetourNego').onclick = function () { negocier(f); };
+    brancherCour();
+  }
+  function brancherCour() {
+    document.querySelectorAll('[data-og]').forEach(function (b) { b.onclick = function () { cour(null, b.getAttribute('data-og')); }; });
+    document.querySelectorAll('[data-siege]').forEach(function (b) { b.onclick = function () { choisirConseiller(b.getAttribute('data-siege')); }; });
+  }
+  function lookPersonne(p, F) { return p.look ? p : looksMembre(p, F); }
+  function jaugeLoy(l) { return '<i class="barreOrdre loy"><i style="width:' + l + '%;background:' + (l >= 60 ? '#22c55e' : l >= 30 ? '#fbbf24' : '#e5484d') + '"></i></i>'; }
+  function ecranConseil(F) {
+    var h = '<div class="lignes"><span>✨ Prestige</span><b>' + (F.prestige || 0) + '</b><span>🏛️ Salaires du conseil</span><b class="moins">−' + M.salaires(etat) + ' / tour</b></div>';
+    Object.keys(M.ROLES).forEach(function (r) {
+      var R = M.ROLES[r], p = M.conseiller(etat, r);
+      h += '<div class="siege"><span class="sIco">' + R.ico + '</span>' + (p ? portrait(lookPersonne(p, F), moi(), 44) : '<span class="videS">?</span>') +
+        '<div><b>' + M.nomRole(F, r) + '</b><small>' + (p ? p.nom + (p.lien ? ' (' + p.lien + ')' : '') + ' · ' + M.DOMAINES[p.dom] + ' ' + p.comp + '/10 → <b>' + M.valeurPour(p, r) + ' pts</b>' : 'Siège vide') + '</small>' +
+        '<small class="effet">' + R.effet + '</small>' + (p && p.loy != null ? jaugeLoy(p.loy) : '') + '</div>' +
+        '<button class="btn mini" data-siege="' + r + '">' + (p ? 'Changer' : 'Nommer') + '</button></div>';
+    });
+    return h + '<p class="petitTxt">💡 Un conseiller travaille à fond dans son domaine. Ailleurs, il ne donne qu\'un tiers de sa compétence. Chacun touche 1 or + la moitié de sa note par tour.</p>';
+  }
+  function ecranNobles(F) {
+    var h = '<p class="petitTxt">Les courtisans peu loyaux (en rouge) finissent par comploter : vol du trésor, émeutes… Un bon 🕵️ maître espion déjoue leurs complots. Festins, tournois et faveurs les gardent fidèles.</p>';
+    h += F.cour.nobles.slice().sort(function (a, b) { return a.loy - b.loy; }).map(function (n) {
+      return '<div class="membre">' + portrait(n, moi(), 40) + '<div><b>' + n.nom + (M.estAuConseil(F, 'n' + n.id) ? ' <span class="tag">🏛️ Conseil</span>' : '') + '</b><small>' + M.age(etat, n) + ' ans · ' + M.DOMAINES[n.dom] + ' ' + n.comp + '/10 · loyauté ' + n.loy + '</small>' + jaugeLoy(n.loy) + '</div></div>';
+    }).join('') || '<p class="calme">Personne à la cour.</p>';
+    return h;
+  }
+  function choisirConseiller(r) {
+    var R = M.ROLES[r], F = etat.factions[moi()], liste = M.candidats(etat).sort(function (a, b) { return M.valeurPour(b.p, r) - M.valeurPour(a.p, r); });
+    var actuel = F.cour.conseil[r];
+    var h = '<h2>' + R.ico + ' ' + M.nomRole(F, r) + '</h2><p>' + R.effet + ' Choisis quelqu\'un de doué en <b>' + M.DOMAINES[R.dom] + '</b>.</p><div class="diplo">';
+    liste.forEach(function (c) {
+      var p = c.p, v = M.valeurPour(p, r);
+      h += '<button class="ligneDiplo' + (c.cle === actuel ? ' on' : '') + '" data-cand="' + c.cle + '">' + portrait(lookPersonne(p, F), moi(), 34) + '<span class="dNom"><b>' + p.nom + (c.fam ? ' 👑' : '') + '</b><small>' + (c.fam ? p.lien + ' · ' : '') + M.DOMAINES[p.dom] + ' ' + p.comp + '/10' + (p.loy != null ? ' · loyauté ' + p.loy : '') + (M.estAuConseil(F, c.cle) && c.cle !== actuel ? ' · déjà au conseil' : '') + '</small></span><span class="note' + (v >= 7 ? ' haute' : v <= 2 ? ' basse' : '') + '">' + v + '</span></button>';
+    });
+    h += '</div>' + (actuel ? '<button class="btn" id="fVider">🚪 Renvoyer (siège vide)</button>' : '') + '<button class="btn" id="fRetCons">← Conseil</button>';
+    feuille(h);
+    document.querySelectorAll('[data-cand]').forEach(function (b) { b.onclick = function () { var e = M.nommer(etat, r, b.getAttribute('data-cand')); if (e) toast(e); sauver(); dessiner(); cour(null, 'conseil'); }; });
+    if ($('fVider')) $('fVider').onclick = function () { M.nommer(etat, r, null); sauver(); dessiner(); cour(null, 'conseil'); };
+    $('fRetCons').onclick = function () { cour(null, 'conseil'); };
+  }
+  // Événements de cour : un choix à faire au début du tour.
+  function traiterEvenements(ensuite) {
+    var E = (etat.evenements || [])[0];
+    if (etat.fin || !E) { ensuite(); return; }
+    feuille('<h2>' + E.titre + '</h2><p>' + E.texte + '</p><p class="petitTxt">💰 Trésor : ' + etat.factions[moi()].or + ' or · ✨ Prestige : ' + (etat.factions[moi()].prestige || 0) + '</p>' +
+      E.choix.map(function (c, k) { return '<button class="btn' + (k === 0 ? ' or' : '') + '" data-ev="' + k + '">' + c + '</button>'; }).join(''));
+    document.querySelectorAll('[data-ev]').forEach(function (b) {
+      b.onclick = function () { var m = M.choisirEvenement(etat, +b.getAttribute('data-ev')); fermer(); if (m) toast(m); sauver(); dessiner(); traiterEvenements(ensuite); };
+    });
+  }
+  // ---------- Commerce ----------
+  function importsDe(f) {
+    var mes = M.biens(etat, moi()), leurs = M.biens(etat, f);
+    var l = Object.keys(leurs).filter(function (k) { return !mes[k]; }).map(function (k) { return M.PRODUITS[k].ico + ' ' + M.PRODUITS[k].nom.toLowerCase(); });
+    return l.length ? l.join(', ') : 'des marchandises';
+  }
+  function commerce() {
+    var b = M.biens(etat, moi()), acc = M.accords(etat), max = M.maxAccords(etat), lx = M.luxes(etat, moi()), P = M.PRODUITS;
+    var h = '<h2>📦 Commerce</h2><p>Signe des accords commerciaux : chaque partenaire achète ce que tu produis et te vend ce qui te manque. Les ⚓ ports augmentent les profits et le nombre d\'accords.</p>' +
+      '<div class="lignes"><span>Revenus du commerce</span><b class="plus">+' + M.revenuCommerce(etat) + ' / tour</b><span>Accords</span><b>' + acc.length + ' / ' + max + '</b><span>⚓ Niveaux de ports</span><b>' + M.ports(etat, moi()) + '</b></div>' +
+      '<h4 class="titreFam">Tes marchandises</h4><div class="biens">' + Object.keys(b).map(function (k) { return '<span class="bien' + (P[k].luxe ? ' luxe' : '') + '">' + P[k].ico + ' ' + P[k].nom + (b[k] > 1 ? ' ×' + b[k] : '') + '</span>'; }).join('') + '</div>' +
+      '<p class="petitTxt">💎 Luxe à ta cour : ' + (lx.length ? lx.map(function (k) { return P[k].ico + ' ' + P[k].nom; }).join(', ') : 'aucun') + '. Chaque produit de luxe (possédé ou importé) calme le peuple : +2 d\'ordre public partout, jusqu\'à +8.</p>' +
+      '<h4 class="titreFam">Tes accords</h4>';
+    h += acc.length ? acc.map(function (f) {
+      return '<div class="membre">' + portrait(etat.factions[f].roi, f, 34) + '<div><b>' + etat.factions[f].nom + ' <span class="plus">+' + M.valeurAccord(etat, f) + '</span></b><small>Importe : ' + importsDe(f) + '</small></div><button class="btn mini" data-fin="' + f + '">Rompre</button></div>';
+    }).join('') : '<p class="calme">Aucun accord pour l\'instant.</p>';
+    var partenaires = M.diplomatie(etat).filter(function (d) { return d.rel !== 'guerre' && acc.indexOf(d.f) < 0; })
+      .map(function (d) { d.v = M.valeurAccord(etat, d.f); return d; }).sort(function (x, y) { return y.v - x.v; });
+    h += '<h4 class="titreFam">Partenaires possibles</h4><div class="diplo">' + partenaires.map(function (d) {
+      return '<button class="ligneDiplo" data-com="' + d.f + '">' + portrait(etat.factions[d.f].roi, d.f, 34) + '<span class="dNom"><b>' + d.nom + '</b><small>' + importsDe(d.f) + ' · ' + d.humeur + '</small></span><span class="note haute">+' + d.v + '</span></button>';
+    }).join('') + '</div><button class="btn" data-fermer>Fermer</button>';
+    feuille(h);
+    document.querySelectorAll('[data-com]').forEach(function (x) { x.onclick = function () { var r = M.proposer(etat, +x.getAttribute('data-com'), 'commerce'); toast((r.ok ? '✅ ' : '❌ ') + r.msg); sauver(); dessiner(); commerce(); }; });
+    document.querySelectorAll('[data-fin]').forEach(function (x) { x.onclick = function () { var r = M.proposer(etat, +x.getAttribute('data-fin'), 'finCommerce'); toast(r.msg); sauver(); dessiner(); commerce(); }; });
   }
   function choisirMariage() {
     var liste = M.diplomatie(etat).filter(function (d) { return d.rel !== 'guerre' && !etat.factions[d.f].cour.elu; });
@@ -832,10 +1120,11 @@
       $('fNon').onclick = function () { repM(false); };
       return;
     }
-    feuille('<h2>' + (paix ? '🕊️' : '🤝') + ' Un messager de ' + F.nom + '</h2>' +
+    var com = P.type === 'commerce';
+    feuille('<h2>' + (paix ? '🕊️' : com ? '📦' : '🤝') + ' Un messager de ' + F.nom + '</h2>' +
       '<div class="roiNego">' + portrait(F.roi, P.f, 56) + '<span><b>' + F.roi.nom + '</b><small>' + F.nom + ' · ' + M.nbProvinces(etat, P.f) + ' prov. · ' + M.humeur(D.att) + '</small></span></div>' +
       '<p><b>' + F.roi.nom + '</b> ' +
-      (paix ? 'est las de la guerre et te propose la <b>paix</b>.' : 'te propose une <b>alliance</b> : vous ne vous attaquerez plus, il défendra tes villes voisines et tu pourras lui demander de l\'or ou des troupes.') + '</p>' +
+      (paix ? 'est las de la guerre et te propose la <b>paix</b>.' : com ? 'te propose un <b>accord commercial</b> : ses marchands t\'apporteront ' + importsDe(P.f) + ' et te rapporteront <b>+' + M.valeurAccord(etat, P.f) + ' or</b> par tour.' : 'te propose une <b>alliance</b> : vous ne vous attaquerez plus, il défendra tes villes voisines et tu pourras lui demander de l\'or ou des troupes.') + '</p>' +
       '<button class="btn or" id="fOui">✅ Accepter</button><button class="btn" id="fNon">❌ Refuser</button>');
     var rep = function (oui) { var msg = M.repondre(etat, 0, oui); fermer(); if (msg) toast(msg); sauver(); dessiner(); traiterPropositions(ensuite); };
     $('fOui').onclick = function () { rep(true); };
@@ -900,6 +1189,7 @@
         '<button class="btn or" data-act="aideTroupes">🛡️ Demander des renforts</button>' +
         (D.aideT > etat.tour ? '<p class="petitTxt">Ton allié pourra t\'aider de nouveau dans ' + (D.aideT - etat.tour) + ' tour(s).</p>' : '');
     }
+    if (rel !== 'guerre') h += (etat.commerce || {})[f] ? '<button class="btn" data-act="finCommerce">📦 Mettre fin à l\'accord commercial</button>' : '<button class="btn bleu" data-act="commerce">📦 Accord commercial (+' + M.valeurAccord(etat, f) + ' or/tour)</button>';
     h += '<button class="btn" data-act="cadeau"' + (J.or < 100 ? ' disabled' : '') + '>🎁 Offrir 100 or (humeur +15)</button>';
     if (rel !== 'guerre' && !F.cour.elu && !J.cour.elu) h += '<button class="btn" id="fMariage">💍 Proposer un mariage</button>';
     if (rel === 'alliance') h += '<button class="btn" data-act="rompre">💔 Rompre l\'alliance</button>';
@@ -958,6 +1248,24 @@
       '♀ <b>Mariage matrilinéaire</b> : quand une femme de ta famille se marie, choisis « matrilinéaire ». Son mari quitte sa cour pour la tienne et leurs enfants sont de <b>ta</b> dynastie (et peuvent hériter de ton trône). Plus dur à faire accepter.',
       '♂ En mariage patrilinéaire, les enfants d\'une reine appartiennent à la maison de leur père : à sa mort, la dynastie change sur le trône !',
       'Les papes, doges et républiques élisent leur chef : pas de mariage possible avec eux.']],
+    conseil: ['🏛️ Conseil et courtisans', [
+      'Dans <b>👑 Ma cour</b>, l\'onglet <b>🏛️ Conseil</b> a 5 sièges : 📜 chancelier, ⚔️ maréchal, 💰 intendant, 🕵️ maître espion et ⛪ chapelain.',
+      'Nomme pour chaque siège un noble (ou un membre de ta famille) doué dans le bon domaine : sa note donne le bonus. Chaque conseiller touche un salaire.',
+      'L\'onglet <b>🎩 Courtisans</b> montre la loyauté de chacun. Sous 25, un courtisan complote : il vole le trésor ou soulève la capitale, sauf si ton maître espion le démasque.',
+      'Chaque tour peut apporter un <b>événement de cour</b> : festin, tournoi, querelle, ambassade, savant… Tes choix changent la loyauté, le prestige et le trésor.',
+      'Le <b>✨ prestige</b> monte avec les fêtes, les conquêtes et les quêtes. Il rend les mariages plus faciles et la noblesse plus fidèle.']],
+    marine: ['⚓ Marine et batailles navales', [
+      'Construis un <b>⚓ port</b> dans une province côtière (🌊), puis touche <b>⛵ Navires</b> : galères, cogues, caraques, galions puis vaisseaux de ligne selon l\'époque.',
+      'Sélectionne un port avec des navires : les côtes en <b>contour bleu</b> sont accessibles par la mer (même mer ou mer voisine). Chaque navire porte 2 à 5 unités.',
+      'Vers une côte à toi, la flotte transporte tes troupes. Vers une côte ennemie, tu <b>débarques</b> : il faut d\'abord battre la flotte qui garde cette mer.',
+      'La <b>bataille navale</b> se joue en bordées. Si tu la perds, tes troupes rentrent au port, éprouvées. Si tu la gagnes, la bataille continue à terre.',
+      'Tes flottes gardent aussi tes côtes : un ennemi devra les vaincre avant de débarquer chez toi. Les navires se réparent au port.']],
+    commerce: ['📦 Commerce', [
+      'Chaque province produit une marchandise (🌾 blé, 🍷 vin, 🧵 soie, 🌶️ épices…), visible dans son panneau.',
+      'Bouton <b>📦 Commerce</b> : signe des accords avec les royaumes en paix. Plus ils t\'apportent de produits que tu n\'as pas, plus l\'accord rapporte d\'or chaque tour.',
+      'Les ⚓ ports augmentent les profits et le nombre d\'accords possibles. Un bon chancelier aide à convaincre.',
+      '💎 Les produits de luxe (soie, épices, fourrures, ambre, or) calment le peuple : +2 d\'ordre public partout pour chacun.',
+      'La guerre rompt l\'accord commercial avec ce royaume.']],
     quetes: ['📜 Quêtes impériales', [
       'Certains royaumes peuvent <b>restaurer un empire historique</b> : l\'Empire romain, l\'empire de Charlemagne, le grand Califat, l\'Empire perse, la Rus, l\'Empire angevin…',
       'Bouton <b>📜 Quêtes</b> : la liste des provinces à posséder. Celles que tu tiens sont cochées ✅, touche les autres pour les voir sur la carte.',
@@ -981,6 +1289,9 @@
     ['Les personnages sont-ils réels ?', 'Oui : chaque royaume commence avec son vrai souverain, sa dynastie, son conjoint et ses enfants (Charlemagne, Richard Cœur de Lion, Saladin, Mehmed II, Louis XIV…). Ensuite, l\'histoire, c\'est toi qui l\'écris.'],
     ['Comment marchent les mariages ?', 'Touche 👑 Ma cour puis 💍 Arranger un mariage. Un mariage rapproche deux royaumes, et si l\'héritier d\'un royaume épouse l\'un des tiens, tu peux hériter de tout son royaume.'],
     ['C\'est quoi un mariage matrilinéaire ?', 'Quand une princesse (ou ta reine) se marie, les enfants sont normalement de la maison de leur père. En mariage matrilinéaire, le mari rejoint ta cour et les enfants restent de ta dynastie : pratique pour garder ton trône dans la famille quand tu n\'as que des filles.'],
+    ['Y a-t-il des batailles navales ?', 'Oui ! Construis un port et des navires, puis débarque sur les côtes ennemies : il faut d\'abord vaincre leur flotte dans une bataille navale. Les flottes gardent aussi tes côtes.'],
+    ['Comment gagner plus d\'or ?', 'Impôts, marchés, et surtout le 📦 commerce : signe des accords avec les royaumes qui produisent ce qui te manque. Nomme aussi un bon 💰 intendant au conseil.'],
+    ['À quoi sert le conseil ?', 'Dans 👑 Ma cour, onglet Conseil : 5 conseillers donnent des bonus (impôts, entretien, ordre, diplomatie, espionnage). Garde tes courtisans loyaux, sinon ils complotent !'],
     ['C\'est quoi les quêtes ?', 'Selon ton royaume, tu peux restaurer un empire historique (Empire romain, Charlemagne, Califat, Rus, Reconquista…). Touche 📜 Quêtes pour voir les provinces à conquérir et la récompense.'],
     ['Ma partie est-elle sauvegardée ?', 'Oui, automatiquement sur ton appareil, à chaque action. Reviens quand tu veux avec « Continuer la campagne ».'],
     ['Peut-on le télécharger ?', 'Oui ! Bouton « 📲 Installer le jeu » sur le menu : il s\'ajoute sur ton écran d\'accueil comme une vraie appli et marche même sans internet (sauf la 3D la toute première fois). Sur iPhone : bouton Partager de Safari puis « Sur l\'écran d\'accueil ».'],

@@ -69,6 +69,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 #carte .bord{fill:none;pointer-events:none;stroke-linejoin:round}
 #carte .bord.sel{stroke:#fff;stroke-width:2}
 #carte .bord.cible{stroke:#fbbf24;stroke-width:1.6;stroke-dasharray:4 3;animation:pointille 1s linear infinite}
+#carte .bord.mer{stroke:#38bdf8;stroke-width:1.6;stroke-dasharray:2 3;animation:pointille 1.4s linear infinite}
+#carte .flotteM text{fill:#0c4a6e}
 #carte text{pointer-events:none;font-family:system-ui,sans-serif}
 #carte .nom{font-size:6.5px;font-weight:800;fill:#fff;paint-order:stroke;stroke:#111827;stroke-width:1.8px}
 #carte .cour{font-size:6px}
@@ -189,6 +191,37 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .gestion .ordre small{color:var(--muted)}
 .barreOrdre{display:block;height:6px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}
 .barreOrdre i{display:block;height:100%;border-radius:9px}
+.actions.wrap{flex-wrap:wrap}.actions.wrap .btn{flex:1 1 40%}
+.u.navire{display:inline-flex;align-items:center;gap:4px;border-color:rgba(56,189,248,.45)}
+.u.navire svg.nav{flex:none}
+.recrue b svg.nav{vertical-align:middle}
+.camp svg.nav{margin:1px}
+.sceneNav{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block;margin:6px 0}
+.sceneNav text{fill:#fde68a;font-weight:800;font-size:13px}
+.sceneNav .nb{transition:transform 1.2s,opacity 1.2s}
+.sceneNav .nb.coule{opacity:.25}
+.sceneNav .nb.coule>g:first-child{transform-origin:20px 20px;animation:sombre 1.2s forwards}
+@keyframes sombre{to{transform:translateY(8px) rotate(25deg)}}
+.sceneNav .feu{fill:#fde047;opacity:.9;animation:flash .35s ease-out forwards}
+.sceneNav .fumee{fill:#e5e7eb;opacity:.5;animation:fume .9s ease-out forwards}
+@keyframes flash{from{r:2;opacity:1}to{r:7;opacity:0}}
+@keyframes fume{from{r:3;opacity:.6}to{r:11;opacity:0}}
+.onglets{display:flex;gap:6px;margin:8px 0}
+.onglets button{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:7px 4px;color:inherit;font-size:13px;font-weight:700}
+.onglets button.on{border-color:var(--or);color:#fde68a;background:rgba(251,191,36,.08)}
+.siege{display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0}
+.siege>div{flex:1;display:flex;flex-direction:column;min-width:0;gap:2px}
+.siege small{color:var(--muted);font-size:12px}.siege small.effet{font-size:11px;opacity:.8}
+.siege .sIco{font-size:20px;width:24px;text-align:center}
+.siege .videS{width:44px;height:44px;border-radius:50%;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+.barreOrdre.loy{height:5px;margin-top:3px}
+.ligneDiplo.on{border-color:var(--or)}
+.note{min-width:30px;text-align:center;font-weight:900;border-radius:8px;padding:3px 6px;background:rgba(255,255,255,.06)}
+.note.haute{color:#86efac;background:rgba(34,197,94,.12)}.note.basse{color:#fca5a5}
+.biens{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.bien{font-size:12px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.bien.luxe{border-color:rgba(251,191,36,.55);color:#fde68a}
+.plus{color:#22c55e}
 .resumeQuete{display:flex;flex-direction:column;gap:5px;width:100%;margin-top:8px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:7px 9px;color:inherit;text-align:left;font-size:13px}
 .resumeQuete small{color:var(--muted)}
 .tagQuete{font-size:12px;color:#fde68a;background:rgba(251,191,36,.08);border-left:3px solid var(--or);border-radius:6px;padding:5px 8px;margin:6px 0}
@@ -320,14 +353,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <script src="../supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="monde.js?v=8"></script>
-<script src="histoire.js?v=8"></script>
-<script src="personnages.js?v=8"></script>
-<script src="moteur.js?v=8"></script>
-<script src="portraits.js?v=8"></script>
+<script src="monde.js?v=9"></script>
+<script src="histoire.js?v=9"></script>
+<script src="personnages.js?v=9"></script>
+<script src="moteur.js?v=9"></script>
+<script src="portraits.js?v=9"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js?v=8"></script>
-<script src="jeu.js?v=8"></script>
+<script src="bataille3d.js?v=9"></script>
+<script src="jeu.js?v=9"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

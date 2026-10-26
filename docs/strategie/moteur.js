@@ -32,7 +32,8 @@
     murs:    { nom: 'Remparts', ico: '🏰', niveaux: ['Palissade', 'Murs de pierre', 'Forteresse'], couts: [80, 200, 400], effet: 'Défense en cas de siège' },
     caserne: { nom: 'Caserne',  ico: '⚒️', niveaux: ['Caserne', 'Grande caserne', 'Arsenal'], couts: [80, 200, 350], effet: 'Débloque de meilleures unités' },
     marche:  { nom: 'Marché',   ico: '💰', niveaux: ['Marché', 'Foire', 'Port marchand'], couts: [100, 220, 400], effet: '+10 / +25 / +45 or par tour' },
-    ferme:   { nom: 'Fermes',   ico: '🌾', niveaux: ['Fermes', 'Moulins'], couts: [60, 150], effet: '+5 / +12 or et soigne la garnison' }
+    ferme:   { nom: 'Fermes',   ico: '🌾', niveaux: ['Fermes', 'Moulins'], couts: [60, 150], effet: '+5 / +12 or et soigne la garnison' },
+    port:    { nom: 'Port',     ico: '⚓', niveaux: ['Port', 'Chantier naval', 'Arsenal maritime'], couts: [100, 220, 400], effet: 'Construit des navires, enrichit le commerce et répare la flotte', cotier: true }
   };
   var BONUS_MARCHE = [0, 10, 25, 45], BONUS_FERME = [0, 5, 12];
 
@@ -64,6 +65,143 @@
   var INDEX = {};
   PROV.forEach(function (p, i) { INDEX[p.id] = i; });
 
+  // ---------- Mers et marine ----------
+  var MERS = HISTOIRE.MERS || {};
+  var COTES = PROV.map(function () { return []; });
+  Object.keys(MERS).forEach(function (m) { MERS[m].provinces.split(' ').forEach(function (id) { COTES[INDEX[id]].push(m); }); });
+  // PORTEE[i] : provinces côtières qu'une flotte partie de i peut atteindre (même mer ou mer voisine).
+  var PORTEE = PROV.map(function (P, i) {
+    var mers = {};
+    COTES[i].forEach(function (m) { mers[m] = 1; MERS[m].voisines.forEach(function (v) { mers[v] = 1; }); });
+    return PROV.map(function (Q, j) { return j; }).filter(function (j) { return j !== i && COTES[j].some(function (m) { return mers[m]; }); });
+  });
+  function estCotiere(i) { return COTES[i].length > 0; }
+  function nomMer(i, j) {
+    var m = COTES[j].filter(function (x) { return COTES[i].indexOf(x) >= 0; })[0] || COTES[j][0];
+    return m ? MERS[m].nom : 'la mer';
+  }
+  var NAVIRES = {
+    galere:   { nom: 'Galère', ico: '🚣', cout: 80, pv: 60, atq: 6, cap: 2, annee: 0, port: 1 },
+    cogue:    { nom: 'Cogue', ico: '⛵', cout: 110, pv: 90, atq: 7, cap: 3, annee: 1150, port: 1 },
+    caraque:  { nom: 'Caraque', ico: '⛵', cout: 170, pv: 130, atq: 11, cap: 4, annee: 1400, port: 2 },
+    galion:   { nom: 'Galion', ico: '⛵', cout: 230, pv: 170, atq: 17, cap: 5, annee: 1550, port: 2 },
+    vaisseau: { nom: 'Vaisseau de ligne', ico: '⚓', cout: 320, pv: 230, atq: 28, cap: 4, annee: 1650, port: 3 }
+  };
+  var TYPES_NAV = Object.keys(NAVIRES), MAX_NAVIRES = 6;
+  var MARITIMES = ['byzance', 'venise', 'normandssicile', 'sicile', 'aragon', 'portugal', 'hollande', 'bretagne', 'danemark', 'vikings', 'norvege', 'kalmar', 'genes', 'ottomans', 'fatimides', 'barbaresques'];
+  function creerNavire(t) { return { t: t, hp: NAVIRES[t].pv, bouge: false }; }
+  function blocageNavire(etat, id, t) {
+    var N = NAVIRES[t], p = etat.provinces[id];
+    if (!estCotiere(id)) return 'Pas de côte ici.';
+    if (N.annee > etat.annee) return 'Disponible en ' + N.annee;
+    if ((p.bat.port || 0) < N.port) return 'Port niv. ' + N.port;
+    return null;
+  }
+  function meilleurNavire(etat, id) {
+    var l = TYPES_NAV.filter(function (t) { return !blocageNavire(etat, id, t); });
+    return l.sort(function (a, b) { return NAVIRES[b].cout - NAVIRES[a].cout; })[0] || null;
+  }
+  function construireNavire(etat, id, t) {
+    var p = etat.provinces[id], f = p.proprio;
+    if (f < 0) return 'Province rebelle.';
+    var b = blocageNavire(etat, id, t);
+    if (b) return b;
+    if (etat.factions[f].or < NAVIRES[t].cout) return "Pas assez d'or.";
+    if (p.flotte.length >= MAX_NAVIRES) return 'Port plein (' + MAX_NAVIRES + ' navires max).';
+    etat.factions[f].or -= NAVIRES[t].cout;
+    var n = creerNavire(t); n.bouge = true;
+    p.flotte.push(n);
+    return null;
+  }
+  function forceFlotte(fl) { return fl.reduce(function (s, n) { return s + NAVIRES[n.t].atq * n.hp / NAVIRES[n.t].pv; }, 0); }
+  function capacite(fl) { return fl.reduce(function (s, n) { return s + (n.bouge ? 0 : NAVIRES[n.t].cap); }, 0); }
+  function entretienNavire(t) { return Math.ceil(NAVIRES[t].cout / 30); }
+  // Flottes du propriétaire de « vers » qui gardent ses côtes (même mer).
+  function flotteDefense(etat, vers) {
+    var f = etat.provinces[vers].proprio;
+    if (f < 0) return [];
+    return etat.provinces.map(function (p, j) { return j; }).filter(function (j) {
+      var p = etat.provinces[j];
+      return p.proprio === f && p.flotte && p.flotte.length && (j === vers || COTES[j].some(function (m) { return COTES[vers].indexOf(m) >= 0; }));
+    });
+  }
+  // Bataille navale : les navires (modifiés sur place) échangent des bordées pendant 6 rounds au plus.
+  function combatNaval(att, def, alea, bonusDef) {
+    var tours = [], vie = function () { return { a: att.map(function (n) { return Math.round(n.hp); }), d: def.map(function (n) { return Math.round(n.hp); }) }; };
+    tours.push(vie());
+    for (var r = 0; r < 6; r++) {
+      var vA = att.filter(function (n) { return n.hp > 0; }), vD = def.filter(function (n) { return n.hp > 0; });
+      if (!vA.length || !vD.length) break;
+      var tirs = [];
+      vA.forEach(function (n) { tirs.push([vD[Math.floor(alea() * vD.length)], NAVIRES[n.t].atq * (0.6 + 0.8 * alea()) * 2.2]); });
+      vD.forEach(function (n) { tirs.push([vA[Math.floor(alea() * vA.length)], NAVIRES[n.t].atq * (0.6 + 0.8 * alea()) * 2.2 * (1 + bonusDef)]); });
+      tirs.forEach(function (t) { t[0].hp = Math.max(0, t[0].hp - t[1]); });
+      tours.push(vie());
+    }
+    var fA = forceFlotte(att), fD = forceFlotte(def);
+    return { gagnant: fD <= 0 ? 0 : fA <= 0 ? 1 : fA > fD * (1 + bonusDef) ? 0 : 1, tours: tours };
+  }
+  // Transport de troupes par la mer entre deux provinces à soi.
+  function naviguer(etat, de, vers, indices) {
+    var a = etat.provinces[de], b = etat.provinces[vers];
+    if (PORTEE[de].indexOf(vers) < 0) return 'Trop loin par la mer.';
+    if (b.proprio !== a.proprio) return 'Province ennemie : il faut débarquer.';
+    var navires = a.flotte.filter(function (n) { return !n.bouge; });
+    if (!navires.length) return 'Aucun navire disponible ici.';
+    if (b.flotte.length + navires.length > MAX_NAVIRES) return 'Port plein là-bas.';
+    var libres = indices.filter(function (k) { return a.armee[k] && !a.armee[k].bouge; });
+    if (libres.length > capacite(a.flotte)) return 'Tes navires ne portent que ' + capacite(a.flotte) + ' unités.';
+    if (b.armee.length + libres.length > MAX_UNITES) return "Trop d'unités là-bas.";
+    var unites = prendre(a, libres);
+    unites.forEach(function (u) { u.bouge = true; });
+    navires.forEach(function (n) { n.bouge = true; });
+    a.flotte = a.flotte.filter(function (n) { return navires.indexOf(n) < 0; });
+    b.armee = b.armee.concat(unites);
+    b.flotte = b.flotte.concat(navires);
+    return null;
+  }
+  // Débarquement : la flotte emmène des troupes attaquer une côte. D'abord la bataille navale
+  // contre les flottes qui gardent cette côte, puis (si elle est gagnée) la bataille à terre.
+  function preparerDebarquement(etat, de, vers, indices) {
+    var a = etat.provinces[de], c = etat.provinces[vers];
+    if (PORTEE[de].indexOf(vers) < 0) return { erreur: 'Trop loin par la mer.' };
+    if (c.proprio === a.proprio) return { erreur: 'Déjà à toi.' };
+    if (a.proprio === etat.joueur && c.proprio >= 0 && relation(etat, c.proprio) !== 'guerre')
+      return { erreur: 'Tu es en ' + relation(etat, c.proprio) + ' avec ' + etat.factions[c.proprio].nom + '.', paix: c.proprio };
+    var navires = a.flotte.filter(function (n) { return !n.bouge; });
+    if (!navires.length) return { erreur: 'Aucun navire disponible ici.' };
+    var libres = indices.filter(function (k) { return a.armee[k] && !a.armee[k].bouge; });
+    if (!libres.length) return { erreur: 'Aucune unité choisie.' };
+    if (libres.length > capacite(a.flotte)) return { erreur: 'Tes navires ne portent que ' + capacite(a.flotte) + ' unités.' };
+    var unites = prendre(a, libres);
+    navires.forEach(function (n) { n.bouge = true; });
+    a.flotte = a.flotte.filter(function (n) { return navires.indexOf(n) < 0; });
+    var att = { de: de, vers: vers, camp: a.proprio, unites: unites, flotte: navires, mer: true };
+    var gardes = flotteDefense(etat, vers);
+    if (gardes.length) {
+      var def = [];
+      gardes.forEach(function (j) { def = def.concat(etat.provinces[j].flotte); });
+      var typesA = navires.map(function (n) { return n.t; }), typesD = def.map(function (n) { return n.t; });
+      var r = combatNaval(navires, def, aleaPartie(etat), 0.1 * (c.bat.port || 0));
+      gardes.forEach(function (j) { etat.provinces[j].flotte = etat.provinces[j].flotte.filter(function (n) { return n.hp > 0; }); });
+      att.flotte = navires.filter(function (n) { return n.hp > 0; });
+      att.naval = { gagnant: r.gagnant, tours: r.tours, a: typesA, d: typesD, mer: nomMer(de, vers), campD: c.proprio };
+      var coules = [typesA.length - att.flotte.length, typesD.length - def.filter(function (n) { return n.hp > 0; }).length];
+      att.naval.coules = coules;
+      var msg = '⚓ Bataille navale en ' + att.naval.mer + ' : ' + nomF(etat, att.camp) + (r.gagnant === 0 ? ' bat la flotte de ' : ' est repoussé par la flotte de ') + nomF(etat, c.proprio) + ' (' + coules[0] + ' contre ' + coules[1] + ' navires coulés).';
+      log(etat, msg);
+      if (c.proprio === etat.joueur && att.camp !== etat.joueur) etat.nouvelles.push(msg);
+      if (r.gagnant === 1) {
+        // Échec : les troupes souffrent en mer et rentrent au port.
+        att.unites.forEach(function (u) { u.hp = Math.max(UNITES[u.t].pv, u.hp * 0.6); u.bouge = true; });
+        a.armee = a.armee.concat(att.unites).slice(0, MAX_UNITES);
+        a.flotte = a.flotte.concat(att.flotte).slice(0, MAX_NAVIRES);
+        att.echec = true;
+      }
+    }
+    return att;
+  }
+
   function epoque(id) { return HISTOIRE.EPOQUES.filter(function (e) { return e.id === id; })[0]; }
 
   // ---------- Partie ----------
@@ -75,7 +213,7 @@
     });
     var joueur = factions.map(function (f) { return f.id; }).indexOf(factionId);
     var provinces = PROV.map(function (p, i) {
-      return { proprio: -1, armee: [], bat: { murs: alea() < 0.4 ? 1 : 0, caserne: 0, marche: 0, ferme: 0 },
+      return { proprio: -1, armee: [], flotte: [], bat: { murs: alea() < 0.4 ? 1 : 0, caserne: 0, marche: 0, ferme: 0, port: 0 },
         base: 15 + Math.floor(alea() * 4) * 5, construit: false, impots: 1, ordre: 65, agit: 0 };
     });
     E.factions.forEach(function (f, fi) {
@@ -83,7 +221,7 @@
         var p = provinces[INDEX[id]];
         p.proprio = fi;
         if (k === 0) {
-          p.bat = { murs: 2, caserne: 1, marche: 1, ferme: 1 };
+          p.bat = { murs: 2, caserne: 1, marche: 1, ferme: 1, port: 0 };
           p.base = 30;
           p.armee = armeeDepart(E.annee, 4, alea);
         } else {
@@ -95,6 +233,18 @@
     provinces.forEach(function (p) {
       if (p.proprio === -1) p.armee = armeeDepart(E.annee, 1 + Math.floor(alea() * 2), alea, true);
     });
+    // Ports et flottes de départ : capitales côtières, et toutes les côtes des puissances maritimes.
+    E.factions.forEach(function (f, fi) {
+      var marin = MARITIMES.indexOf(f[0]) >= 0;
+      f[3].forEach(function (id, k) {
+        var i = INDEX[id], p = provinces[i];
+        if (!estCotiere(i) || (k > 0 && !(marin && alea() < 0.5))) return;
+        p.bat.port = marin && k === 0 ? 2 : 1;
+        var types = TYPES_NAV.filter(function (t) { return NAVIRES[t].annee <= E.annee && NAVIRES[t].port <= p.bat.port; });
+        var n = k === 0 ? (marin ? 3 : 1) : 1;
+        for (var q = 0; q < n && types.length; q++) p.flotte.push(creerNavire(types[types.length - 1 - (q % Math.min(2, types.length))]));
+      });
+    });
     var pas = Math.max(1, Math.round((HISTOIRE.FIN - E.annee) / 150));
     var etat = {
       v: 2, epoque: epoqueId, annee: E.annee, pas: pas, tour: 1, joueur: joueur,
@@ -104,6 +254,7 @@
     };
     initDiplo(etat, alea);
     creerCour(etat, alea);
+    assurerConseil(etat);
     etat.provinces.forEach(function (p, i) { p.ordre = cibleOrdre(etat, i); });
     return etat;
   }
@@ -127,9 +278,10 @@
   }
   function entretienUnite(t) { return Math.ceil(UNITES[t].cout / 25); }
   function entretien(etat, f) {
-    return etat.provinces.reduce(function (s, p) {
-      return s + (p.proprio === f ? p.armee.reduce(function (t, u) { return t + entretienUnite(u.t); }, 0) : 0);
+    var e = etat.provinces.reduce(function (s, p) {
+      return s + (p.proprio === f ? p.armee.reduce(function (t, u) { return t + entretienUnite(u.t); }, 0) + (p.flotte || []).reduce(function (t, n) { return t + entretienNavire(n.t); }, 0) : 0);
     }, 0);
+    return f === etat.joueur ? Math.round(e * (1 - 0.03 * bonusConseil(etat, 'marechal'))) : e;
   }
   function estCapitale(etat, i) { var f = etat.provinces[i].proprio; return f >= 0 && etat.factions[f].capitale === i; }
   // Ce que chaque cause ajoute ou retire à l'ordre public d'une province (affiché au joueur).
@@ -147,6 +299,12 @@
     if (p.agit) d.push(['🔥 Conquête récente', -p.agit]);
     var F = etat.factions[f];
     if (F.empires && F.empires.length) d.push(['🦅 Empire restauré', 5 * Math.min(2, F.empires.length)]);
+    if (f === etat.joueur) {
+      var ch = Math.floor(bonusConseil(etat, 'chapelain') / 2);
+      if (ch) d.push(['⛪ ' + nomRole(F, 'chapelain'), ch]);
+      var lx = luxes(etat, f).length;
+      if (lx) d.push(['💎 Produits de luxe (' + lx + ')', 2 * Math.min(4, lx)]);
+    }
     return d;
   }
   function cibleOrdre(etat, i) {
@@ -196,7 +354,11 @@
     etat.factions.forEach(function (F, f) {
       var cout = entretien(etat, f);
       F.or -= cout;
-      if (f === etat.joueur) etat.rapport.entretien = cout;
+      if (f === etat.joueur) {
+        etat.rapport.entretien = cout;
+        etat.rapport.salaires = salaires(etat);
+        F.or -= etat.rapport.salaires;
+      }
       // Plus d'or : des soldats désertent.
       var garde = 0;
       while (F.or < 0 && garde++ < 20) {
@@ -247,7 +409,8 @@
   function assurerCour(etat) {
     if (!etat.factions[0].roi) creerCour(etat, aleaPartie(etat));
     if (!etat.rapport) etat.rapport = { cour: [], revoltes: [], entretien: 0 };
-    etat.provinces.forEach(function (p) { if (p.ordre == null) p.ordre = 65; if (p.impots == null) p.impots = 1; if (p.agit == null) p.agit = 0; });
+    etat.provinces.forEach(function (p) { if (p.ordre == null) p.ordre = 65; if (p.impots == null) p.impots = 1; if (p.agit == null) p.agit = 0; if (!p.flotte) p.flotte = []; if (p.bat.port == null) p.bat.port = 0; });
+    assurerConseil(etat);
   }
   function heritier(F) {
     var liste = F.cour.fam.slice().sort(function (a, b) {
@@ -307,6 +470,7 @@
     var h = heritier(F);
     if (kb >= 0 && h && F.cour.fam[kb] === h) score -= 30; // donner son héritier coûte cher
     if (kb < 0) score -= 10;
+    score += bonusConseil(etat, 'chancelier') + Math.min(10, Math.floor((etat.factions[etat.joueur].prestige || 0) / 10));
     if (matri) score -= 15 + (kb >= 0 && h && F.cour.fam[kb] === h ? 20 : 0); // perdre un prince (et ses enfants) coûte plus
     return Math.round(score);
   }
@@ -447,6 +611,293 @@
     });
   }
 
+  // ---------- Commerce ----------
+  // etat.commerce[f] = { depuis } : accords commerciaux du joueur avec le royaume f.
+  var PRODUITS = HISTOIRE.PRODUITS || {}, PRODUIT_DE = [];
+  Object.keys(HISTOIRE.PRODUCTION || {}).forEach(function (k) { HISTOIRE.PRODUCTION[k].split(' ').forEach(function (id) { PRODUIT_DE[INDEX[id]] = k; }); });
+  function biens(etat, f) {
+    var b = {};
+    etat.provinces.forEach(function (p, i) { if (p.proprio === f && PRODUIT_DE[i]) b[PRODUIT_DE[i]] = (b[PRODUIT_DE[i]] || 0) + 1; });
+    return b;
+  }
+  function ports(etat, f) { return etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? p.bat.port || 0 : 0); }, 0); }
+  // Deux royaumes sont proches s'ils se touchent ou partagent une mer.
+  function proches(etat, f, g) {
+    return etat.provinces.some(function (p, i) {
+      if (p.proprio !== f) return false;
+      return PROV[i].voisins.concat(PORTEE[i]).some(function (v) { return etat.provinces[v].proprio === g; });
+    });
+  }
+  function accords(etat) {
+    etat.commerce = etat.commerce || {};
+    return Object.keys(etat.commerce).map(Number);
+  }
+  function valeurAccord(etat, f) {
+    var j = etat.joueur, bj = biens(etat, j), bf = biens(etat, f), v = 2;
+    Object.keys(bf).forEach(function (k) { if (!bj[k]) v += Math.round(PRODUITS[k].prix / 2); });
+    Object.keys(bj).forEach(function (k) { if (!bf[k]) v += Math.round(PRODUITS[k].prix / 4); });
+    v *= 1 + 0.08 * Math.min(5, ports(etat, j));
+    if (!proches(etat, j, f)) v *= 0.6;
+    return Math.min(30, Math.round(v));
+  }
+  function maxAccords(etat) { return 2 + Math.min(4, Math.floor(ports(etat, etat.joueur) / 2)) + (bonusConseil(etat, 'chancelier') >= 7 ? 1 : 0); }
+  function revenuCommerce(etat) { return accords(etat).reduce(function (s, f) { return s + valeurAccord(etat, f); }, 0); }
+  // Produits de luxe dont dispose un royaume (les siens, et pour le joueur ceux de ses partenaires).
+  function luxes(etat, f) {
+    var b = biens(etat, f);
+    if (f === etat.joueur) accords(etat).forEach(function (g) { var x = biens(etat, g); for (var k in x) b[k] = 1; });
+    return Object.keys(b).filter(function (k) { return PRODUITS[k].luxe; });
+  }
+  function rompreCommerce(etat, f, raison) {
+    if (!etat.commerce || !etat.commerce[f]) return;
+    delete etat.commerce[f];
+    var m = '📦 Accord commercial avec ' + etat.factions[f].nom + ' rompu' + (raison ? ' : ' + raison : '.');
+    log(etat, m);
+    etat.nouvelles.push(m);
+  }
+  function tourCommerce(etat) {
+    var total = 0;
+    accords(etat).forEach(function (f) {
+      if (!nbProvinces(etat, f)) { rompreCommerce(etat, f, 'le royaume a disparu.'); return; }
+      if (relation(etat, f) === 'guerre') { rompreCommerce(etat, f, 'vous êtes en guerre.'); return; }
+      var v = valeurAccord(etat, f);
+      total += v;
+      etat.factions[f].or += Math.round(v / 2);
+      changerAttitude(etat, f, 1);
+    });
+    etat.factions[etat.joueur].or += total;
+    if (etat.rapport) etat.rapport.commerce = total;
+  }
+
+  // ---------- La cour : conseil, courtisans, complots et événements ----------
+  var ROLES = {
+    chancelier: { nom: 'Chancelier', ico: '📜', dom: 'dip', effet: 'Les royaumes t\'apprécient chaque tour ; mariages, alliances et accords plus faciles.' },
+    marechal: { nom: 'Maréchal', ico: '⚔️', dom: 'mar', effet: 'Entretien des armées et des flottes −3 % par point.' },
+    intendant: { nom: 'Intendant', ico: '💰', dom: 'int', effet: 'Impôts +2 % par point.' },
+    espion: { nom: 'Maître espion', ico: '🕵️', dom: 'intr', effet: 'Déjoue les complots (+10 % par point).' },
+    chapelain: { nom: 'Chapelain', ico: '⛪', dom: 'pie', effet: 'Ordre public +1 tous les 2 points dans tout le royaume.' }
+  };
+  var DOMAINES = { dip: '📜 Diplomatie', mar: '⚔️ Guerre', int: '💰 Finances', intr: '🕵️ Intrigue', pie: '⛪ Piété' };
+  var TITRES = {
+    franc: ['Comte', 'Duc', 'Baron', 'Sire'], anglais: ['Earl', 'Lord', 'Sir', 'Baron'], germ: ['Graf', 'Herzog', 'Freiherr', 'Ritter'],
+    ital: ['Conte', 'Marchese', 'Duca', 'Messer'], iber: ['Conde', 'Duque', 'Don', 'Marqués'], nord: ['Jarl', 'Herse', 'Lendmann', 'Jarl'],
+    slave: ['Boyard', 'Kniaz', 'Voïvode', 'Boyard'], hongrois: ['Comte', 'Ban', 'Palatin', 'Baron'], byz: ['Stratège', 'Sébaste', 'Archonte', 'Logothète'],
+    arabe: ['Émir', 'Vizir', 'Cheikh', 'Cadi'], turc: ['Pacha', 'Bey', 'Agha', 'Vizir'], steppe: ['Bey', 'Noyan', 'Tarkhan', 'Bey'],
+    perse: ['Khan', 'Mirza', 'Vizir', 'Beg'], caucase: ['Eristavi', 'Atabeg', 'Mtavari', 'Eristavi']
+  };
+  function nomRole(F, r) {
+    if (r !== 'chapelain') return ROLES[r].nom;
+    var c = F.cour.c;
+    return /arabe|turc|perse|steppe/.test(c) ? 'Grand cadi' : c === 'byz' || c === 'slave' ? 'Patriarche' : 'Chapelain';
+  }
+  function creerNoble(etat, F, alea) {
+    var t = TITRES[F.cour.c] || TITRES.franc, doms = Object.keys(DOMAINES);
+    var look = lookCulture(F.cour.c, alea);
+    if (look.tete === 'couronne' || look.tete === 'byzance') look.tete = alea() < 0.5 ? 'chapeau' : 'aucun';
+    if (look.tete === 'fourrure' && alea() < 0.5) look.tete = 'kalpak';
+    etat.idNoble = (etat.idNoble || 0) + 1;
+    return {
+      id: etat.idNoble, nom: (function () {
+        var pris = (F.cour.nobles || []).map(function (n) { return n.nom.split(' ').slice(1).join(' '); }), nom;
+        for (var k = 0; k < 6; k++) { nom = nomAlea(etat, F, 'm', alea); if (pris.indexOf(nom) < 0) break; }
+        return t[Math.floor(alea() * t.length)] + ' ' + nom;
+      })(), ne: etat.annee - 22 - Math.floor(alea() * 35), sexe: 'm',
+      dom: doms[Math.floor(alea() * doms.length)], comp: 2 + Math.floor(alea() * 5) + Math.floor(alea() * 4), loy: 45 + Math.floor(alea() * 40), look: look
+    };
+  }
+  // Les membres adultes de la famille peuvent aussi siéger au conseil.
+  function talent(m) {
+    if (!m.dom) {
+      var h = 0;
+      for (var k = 0; k < m.nom.length; k++) h = (h * 31 + m.nom.charCodeAt(k)) >>> 0;
+      m.dom = Object.keys(DOMAINES)[h % 5];
+      m.comp = 3 + (h >> 3) % 6;
+    }
+    return m;
+  }
+  function assurerConseil(etat) {
+    var J = etat.factions[etat.joueur];
+    if (!J || !J.cour || J.cour.conseil) return;
+    var alea = aleaPartie(etat);
+    J.cour.conseil = {};
+    J.cour.nobles = [];
+    for (var k = 0; k < 6; k++) J.cour.nobles.push(creerNoble(etat, J, alea));
+    if (J.prestige == null) J.prestige = 20;
+    // Au départ, chaque siège revient au noble le plus doué pour lui.
+    Object.keys(ROLES).forEach(function (r) {
+      var libres = J.cour.nobles.filter(function (n) { return !estAuConseil(J, 'n' + n.id); });
+      libres.sort(function (a, b) { return valeurPour(b, r) - valeurPour(a, r); });
+      if (libres[0]) J.cour.conseil[r] = 'n' + libres[0].id;
+    });
+  }
+  // Compétence d'un candidat pour un siège : pleine dans son domaine, réduite ailleurs.
+  function valeurPour(c, r) { talent(c); return c.dom === ROLES[r].dom ? c.comp : Math.max(1, Math.floor(c.comp / 3)); }
+  function estAuConseil(F, cle) { return Object.keys(F.cour.conseil || {}).some(function (r) { return F.cour.conseil[r] === cle; }); }
+  function personneCour(F, cle) {
+    if (!cle) return null;
+    if (cle.charAt(0) === 'n') { var id = +cle.slice(1); return F.cour.nobles.filter(function (n) { return n.id === id; })[0] || null; }
+    var nom = cle.slice(1);
+    return F.cour.fam.filter(function (m) { return m.nom === nom; })[0] || null;
+  }
+  function conseiller(etat, r) {
+    var J = etat.factions[etat.joueur];
+    if (!J.cour.conseil) return null;
+    var p = personneCour(J, J.cour.conseil[r]);
+    if (!p && J.cour.conseil[r]) delete J.cour.conseil[r];
+    return p;
+  }
+  function bonusConseil(etat, r) { var p = etat.factions[etat.joueur] && etat.factions[etat.joueur].cour && conseiller(etat, r); return p ? valeurPour(p, r) : 0; }
+  function candidats(etat) {
+    var J = etat.factions[etat.joueur];
+    var l = J.cour.nobles.map(function (n) { return { cle: 'n' + n.id, p: n, fam: false }; });
+    J.cour.fam.forEach(function (m) { if (etat.annee - m.ne >= 16 && !(m.epoux && !m.epoux.matri && m.sexe === 'f')) l.push({ cle: 'f' + m.nom, p: talent(m), fam: true }); });
+    return l;
+  }
+  function nommer(etat, r, cle) {
+    var J = etat.factions[etat.joueur];
+    if (!ROLES[r]) return 'Siège inconnu.';
+    if (!cle) { delete J.cour.conseil[r]; return null; }
+    var p = personneCour(J, cle);
+    if (!p) return 'Personne introuvable.';
+    Object.keys(J.cour.conseil).forEach(function (x) { if (J.cour.conseil[x] === cle) delete J.cour.conseil[x]; });
+    var ancien = personneCour(J, J.cour.conseil[r]);
+    if (ancien && ancien.loy != null) ancien.loy = Math.max(0, ancien.loy - 15); // un renvoi vexe
+    J.cour.conseil[r] = cle;
+    if (p.loy != null) p.loy = Math.min(100, p.loy + 10);
+    return null;
+  }
+  function salaires(etat) {
+    var J = etat.factions[etat.joueur];
+    if (!J.cour.conseil) return 0;
+    return Object.keys(ROLES).reduce(function (s, r) { var p = conseiller(etat, r); return s + (p ? 1 + Math.floor(valeurPour(p, r) / 2) : 0); }, 0);
+  }
+
+  // Événements de cour : le joueur choisit, chaque choix a ses effets.
+  var SAVANTS = ['un maître bâtisseur', 'un poète renommé', 'un astronome', 'un grand peintre', 'un médecin savant', 'un troubadour', 'un cartographe'];
+  function evenement(etat, type, alea, data) {
+    var J = etat.factions[etat.joueur], E = { type: type, data: data || {} };
+    var noble = function () { return J.cour.nobles[Math.floor(alea() * J.cour.nobles.length)]; };
+    if (type === 'festin') { E.titre = '🍗 Un grand festin ?'; E.texte = 'Les nobles murmurent que la cour de ' + J.roi.nom + ' manque d\'éclat. Ils réclament un grand festin.'; E.choix = ['🍷 Organiser le festin (−60 or)', '🙅 Pas de dépense inutile']; }
+    else if (type === 'tournoi') { E.titre = '🏇 Un tournoi'; E.texte = 'Les chevaliers du royaume rêvent d\'un grand tournoi pour montrer leur bravoure.'; E.choix = ['🎺 Organiser le tournoi (−90 or)', '🙅 Refuser']; }
+    else if (type === 'faveur') { var n = noble(); if (!n) return null; E.data.id = n.id; E.titre = '🙇 ' + n.nom + ' demande une faveur'; E.texte = n.nom + ' te demande une pension pour ses services.'; E.choix = ['💰 Accorder (−40 or)', '🙅 Refuser']; }
+    else if (type === 'rivalite') {
+      if (J.cour.nobles.length < 2) return null;
+      var x = J.cour.nobles[Math.floor(alea() * J.cour.nobles.length)], y = J.cour.nobles.filter(function (q) { return q !== x; })[Math.floor(alea() * (J.cour.nobles.length - 1))];
+      E.data = { x: x.id, y: y.id }; E.titre = '⚔️ Querelle à la cour'; E.texte = x.nom + ' et ' + y.nom + ' se disputent une terre et veulent que tu tranches.'; E.choix = ['👉 Donner raison à ' + x.nom, '👉 Donner raison à ' + y.nom];
+    }
+    else if (type === 'savant') { var s = SAVANTS[Math.floor(alea() * SAVANTS.length)]; E.data.s = s; E.titre = '🎨 Un visiteur illustre'; E.texte = 'Arrivé de loin, ' + s + ' propose de servir ta cour.'; E.choix = ['🤝 L\'accueillir (−70 or)', '👋 Le renvoyer']; }
+    else if (type === 'pelerinage') { E.titre = '🙏 Des reliques'; E.texte = 'Un grand pèlerinage traverse le royaume. Le clergé demande ton soutien.'; E.choix = ['⛪ Financer (−50 or)', '🙅 Ne rien donner']; }
+    else if (type === 'ambassade') {
+      var amis = diplomatie(etat).filter(function (d) { return d.rel !== 'guerre'; });
+      if (!amis.length) return null;
+      var d = amis[Math.floor(alea() * amis.length)]; E.data.f = d.f;
+      E.titre = '🎁 Une ambassade de ' + d.nom; E.texte = 'Les ambassadeurs de ' + etat.factions[d.f].roi.nom + ' arrivent avec des présents.'; E.choix = ['🎉 Les recevoir en grande pompe (−30 or)', '🙂 Un accueil simple'];
+    }
+    else if (type === 'noble') { var nv = creerNoble(etat, J, alea); E.data.n = nv; E.titre = '🎩 Un nouveau venu'; E.texte = nv.nom + ' (' + DOMAINES[nv.dom] + ' ' + nv.comp + '/10) demande à entrer à ta cour.'; E.choix = ['🤝 L\'accueillir', '🙅 Refuser']; }
+    else if (type === 'complot') { var c = personneCour(J, 'n' + data.id); if (!c) return null; E.titre = '🕵️ Complot découvert !'; E.texte = 'Ton maître espion a découvert que ' + c.nom + ' complote contre toi.'; E.choix = ['⛓️ Le jeter au cachot', '🕊️ Lui pardonner']; }
+    return E;
+  }
+  function choisirEvenement(etat, n) {
+    var E = (etat.evenements || []).shift();
+    if (!E) return null;
+    var J = etat.factions[etat.joueur], a = n === 0, msg;
+    var tous = function (d) { J.cour.nobles.forEach(function (x) { x.loy = Math.max(0, Math.min(100, x.loy + d)); }); };
+    var cout = function (o) { if (J.or < o) return false; J.or -= o; return true; };
+    var noble = function (id) { return personneCour(J, 'n' + id); };
+    var pres = function (d) { J.prestige = Math.max(0, (J.prestige || 0) + d); };
+    if (E.type === 'festin') {
+      if (a && cout(60)) { tous(12); pres(5); msg = '🍷 Le festin est un succès : les nobles sont ravis (loyauté +12, prestige +5).'; }
+      else if (a) msg = 'Pas assez d\'or pour le festin.';
+      else { tous(-5); msg = 'Les nobles trouvent ta cour bien triste (loyauté −5).'; }
+    } else if (E.type === 'tournoi') {
+      if (a && cout(90)) { pres(10); tous(6); var g = J.cour.nobles[Math.floor(aleaPartie(etat)() * J.cour.nobles.length)]; if (g) g.loy = Math.min(100, g.loy + 15); msg = '🏆 Tournoi grandiose' + (g ? ', remporté par ' + g.nom : '') + ' (prestige +10).'; }
+      else if (a) msg = 'Pas assez d\'or pour le tournoi.';
+      else msg = 'Pas de tournoi cette année.';
+    } else if (E.type === 'faveur') {
+      var x = noble(E.data.id);
+      if (!x) msg = 'Il a quitté la cour.';
+      else if (a && cout(40)) { x.loy = Math.min(100, x.loy + 25); msg = x.nom + ' te remercie (loyauté +25).'; }
+      else if (a) msg = 'Pas assez d\'or.';
+      else { x.loy = Math.max(0, x.loy - 20); msg = x.nom + ' est vexé (loyauté −20).'; }
+    } else if (E.type === 'rivalite') {
+      var g2 = noble(a ? E.data.x : E.data.y), p2 = noble(a ? E.data.y : E.data.x);
+      if (g2) g2.loy = Math.min(100, g2.loy + 20);
+      if (p2) p2.loy = Math.max(0, p2.loy - 20);
+      msg = (g2 ? g2.nom : '?') + ' gagne la querelle' + (p2 ? ', ' + p2.nom + ' t\'en veut' : '') + '.';
+    } else if (E.type === 'savant') {
+      if (a && cout(70)) { pres(8); var cap = etat.provinces[J.capitale]; if (cap && cap.proprio === etat.joueur) cap.ordre = Math.min(100, cap.ordre + 10); msg = '🎨 ' + E.data.s.charAt(0).toUpperCase() + E.data.s.slice(1) + ' embellit ta capitale (prestige +8).'; }
+      else if (a) msg = 'Pas assez d\'or.';
+      else msg = 'Le visiteur repart vers une autre cour.';
+    } else if (E.type === 'pelerinage') {
+      if (a && cout(50)) { etat.provinces.forEach(function (p) { if (p.proprio === etat.joueur) p.ordre = Math.min(100, p.ordre + 6); }); pres(3); msg = '⛪ Le peuple t\'acclame (ordre public +6 partout).'; }
+      else if (a) msg = 'Pas assez d\'or.';
+      else { var cp = etat.provinces[J.capitale]; if (cp && cp.proprio === etat.joueur) cp.ordre = Math.max(0, cp.ordre - 5); msg = 'Le clergé est déçu.'; }
+    } else if (E.type === 'ambassade') {
+      if (!etat.diplo[E.data.f]) msg = '';
+      else if (a && cout(30)) { changerAttitude(etat, E.data.f, 15); pres(2); msg = '🎉 L\'ambassade repart enchantée (humeur +15).'; }
+      else { changerAttitude(etat, E.data.f, 5); msg = 'L\'ambassade repart contente (humeur +5).'; }
+    } else if (E.type === 'noble') {
+      if (a) { J.cour.nobles.push(E.data.n); msg = E.data.n.nom + ' rejoint ta cour.'; }
+      else msg = 'Tu le renvoies chez lui.';
+    } else if (E.type === 'complot') {
+      var c = noble(E.data.id);
+      if (!c) msg = 'Le comploteur a fui.';
+      else if (a) { J.cour.nobles.splice(J.cour.nobles.indexOf(c), 1); tous(-3); pres(2); msg = '⛓️ ' + c.nom + ' croupit au cachot. La cour tremble.'; }
+      else { c.loy = 60; pres(-5); msg = '🕊️ ' + c.nom + ' jure fidélité, ému par ta clémence.'; }
+    }
+    if (msg) log(etat, msg);
+    return msg;
+  }
+  // Une année de vie de cour pour le joueur : loyauté, complots, arrivées, morts, événements.
+  function tourCourtisans(etat, alea) {
+    var J = etat.factions[etat.joueur];
+    assurerConseil(etat);
+    etat.evenements = [];
+    if (!J.cour.nobles) return;
+    var espion = bonusConseil(etat, 'espion');
+    for (var k = J.cour.nobles.length - 1; k >= 0; k--) {
+      var n = J.cour.nobles[k], auConseil = estAuConseil(J, 'n' + n.id);
+      n.loy = Math.max(0, Math.min(100, n.loy + (auConseil ? 1 : -1) + ((J.prestige || 0) >= 60 ? 1 : (J.prestige || 0) < 10 ? -1 : 0) + Math.round(alea() * 4 - 2)));
+      if (etat.annee - n.ne > 55 && alea() < probaMort(etat.annee - n.ne) * etat.pas) {
+        J.cour.nobles.splice(k, 1);
+        etat.rapport.cour.push('🕯️ ' + n.nom + ' est mort' + (auConseil ? ' : son siège au conseil est libre.' : '.'));
+        continue;
+      }
+      if (n.loy < 25 && alea() < 0.35) {
+        if (alea() < 0.2 + 0.1 * espion) etat.evenements.push(evenement(etat, 'complot', alea, { id: n.id }));
+        else {
+          // Le complot réussit : vol du trésor ou troubles, puis le traître s'enfuit.
+          J.cour.nobles.splice(k, 1);
+          if (alea() < 0.5) {
+            var vol = Math.max(20, Math.floor(J.or * 0.15));
+            J.or = Math.max(0, J.or - vol);
+            etat.rapport.cour.push('🗡️ Complot ! ' + n.nom + ' s\'enfuit avec ' + vol + ' pièces d\'or du trésor.');
+          } else {
+            var cap = etat.provinces[J.capitale];
+            if (cap && cap.proprio === etat.joueur) cap.ordre = Math.max(0, cap.ordre - 20);
+            etat.rapport.cour.push('🗡️ Complot ! ' + n.nom + ' soulève la capitale contre toi (ordre −20) puis s\'enfuit.');
+          }
+          J.prestige = Math.max(0, (J.prestige || 0) - 5);
+        }
+      }
+    }
+    if (J.cour.nobles.length < 4 && alea() < 0.6) {
+      var nv = creerNoble(etat, J, alea);
+      J.cour.nobles.push(nv);
+      etat.rapport.cour.push('🎩 ' + nv.nom + ' rejoint ta cour (' + DOMAINES[nv.dom] + ' ' + nv.comp + '/10).');
+    }
+    // Le chancelier entretient les amitiés.
+    var ch = bonusConseil(etat, 'chancelier');
+    if (ch >= 4) etat.diplo.forEach(function (D, f) { if (D && D.rel !== 'guerre') changerAttitude(etat, f, ch >= 8 ? 2 : 1); });
+    if (alea() < 0.5) {
+      var types = ['festin', 'tournoi', 'faveur', 'rivalite', 'savant', 'pelerinage', 'ambassade', 'noble'];
+      if (etat.annee < 1100) types.splice(1, 1);
+      var E = evenement(etat, types[Math.floor(alea() * types.length)], alea);
+      if (E) etat.evenements.push(E);
+    }
+    etat.evenements = etat.evenements.filter(Boolean);
+  }
+
   // ---------- Quêtes : restaurer un empire historique ----------
   var QUETES = HISTOIRE.QUETES || [];
   function quetes(etat, f) {
@@ -463,6 +914,7 @@
     F.empires = (F.empires || []).concat(q.id);
     F.nom = q.nom;
     F.or += q.or;
+    if (moi) F.prestige = (F.prestige || 0) + 30;
     etat.provinces.forEach(function (p) { if (p.proprio === f) { p.ordre = Math.min(100, (p.ordre == null ? 60 : p.ordre) + 15); p.agit = 0; } });
     var m = q.ico + ' ' + (moi ? 'Quête accomplie ! ' : '') + ancien + ' devient l\'' + q.nom + ' (' + q.titre.toLowerCase() + ').' + (moi ? ' +' + q.or + ' or, ordre public +15 partout.' : '');
     log(etat, m);
@@ -488,7 +940,8 @@
   }
 
   function revenu(etat, f) {
-    return etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? revenuProvince(p) : 0); }, 0);
+    var r = etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? revenuProvince(p) : 0); }, 0);
+    return f === etat.joueur ? Math.round(r * (1 + 0.02 * bonusConseil(etat, 'intendant'))) : r;
   }
   function nbProvinces(etat, f) {
     return etat.provinces.filter(function (p) { return p.proprio === f; }).length;
@@ -787,6 +1240,9 @@
       c.armee = survA.slice(0, MAX_UNITES);
       if (b && b.mur && b.mur.segs.some(function (s) { return s.hp <= 0; })) c.bat.murs = Math.max(0, c.bat.murs - 1);
       if (att.camp === etat.joueur && ancien >= 0) changerAttitude(etat, ancien, -25);
+      if (att.camp === etat.joueur) etat.factions[att.camp].prestige = (etat.factions[att.camp].prestige || 0) + 1;
+      // La flotte entre au port conquis (les navires qui y étaient sont capturés).
+      if (att.flotte) c.flotte = att.flotte.concat(c.flotte || []).slice(0, MAX_NAVIRES);
       c.agit = 25;
       c.ordre = Math.min(c.ordre == null ? 40 : c.ordre, 40);
       c.impots = 1;
@@ -796,6 +1252,7 @@
     } else {
       c.armee = survD;
       a.armee = a.armee.concat(survA).slice(0, MAX_UNITES);
+      if (att.flotte) a.flotte = (a.flotte || []).concat(att.flotte).slice(0, MAX_NAVIRES);
       log(etat, '🛡️ ' + nomF(etat, ancien) + ' repousse ' + nomF(etat, att.camp) + ' à ' + PROV[att.vers].nom + '.');
     }
     return gagne;
@@ -841,7 +1298,16 @@
       if (F.or > 250) {
         var id = miennes[Math.floor(alea() * Math.min(3, miennes.length))], p = etat.provinces[id];
         var choix = p.bat.marche < 2 ? 'marche' : p.bat.caserne < 2 ? 'caserne' : p.bat.murs < 2 ? 'murs' : alea() < 0.5 ? 'caserne' : 'marche';
+        if (estCotiere(id) && p.bat.marche >= 1 && p.bat.port < 2 && alea() < 0.3) choix = 'port';
         construire(etat, id, choix);
+      }
+      // 1 bis. Une flotte pour garder les côtes et débarquer.
+      if (F.or > 220 && alea() < 0.4) {
+        var chantiers = miennes.filter(function (i) { return etat.provinces[i].bat.port && etat.provinces[i].flotte.length < 4; });
+        if (chantiers.length) {
+          var ch = chantiers[Math.floor(alea() * chantiers.length)], nt = meilleurNavire(etat, ch);
+          if (nt && NAVIRES[nt].cout < F.or - 80) construireNavire(etat, ch, nt);
+        }
       }
       // 2. Recruter aux frontières menacées.
       var essais = 0;
@@ -884,6 +1350,32 @@
         var b = batailleAttaque(etat, att, Math.floor(alea() * 1e9));
         resoudreAuto(b);
         appliquerBataille(etat, att, b);
+      });
+      // 4. Débarquer sur une côte faible.
+      miennes.forEach(function (i) {
+        var p = etat.provinces[i];
+        if (p.proprio !== f || !p.flotte || alea() > 0.3) return;
+        var cap = capacite(p.flotte);
+        var dispo = p.armee.map(function (u, k) { return u.bouge ? -1 : k; }).filter(function (k) { return k >= 0; }).slice(0, cap);
+        if (dispo.length < 2) return;
+        if (dispo.length === p.armee.length) dispo.pop();
+        var fEnvoi = force(dispo.map(function (k) { return p.armee[k]; })), fNav = forceFlotte(p.flotte.filter(function (n) { return !n.bouge; }));
+        var cibles = PORTEE[i].filter(function (v) {
+          var o = etat.provinces[v].proprio;
+          if (o === f || PROV[i].voisins.indexOf(v) >= 0 || (o === etat.joueur && relation(etat, f) !== 'guerre')) return false;
+          var garde = flotteDefense(etat, v).reduce(function (s, j) { return s + forceFlotte(etat.provinces[j].flotte); }, 0);
+          return fEnvoi > forceDefense(etat.provinces[v]) * 1.5 + 40 && fNav > garde * 1.3;
+        });
+        if (!cibles.length) return;
+        var v = cibles[Math.floor(alea() * cibles.length)], cp = etat.provinces[v];
+        var att = preparerDebarquement(etat, i, v, dispo);
+        if (att.erreur || att.echec) return;
+        if (cp.proprio === etat.joueur && cp.armee.length) { renfortAllie(etat, v); pourJoueur.push(att); return; }
+        if (cp.proprio === etat.joueur) etat.nouvelles.push('⚓ ' + F.nom + ' débarque à ' + PROV[v].nom + ' !');
+        if (!cp.armee.length) { appliquerBataille(etat, att, null); return; }
+        var b2 = batailleAttaque(etat, att, Math.floor(alea() * 1e9));
+        resoudreAuto(b2);
+        appliquerBataille(etat, att, b2);
       });
     });
     return pourJoueur;
@@ -929,6 +1421,7 @@
   }
   function changerRelation(etat, f, rel) {
     var D = etat.diplo[f];
+    if (rel === 'guerre') rompreCommerce(etat, f, 'c\'est la guerre !');
     D.rel = rel;
     D.depuis = etat.tour;
   }
@@ -972,7 +1465,27 @@
       changerAttitude(etat, f, 15);
       return { ok: true, msg: F.nom + ' apprécie ton cadeau (' + humeur(D.att) + ').' };
     }
+    if (type === 'finCommerce') {
+      if (!etat.commerce || !etat.commerce[f]) return { ok: false, msg: 'Pas d\'accord avec ce royaume.' };
+      delete etat.commerce[f];
+      changerAttitude(etat, f, -10);
+      log(etat, '📦 Tu mets fin à l\'accord commercial avec ' + F.nom + '.');
+      return { ok: true, msg: 'Accord commercial avec ' + F.nom + ' terminé.' };
+    }
     if (D.demande === etat.tour) return { ok: false, msg: F.nom + ' a déjà reçu ton messager ce tour-ci.' };
+    if (type === 'commerce') {
+      etat.commerce = etat.commerce || {};
+      if (etat.commerce[f]) return { ok: false, msg: 'Vous commercez déjà ensemble.' };
+      if (D.rel === 'guerre') return { ok: false, msg: 'Pas de commerce en pleine guerre.' };
+      if (accords(etat).length >= maxAccords(etat)) return { ok: false, msg: 'Tu as déjà ' + maxAccords(etat) + ' accords : construis des ports (ou nomme un bon chancelier) pour en signer plus.' };
+      D.demande = etat.tour;
+      var seuilC = -10 - (D.rel === 'alliance' ? 20 : 0) - (D.sang ? 10 : 0) - bonusConseil(etat, 'chancelier');
+      if (D.att < seuilC) { changerAttitude(etat, f, -2); return { ok: false, msg: F.nom + ' refuse de commercer avec toi : améliore d\'abord ses sentiments.' }; }
+      etat.commerce[f] = { depuis: etat.tour };
+      changerAttitude(etat, f, 5);
+      log(etat, '📦 Accord commercial avec ' + F.nom + '.');
+      return { ok: true, msg: '📦 Accord commercial signé avec ' + F.nom + ' : +' + valeurAccord(etat, f) + ' or par tour !' };
+    }
     if (type === 'paix') {
       if (D.rel !== 'guerre') return { ok: false, msg: 'Vous êtes déjà en paix.' };
       D.demande = etat.tour;
@@ -988,7 +1501,7 @@
       if (D.rel === 'alliance') return { ok: false, msg: 'Vous êtes déjà alliés.' };
       if (D.rel === 'guerre') return { ok: false, msg: "Signe d'abord la paix." };
       D.demande = etat.tour;
-      var seuil = D.sang ? 25 : 40;
+      var seuil = (D.sang ? 25 : 40) - Math.floor(bonusConseil(etat, 'chancelier') / 2);
       if (D.att < seuil) { changerAttitude(etat, f, -2); return { ok: false, msg: F.nom + ' refuse : il faut une humeur de ' + seuil + ' au moins' + (D.sang ? '.' : ' (25 si vos familles sont unies par un mariage).') }; }
       changerRelation(etat, f, 'alliance');
       changerAttitude(etat, f, 10);
@@ -1099,6 +1612,8 @@
         var paire = null;
         leurs.some(function (x) { return miens.some(function (y) { if (!verifMariage(etat, f, y.k, x.k)) { paire = { a: y.k, b: x.k }; return true; } return false; }); });
         if (paire) etat.propositions.push({ f: f, type: 'mariage', a: paire.a, b: paire.b, noms: [membre(etat.factions[etat.joueur], paire.a).nom, membre(etat.factions[f], paire.b).nom] });
+      } else if (D.rel !== 'guerre' && D.att >= 15 && alea() < 0.1 && nb < 6 && !(etat.commerce || {})[f] && accords(etat).length < maxAccords(etat)) {
+        etat.propositions.push({ f: f, type: 'commerce', valeur: valeurAccord(etat, f) });
       } else if (D.rel === 'paix' && voisin && D.att <= (D.sang ? -60 : -40) && etat.tour - D.depuis >= 2 && alea() < 0.5) {
         changerRelation(etat, f, 'guerre');
         var m = '⚔️ ' + F.nom + ' te déclare la guerre !';
@@ -1128,7 +1643,7 @@
     if (!nbProvinces(etat, P.f)) return F.nom + ' a disparu.';
     if (!oui) {
       changerAttitude(etat, P.f, P.type === 'paix' ? -5 : -10);
-      return 'Tu refuses ' + (P.type === 'paix' ? 'la paix' : P.type === 'mariage' ? 'le mariage' : "l'alliance") + ' de ' + F.nom + '.';
+      return 'Tu refuses ' + (P.type === 'paix' ? 'la paix' : P.type === 'mariage' ? 'le mariage' : P.type === 'commerce' ? "l'accord commercial" : "l'alliance") + ' de ' + F.nom + '.';
     }
     if (P.type === 'mariage') {
       var pa = membre(etat.factions[etat.joueur], P.a), pb = membre(F, P.b);
@@ -1137,6 +1652,14 @@
       changerAttitude(etat, P.f, 15);
       log(etat, '💍 Mariage de ' + pa.nom + ' et ' + pb.nom + ' (' + F.nom + ').');
       return '💍 ' + pa.nom + ' épouse ' + pb.nom + ' !';
+    }
+    if (P.type === 'commerce') {
+      if (D.rel === 'guerre' || accords(etat).length >= maxAccords(etat)) return 'La situation a changé.';
+      etat.commerce = etat.commerce || {};
+      etat.commerce[P.f] = { depuis: etat.tour };
+      changerAttitude(etat, P.f, 5);
+      log(etat, '📦 Accord commercial avec ' + F.nom + '.');
+      return '📦 Accord commercial avec ' + F.nom + ' : +' + valeurAccord(etat, P.f) + ' or par tour !';
     }
     if (P.type === 'paix' && D.rel === 'guerre') { changerRelation(etat, P.f, 'paix'); changerAttitude(etat, P.f, 10); log(etat, '🕊️ Paix signée avec ' + F.nom + '.'); return 'Paix signée avec ' + F.nom + ' !'; }
     if (P.type === 'alliance' && D.rel === 'paix') { changerRelation(etat, P.f, 'alliance'); changerAttitude(etat, P.f, 10); log(etat, '🤝 Alliance conclue avec ' + F.nom + '.'); return 'Alliance conclue avec ' + F.nom + ' !'; }
@@ -1153,6 +1676,7 @@
       p.construit = false;
       var soin = 0.15 + 0.08 * p.bat.ferme;
       p.armee.forEach(function (u) { u.bouge = false; u.hp = Math.min(pvMax(u.t), u.hp + pvMax(u.t) * soin); });
+      (p.flotte || []).forEach(function (n) { n.bouge = false; n.hp = Math.min(NAVIRES[n.t].pv, n.hp + NAVIRES[n.t].pv * (p.bat.port ? 0.1 + 0.1 * p.bat.port : 0.05)); });
     });
     etat.annee = Math.min(HISTOIRE.FIN, etat.annee + etat.pas);
     etat.tour++;
@@ -1171,10 +1695,12 @@
     });
     var aleaT = aleaPartie(etat);
     tourCour(etat, aleaT, avant);
+    tourCourtisans(etat, aleaT);
+    tourCommerce(etat);
     tourGestion(etat, aleaT);
     tourDiplo(etat);
     var defenses = tourIA(etat);
-    etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); });
+    etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); (p.flotte || []).forEach(function (n) { n.bouge = false; }); });
     tourQuetes(etat);
     verifierFin(etat);
     return defenses;
@@ -1193,6 +1719,13 @@
     IMPOTS: IMPOTS, entretien: entretien, entretienUnite: entretienUnite, detailOrdre: detailOrdre, cibleOrdre: cibleOrdre,
     changerImpots: changerImpots, estCapitale: estCapitale, assurerCour: assurerCour, heritier: heritier, age: age,
     QUETES: QUETES, quetes: quetes, tourQuetes: tourQuetes,
+    MERS: MERS, COTES: COTES, PORTEE: PORTEE, estCotiere: estCotiere, NAVIRES: NAVIRES, TYPES_NAV: TYPES_NAV, MAX_NAVIRES: MAX_NAVIRES,
+    blocageNavire: blocageNavire, construireNavire: construireNavire, forceFlotte: forceFlotte, capacite: capacite, entretienNavire: entretienNavire,
+    flotteDefense: flotteDefense, combatNaval: combatNaval, naviguer: naviguer, preparerDebarquement: preparerDebarquement, nomMer: nomMer,
+    PRODUITS: PRODUITS, PRODUIT_DE: PRODUIT_DE, biens: biens, ports: ports, accords: accords, valeurAccord: valeurAccord, maxAccords: maxAccords,
+    revenuCommerce: revenuCommerce, luxes: luxes, proches: proches,
+    ROLES: ROLES, DOMAINES: DOMAINES, nomRole: nomRole, conseiller: conseiller, bonusConseil: bonusConseil, candidats: candidats, nommer: nommer,
+    valeurPour: valeurPour, salaires: salaires, choisirEvenement: choisirEvenement, assurerConseil: assurerConseil, estAuConseil: estAuConseil,
     membresLibres: membresLibres, membre: membre, verifMariage: verifMariage, chanceMariage: chanceMariage, PERSOS: PERSOS,
     relation: relation, diplomatie: diplomatie, proposer: proposer, repondre: repondre, humeur: humeur, NOM_REL: NOM_REL,
     assurerDiplo: assurerDiplo, changerAttitude: changerAttitude, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log

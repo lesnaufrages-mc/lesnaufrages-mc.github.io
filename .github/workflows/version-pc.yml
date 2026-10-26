@@ -1,0 +1,34 @@
+# Construit la version PC (Windows) d'Imperium of Wars pour Steam.
+# Se lance tout seul quand le jeu ou le dossier pc/ change, ou à la main :
+# onglet Actions > « Version PC (Steam) » > Run workflow.
+# Le résultat se télécharge en bas de la page du lancement, rubrique « Artifacts ».
+name: Version PC (Steam)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['docs/strategie/**', 'pc/**', '.github/workflows/version-pc.yml']
+  pull_request:
+    paths: ['docs/strategie/**', 'pc/**', '.github/workflows/version-pc.yml']
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: pc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pc/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ImperiumOfWars-windows
+          path: pc/dist/win-unpacked/
+          retention-days: 30

@@ -4,8 +4,40 @@
    - categorie : "discord", "minecraft", "appli", "bot" ou "site"
    - epingle   : true pour la garder tout en haut (facultatif)
    - lien / bouton : un lien et le texte du bouton (facultatifs)
+   - video / image : une vidéo du dossier videos/ et son image d'aperçu (facultatifs)
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
+  {
+    date: "2026-10-26",
+    categorie: "site",
+    epingle: true,
+    titre: "Le trailer d'Imperium of Wars est sorti !",
+    texte: "La vraie carte d'Europe, de 771 à 1700. Lève tes armées, assiège des villes et commande tes batailles en 3D et en temps réel. Un jeu de stratégie historique 100 % gratuit, directement dans ton navigateur.",
+    video: "videos/imperium-trailer.mp4",
+    image: "videos/imperium-trailer.jpg",
+    lien: "strategie/",
+    bouton: "Jouer à Imperium of Wars"
+  },
+  {
+    date: "2026-10-25",
+    categorie: "appli",
+    epingle: true,
+    titre: "Le trailer de Mot Mystère est sorti !",
+    texte: "Un mot. Six essais. Le même pour tout le monde. Découvre le jeu en 27 secondes, puis partage la vidéo à tes amis et défie-les sur le mot du jour.",
+    video: "videos/trailer.mp4",
+    image: "videos/trailer.jpg",
+    lien: "jouer/",
+    bouton: "Jouer maintenant"
+  },
+  {
+    date: "2026-10-25",
+    categorie: "minecraft",
+    epingle: true,
+    titre: "Les Naufragés recrutent leur staff !",
+    texte: "On cherche des joueurs motivés : Modo (veiller au respect des règles), Helper (aider et accueillir les nouveaux), Builder (spawns, events, décors), Dev (plugins, site et bot) et Animateur (events, faire vivre la commu). On attend que tu sois actif, respectueux, mature, à l'écoute, et que tu aies un peu de temps chaque semaine. Pour postuler : rejoins le Discord, va dans #recrutement et clique sur Postuler (ou tape /candidature). Le staff te répond en message privé.",
+    lien: "staff/#recrutement",
+    bouton: "Rejoindre le staff"
+  },
   {
     date: "2026-10-25",
     categorie: "appli",

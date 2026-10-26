@@ -1,0 +1,343 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const M = require('../docs/strategie/moteur.js');
+const H = require('../docs/strategie/histoire.js');
+
+test('la carte a des voisins symétriques', () => {
+  M.PROV.forEach((p, i) => {
+    assert.ok(p.voisins.length > 0, p.nom);
+    p.voisins.forEach((v) => assert.ok(M.PROV[v].voisins.includes(i), p.nom + ' / ' + M.PROV[v].nom));
+  });
+});
+
+test('chaque époque cite des provinces existantes, une seule fois', () => {
+  const ids = M.PROV.map((p) => p.id);
+  H.EPOQUES.forEach((e) => {
+    const vu = new Set();
+    e.factions.forEach((f) => f[3].forEach((p) => {
+      assert.ok(ids.includes(p), e.id + ' : ' + p);
+      assert.ok(!vu.has(p), e.id + ' : ' + p + ' en double');
+      vu.add(p);
+    }));
+  });
+});
+
+const duel = (a, b, opts) => {
+  const u = (t) => ({ t, hp: M.pvMax(t) });
+  const bt = M.creerBataille(a.map(u), b.map(u), 3, opts);
+  return M.resoudreAuto(bt).gagnant;
+};
+
+test('pierre-feuille-ciseaux', () => {
+  assert.equal(duel(['cav'], ['milice']), 1);
+  assert.equal(duel(['cav'], ['arc']), 0);
+  assert.equal(duel(['chevalier'], ['piquier']), 1);
+});
+
+test('les remparts aident le défenseur, les canons les abattent', () => {
+  const att = ['epee', 'epee', 'milice'], def = ['epee', 'arc'];
+  assert.equal(duel(att, def, { defenseur: 1, murs: 0 }), 0);
+  assert.equal(duel(att, def, { defenseur: 1, murs: 3 }), 1);
+  assert.equal(duel(['epee', 'epee', 'milice', 'canon', 'canon'], def, { defenseur: 1, murs: 3 }), 0);
+});
+
+test('les unités et bâtiments respectent l\'époque', () => {
+  const e = M.nouvellePartie('charlemagne', 'francs', 1);
+  const paris = M.PROV.findIndex((p) => p.id === 'paris');
+  assert.match(M.recruter(e, paris, 'arquebuse'), /1450/);
+  assert.equal(M.recruter(e, paris, 'milice'), null);
+  assert.equal(M.construire(e, paris, 'ferme'), null);
+  assert.match(M.construire(e, paris, 'murs'), /chantier/);
+});
+
+test('chaque campagne avance jusqu\'au bout sans erreur', () => {
+  H.EPOQUES.forEach((ep) => {
+    const e = M.nouvellePartie(ep.id, ep.factions[0][0], 42);
+    for (let i = 0; i < 400 && !e.fin; i++) {
+      M.finDuTour(e).forEach((att) => {
+        const b = M.batailleAttaque(e, att, i);
+        M.resoudreAuto(b);
+        M.appliquerBataille(e, att, b);
+      });
+    }
+    assert.ok(e.fin, ep.id);
+  });
+});
+
+test('diplomatie : paix, alliance, aide et guerre', () => {
+  const e = M.nouvellePartie('charlemagne', 'francs', 7);
+  const liste = M.diplomatie(e);
+  assert.ok(liste.length > 5);
+  liste.forEach((d) => assert.ok(['paix', 'guerre'].includes(d.rel)));
+  const loin = liste.find((d) => !d.voisin);
+  const f = loin.f;
+  // Une alliance demande une bonne humeur.
+  e.diplo[f].att = 10;
+  assert.equal(M.proposer(e, f, 'alliance').ok, false);
+  e.tour++;
+  e.diplo[f].att = 55;
+  assert.equal(M.proposer(e, f, 'alliance').ok, true);
+  assert.equal(M.relation(e, f), 'alliance');
+  // Un allié envoie de l'or puis attend avant d'aider encore.
+  e.tour++;
+  e.factions[f].or = 500;
+  const or = e.factions[e.joueur].or;
+  assert.equal(M.proposer(e, f, 'aideOr').ok, true);
+  assert.ok(e.factions[e.joueur].or > or);
+  e.tour++;
+  assert.equal(M.proposer(e, f, 'aideTroupes').ok, false);
+  // On ne peut pas attaquer un royaume en paix sans déclarer la guerre.
+  const voisin = liste.find((d) => d.voisin);
+  e.diplo[voisin.f].rel = 'paix';
+  const mienne = e.provinces.findIndex((p, i) => p.proprio === e.joueur && M.PROV[i].voisins.some((v) => e.provinces[v].proprio === voisin.f));
+  const cible = M.PROV[mienne].voisins.find((v) => e.provinces[v].proprio === voisin.f);
+  const att = M.preparerAttaque(e, mienne, cible, [0]);
+  assert.ok(att.erreur && att.paix === voisin.f);
+  assert.equal(M.proposer(e, voisin.f, 'guerre').ok, true);
+  assert.equal(M.relation(e, voisin.f), 'guerre');
+  // Une IA en paix n'attaque jamais le joueur.
+  const e2 = M.nouvellePartie('rois', 'france', 3);
+  e2.diplo.forEach((d) => { if (d) { d.rel = 'paix'; d.att = 90; } });
+  for (let t = 0; t < 10; t++) {
+    const def = M.finDuTour(e2);
+    assert.equal(def.length, 0);
+    e2.diplo.forEach((d) => { if (d) { d.rel = d.rel === 'guerre' ? 'paix' : d.rel; d.att = 90; } });
+  }
+});
+
+test('chaque royaume a son souverain historique', () => {
+  const P = require('../docs/strategie/personnages.js');
+  H.EPOQUES.forEach((e) => e.factions.forEach((f) => {
+    const d = P.EPOQUES[e.id][f[0]];
+    assert.ok(d, e.id + ' : ' + f[0]);
+    assert.ok(d.roi[1] < e.annee && e.annee - d.roi[1] < 95, d.roi[0]);
+    assert.ok(P.NOMS[d.c], d.c);
+  }));
+  const e = M.nouvellePartie('rois', 'france', 1);
+  const F = e.factions[e.joueur];
+  assert.equal(F.roi.nom, 'Louis XIV');
+  assert.equal(M.heritier(F).nom, 'Louis, le Grand Dauphin');
+});
+
+test('succession, mariage et union des couronnes', () => {
+  const e = M.nouvellePartie('croisades', 'castille', 5);
+  const J = e.factions[e.joueur];
+  const f = e.factions.findIndex((F) => F.id === 'portugal');
+  const P = e.factions[f];
+  // Le mariage demande une bonne entente.
+  e.diplo[f].att = -20;
+  const blanche = J.cour.fam.findIndex((m) => m.nom === 'Blanche de Castille');
+  const alphonse = P.cour.fam.findIndex((m) => m.nom === 'Alphonse');
+  assert.equal(M.proposer(e, f, 'mariage', { a: blanche, b: alphonse }).ok, false);
+  e.tour++;
+  e.diplo[f].att = 80;
+  const r = M.proposer(e, f, 'mariage', { a: blanche, b: alphonse });
+  assert.ok(r.ok, r.msg);
+  assert.ok(e.diplo[f].sang);
+  // Deux personnes du même sexe ou déjà mariées : refus.
+  assert.ok(M.verifMariage(e, f, blanche, alphonse));
+  // Le roi de Portugal meurt : son héritier, marié à une Castillane, apporte le royaume.
+  const avant = M.nbProvinces(e, e.joueur);
+  P.roi.ne = e.annee - 200; P.roi.fragile = true;
+  for (let t = 0; t < 6 && M.nbProvinces(e, f) > 0; t++) M.finDuTour(e);
+  assert.equal(M.nbProvinces(e, f), 0);
+  assert.ok(M.nbProvinces(e, e.joueur) > avant);
+  // Un pape mort laisse la place à un pape élu.
+  const e2 = M.nouvellePartie('conquete', 'france', 3);
+  const pape = e2.factions.find((F) => F.id === 'papaute');
+  pape.roi.ne = e2.annee - 200; pape.roi.fragile = true;
+  M.finDuTour(e2);
+  assert.notEqual(pape.roi.nom, 'Alexandre II');
+});
+
+test('impôts, ordre public, entretien et révoltes', () => {
+  const e = M.nouvellePartie('rois', 'france', 2);
+  const cap = e.factions[e.joueur].capitale;
+  const p = e.provinces[cap];
+  const normal = M.revenuProvince(p);
+  assert.equal(M.changerImpots(e, cap, 2), null);
+  assert.ok(M.revenuProvince(p) > normal);
+  assert.ok(M.cibleOrdre(e, cap) < 100);
+  assert.ok(M.entretien(e, e.joueur) > 0);
+  // Une province pressurée, sans garnison, finit par se révolter.
+  const autre = e.provinces.findIndex((q, i) => q.proprio === e.joueur && i !== cap);
+  const q = e.provinces[autre];
+  q.armee = []; q.impots = 2; q.ordre = 0; q.agit = 60;
+  let revolte = false;
+  for (let t = 0; t < 10 && !revolte; t++) { M.finDuTour(e); revolte = q.proprio !== e.joueur; q.ordre = Math.min(q.ordre, 5); q.armee = []; }
+  assert.ok(revolte);
+});
+
+test('mariage matrilinéaire : le mari rejoint la cour, les enfants restent de la dynastie', () => {
+  const e = M.nouvellePartie('rois', 'france', 4);
+  const J = e.factions[e.joueur];
+  J.cour.fam.push({ nom: 'Princesse Test', ne: e.annee - 18, sexe: 'f', lien: 'fille' });
+  const a = J.cour.fam.length - 1;
+  let f = -1, b = -1;
+  e.factions.forEach((F, k) => {
+    if (f >= 0 || k === e.joueur || F.cour.elu || !M.nbProvinces(e, k)) return;
+    const i = F.cour.fam.findIndex((m) => m.sexe === 'm' && !m.epoux);
+    if (i >= 0) { f = k; b = i; }
+  });
+  assert.ok(f >= 0);
+  const F = e.factions[f], mari = F.cour.fam[b].nom, nbAvant = F.cour.fam.length;
+  e.diplo[f].att = 100; e.diplo[f].rel = 'paix';
+  assert.equal(M.verifMariage(e, f, a, -1, true) !== null, true); // pas avec un souverain
+  const r = M.proposer(e, f, 'mariage', { a, b, matri: true });
+  assert.ok(r.ok, r.msg);
+  assert.equal(F.cour.fam.length, nbAvant - 1);
+  const princesse = J.cour.fam[a];
+  assert.equal(princesse.epoux.nom, mari);
+  assert.ok(princesse.epoux.matri);
+  let enfant = null;
+  for (let t = 0; t < 40 && !enfant; t++) {
+    princesse.ne = e.annee - 20; J.roi.ne = e.annee - 40; J.roi.fragile = false;
+    M.finDuTour(e);
+    enfant = J.cour.fam.find((m) => m.parent === 'Princesse Test');
+  }
+  assert.ok(enfant, 'un enfant est né');
+  assert.ok(/^petit/.test(enfant.lien));
+});
+
+test('les enfants d\'une reine mariée de façon patrilinéaire changent la dynastie', () => {
+  const e = M.nouvellePartie('rois', 'france', 5);
+  const J = e.factions[e.joueur];
+  J.roi = { nom: 'Reine Test', ne: e.annee - 25, sexe: 'f', look: J.roi.look };
+  J.conj = null; J.cour.fam = [];
+  let f = -1, b = -1;
+  e.factions.forEach((F, k) => {
+    if (f >= 0 || k === e.joueur || F.cour.elu || !M.nbProvinces(e, k)) return;
+    const i = F.cour.fam.findIndex((m) => m.sexe === 'm' && !m.epoux);
+    if (i >= 0) { f = k; b = i; }
+  });
+  const F = e.factions[f], dynAvant = J.cour.dyn;
+  e.diplo[f].att = 100; e.diplo[f].rel = 'paix';
+  assert.ok(M.proposer(e, f, 'mariage', { a: -1, b, matri: false }).ok);
+  assert.equal(J.cour.dynEnfants, F.cour.dyn);
+  J.cour.fam.push({ nom: 'Prince Test', ne: e.annee - 5, sexe: 'm', lien: 'fils' });
+  J.roi.ne = e.annee - 200; J.roi.fragile = true;
+  M.finDuTour(e);
+  assert.equal(J.roi.nom, 'Prince Test');
+  assert.notEqual(J.cour.dyn, dynAvant);
+  assert.equal(J.cour.dyn, F.cour.dyn);
+});
+
+test('quêtes : aucune n\'est finie au départ, et restaurer un empire renomme le royaume', () => {
+  H.EPOQUES.forEach((E) => {
+    const e = M.nouvellePartie(E.id, E.factions[0][0], 1);
+    e.factions.forEach((F, f) => M.quetes(e, f).forEach((x) => assert.ok(x.manque.length > 0, E.id + ' ' + F.id + ' ' + x.q.id)));
+  });
+  const e = M.nouvellePartie('croisades', 'georgie', 1);
+  const J = e.factions[e.joueur];
+  M.assurerCour(e);
+  const x = M.quetes(e, e.joueur).find((y) => y.q.id === 'georgie');
+  assert.ok(x && x.manque.length);
+  x.manque.forEach((i) => { e.provinces[i].proprio = e.joueur; });
+  const or = J.or;
+  M.tourQuetes(e);
+  assert.equal(J.nom, 'Grande Géorgie');
+  assert.equal(e.quetes.georgie, e.joueur);
+  assert.ok(J.or > or);
+  assert.equal(M.quetes(e, e.joueur).find((y) => y.q.id === 'georgie').faite, e.joueur);
+});
+
+test('marine : ports, transport par la mer et débarquement avec bataille navale', () => {
+  const idx = (id) => M.PROV.findIndex((p) => p.id === id);
+  assert.ok(M.estCotiere(idx('venise')));
+  assert.ok(!M.estCotiere(idx('baviere')));
+  assert.ok(M.PORTEE[idx('venise')].includes(idx('athenes')));
+  const e = M.nouvellePartie('rois', 'france', 3);
+  const J = e.factions[e.joueur];
+  const mars = idx('marseille'), bord = idx('bordeaux');
+  const pm = e.provinces[mars];
+  pm.bat.port = 1; pm.flotte = []; J.or = 5000;
+  assert.equal(M.construireNavire(e, idx('dijon'), 'galere'), 'Pas de côte ici.');
+  assert.equal(M.construireNavire(e, mars, 'galere'), null);
+  pm.flotte.forEach((n) => { n.bouge = false; });
+  pm.armee = [{ t: 'mousquet', hp: 360, bouge: false }, { t: 'mousquet', hp: 360, bouge: false }];
+  // Marseille → Bordeaux par la mer (deux mers voisines)
+  assert.ok(M.PORTEE[mars].includes(bord));
+  assert.equal(M.naviguer(e, mars, bord, [0]), null);
+  assert.equal(e.provinces[bord].flotte.length, 1);
+  // Débarquement contre une côte gardée par une flotte plus forte : échec et retour au port.
+  const pb = e.provinces[bord];
+  pb.flotte.forEach((n) => { n.bouge = false; });
+  pb.armee.forEach((u) => { u.bouge = false; });
+  const cible = idx('lisbonne'), pl = e.provinces[cible], f = pl.proprio;
+  e.diplo[f].rel = 'guerre';
+  pl.flotte = [{ t: 'vaisseau', hp: 230, bouge: false }, { t: 'vaisseau', hp: 230, bouge: false }];
+  const k = pb.armee.findIndex((u) => !u.bouge);
+  const att = M.preparerDebarquement(e, bord, cible, [k]);
+  assert.ok(!att.erreur, att.erreur);
+  assert.ok(att.naval);
+  assert.equal(att.naval.gagnant, 1);
+  assert.ok(att.echec);
+});
+
+test('commerce : accord, revenus, produits de luxe et rupture à la guerre', () => {
+  const e = M.nouvellePartie('constantinople', 'venise', 2);
+  const f = e.factions.findIndex((F) => F.id === 'mamelouks');
+  e.diplo[f].att = 50; e.diplo[f].rel = 'paix';
+  assert.ok(M.valeurAccord(e, f) > 4);
+  const r = M.proposer(e, f, 'commerce');
+  assert.ok(r.ok, r.msg);
+  assert.deepEqual(M.accords(e), [f]);
+  assert.ok(M.revenuCommerce(e) > 0);
+  assert.ok(M.luxes(e, e.joueur).length >= 1);
+  const or = e.factions[e.joueur].or;
+  M.assurerCour(e);
+  e.rapport = { cour: [], revoltes: [] };
+  M.proposer(e, f, 'guerre');
+  assert.deepEqual(M.accords(e), []);
+  assert.ok(e.factions[e.joueur].or === or);
+});
+
+test('cour : conseil, salaires, intendant, événements et complots', () => {
+  const e = M.nouvellePartie('rois', 'france', 6);
+  const J = e.factions[e.joueur];
+  assert.ok(J.cour.nobles.length >= 4);
+  assert.ok(Object.keys(J.cour.conseil).length >= 3);
+  assert.ok(M.salaires(e) > 0);
+  M.nommer(e, 'intendant', null);
+  const sans = M.revenu(e, e.joueur);
+  J.cour.nobles[0].dom = 'int'; J.cour.nobles[0].comp = 10;
+  assert.equal(M.nommer(e, 'intendant', 'n' + J.cour.nobles[0].id), null);
+  assert.ok(M.revenu(e, e.joueur) > sans);
+  // Un courtisan déloyal finit par comploter (complot démasqué ou réussi).
+  J.cour.nobles[1].loy = 0;
+  let trace = false;
+  for (let t = 0; t < 30 && !trace; t++) {
+    J.cour.nobles.forEach((n) => { if (n !== J.cour.nobles[1]) n.loy = 90; });
+    if (J.cour.nobles[1]) J.cour.nobles[1].loy = 0;
+    M.finDuTour(e);
+    trace = (e.evenements || []).some((x) => x.type === 'complot') || e.rapport.cour.some((x) => x.includes('Complot'));
+    while ((e.evenements || []).length) M.choisirEvenement(e, 0);
+  }
+  assert.ok(trace);
+});
+
+test('les vrais tableaux correspondent à des personnages et existent', async () => {
+  const fs = await import('node:fs');
+  const T = require('../docs/strategie/tableaux.js');
+  const P = require('../docs/strategie/personnages.js');
+  const connus = new Set();
+  Object.values(P.EPOQUES).forEach((ep) => Object.values(ep).forEach((d) => {
+    connus.add(d.roi[0] + '|' + d.roi[1]);
+    if (d.conj) connus.add(d.conj[0] + '|' + d.conj[1]);
+    (d.fam || []).forEach((m) => connus.add(m[0] + '|' + m[1]));
+  }));
+  assert.ok(Object.keys(T).length > 50);
+  Object.keys(T).forEach((k) => {
+    assert.ok(connus.has(k), 'personnage inconnu : ' + k);
+    assert.ok(fs.existsSync(new URL('../docs/strategie/tableaux/' + T[k][0], import.meta.url)), T[k][0]);
+  });
+  // Le portrait utilise le tableau quand il existe, et garde le dessin en dessous.
+  globalThis.TABLEAUX = T;
+  const { Portrait } = require('../docs/strategie/portraits.js');
+  const svg = Portrait.svg({ nom: 'Louis XIV', ne: 1638, sexe: 'm', look: { barbe: 'rase', ch: 'perruque', tete: 'aucun' } }, {});
+  assert.ok(svg.includes('tableaux/' + T['Louis XIV|1638'][0]) && svg.includes('<ellipse'));
+  const dessin = Portrait.svg({ nom: 'Héritier inventé', ne: 1700, sexe: 'm' }, {});
+  assert.ok(!dessin.includes('<image'));
+});

@@ -1,0 +1,16 @@
+{
+  "name": "Imperium of Wars",
+  "short_name": "Imperium",
+  "description": "Jeu de stratégie historique 771-1800 : royaumes, diplomatie, sièges et batailles en 3D.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

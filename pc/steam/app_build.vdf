@@ -1,0 +1,11 @@
+"AppBuild"
+{
+	"AppID" "APPID_A_REMPLACER"
+	"Desc" "Imperium of Wars - version PC"
+	"ContentRoot" "..\dist\win-unpacked\"
+	"BuildOutput" ".\sortie\"
+	"Depots"
+	{
+		"DEPOTID_A_REMPLACER" "depot_build.vdf"
+	}
+}

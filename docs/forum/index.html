@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forum – Les Naufragés · Mot Mystère</title>
 <meta name="description" content="Le forum de la communauté Les Naufragés : Mot Mystère, serveur Minecraft, Discord, entraide.">
@@ -25,6 +26,7 @@
     <div class="links">
       <a href="../actualites.html">Actualités</a>
       <a href="../forum/" class="on">Forum</a>
+      <a href="../staff/">Staff</a>
       <a href="../amis/">Entre amis</a>
       <a class="btn btn-play" href="../jouer/">▶ Jouer</a>
       <div class="compte" data-compte></div>
@@ -54,7 +56,9 @@
       <a href="../jouer/">Jouer</a>
       <a href="../actualites.html">Actualités</a>
       <a href="../forum/">Forum</a>
+      <a href="../staff/">Staff</a>
       <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
+      <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X (Twitter)</a>
       <a href="../confidentialite.html">Politique de confidentialité</a>
     </div>
     <span>© <span data-year>2026</span> Les Naufragés · Mot Mystère</span>
@@ -62,7 +66,7 @@
 </footer>
 
 <script src="../supabase-config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <script src="../compte.js"></script>
 <script src="forum.js"></script>
 <script src="../site.js"></script>

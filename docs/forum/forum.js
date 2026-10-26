@@ -8,7 +8,7 @@
     general: '💬 Discussion', 'mot-mystere': '🟩 Mot Mystère', minecraft: '⛏️ Minecraft',
     discord: '🎮 Discord', aide: '🆘 Aide'
   };
-  var PROFIL = 'profil:profils!auteur(pseudo, role)';
+  var PROFIL = 'profil:profils!auteur(*)';
   var filtre = '';
 
   function catTag(c) { return '<span class="tag cat-' + esc(c) + '">' + (CATS[c] || CATS.general) + '</span>'; }
@@ -100,7 +100,7 @@
     if (moi || C.estModo()) actions.push('<button type="button" data-suppr>Supprimer</button>');
     if (C.peutEcrire() && !moi) actions.push('<button type="button" data-signal>Signaler</button>');
     return '<article class="msg-f" data-type="' + type + '" data-id="' + m.id + '" id="' + type + '-' + m.id + '">' +
-      '<div class="av-l">' + esc((m.profil ? m.profil.pseudo : '?').charAt(0).toUpperCase()) + '</div>' +
+      C.avatar(m.profil) +
       '<div class="msg-b"><div class="meta">' + C.badge(m.profil) + '<time datetime="' + esc(m.cree_le) + '">' + C.quand(m.cree_le) + '</time>' +
       (m.modifie_le ? '<span class="small">(modifié)</span>' : '') + '</div>' +
       '<div class="msg-t" data-brut="' + esc(m.texte) + '">' + C.texte(m.texte) + '</div>' +

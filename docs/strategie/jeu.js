@@ -725,10 +725,11 @@
       invite.userChoice.then(function () { invite = null; });
       return;
     }
-    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    feuille('<h2>📲 Installer Imperium of Wars</h2><p>Le jeu s\'ajoute sur ton écran d\'accueil comme une appli, en plein écran, et fonctionne même sans internet.</p><ol class="regles">' +
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent), mobile = ios || /Android|Mobi/.test(navigator.userAgent);
+    feuille('<h2>📲 Installer Imperium of Wars</h2><p>Le jeu devient une appli sur ton ' + (mobile ? 'téléphone' : 'PC') + ', dans sa propre fenêtre, et fonctionne même sans internet.</p><ol class="regles">' +
       (ios ? '<li>Ouvre cette page dans <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> (carré avec une flèche).</li><li>Choisis <b>« Sur l\'écran d\'accueil »</b>, puis <b>Ajouter</b>.</li>'
-           : '<li>Ouvre cette page dans <b>Chrome</b> (Android) ou Edge / Chrome (ordinateur).</li><li>Touche le menu <b>⋮</b> en haut à droite.</li><li>Choisis <b>« Installer l\'application »</b> ou <b>« Ajouter à l\'écran d\'accueil »</b>.</li>') +
+           : mobile ? '<li>Ouvre cette page dans <b>Chrome</b>.</li><li>Touche le menu <b>⋮</b> en haut à droite.</li><li>Choisis <b>« Installer l\'application »</b> ou <b>« Ajouter à l\'écran d\'accueil »</b>.</li>'
+           : '<li>Ouvre cette page dans <b>Chrome</b> ou <b>Edge</b>.</li><li>Clique sur l\'icône <b>Installer</b> (écran avec une flèche) au bout de la barre d\'adresse, ou menu <b>⋮</b> → <b>« Installer Imperium of Wars »</b>.</li><li>Le jeu apparaît dans le menu Démarrer et sur le bureau.</li>') +
       '</ol><button class="btn or" data-fermer>OK</button>');
   };
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {

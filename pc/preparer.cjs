@@ -17,7 +17,8 @@ fs.mkdirSync(path.join(APP, 'vendor', 'fonts'), { recursive: true });
 // 1. Fichiers du jeu (sauf ceux de l'appli web installable, inutiles ici).
 const IGNORES = ['sw.js', 'manifest.webmanifest'];
 for (const f of fs.readdirSync(SOURCE)) {
-  if (!IGNORES.includes(f)) fs.copyFileSync(path.join(SOURCE, f), path.join(APP, f));
+  // Les dossiers (ex. tableaux/ : les vrais portraits) sont copiés avec tout leur contenu.
+  if (!IGNORES.includes(f)) fs.cpSync(path.join(SOURCE, f), path.join(APP, f), { recursive: true });
 }
 fs.copyFileSync(path.join(ICI, 'pc.js'), path.join(APP, 'pc.js'));
 // Sous Windows, git peut fournir des fins de ligne \r\n : on remet des \n pour que

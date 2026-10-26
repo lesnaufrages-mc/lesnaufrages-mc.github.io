@@ -317,3 +317,27 @@ test('cour : conseil, salaires, intendant, événements et complots', () => {
   }
   assert.ok(trace);
 });
+
+test('les vrais tableaux correspondent à des personnages et existent', async () => {
+  const fs = await import('node:fs');
+  const T = require('../docs/strategie/tableaux.js');
+  const P = require('../docs/strategie/personnages.js');
+  const connus = new Set();
+  Object.values(P.EPOQUES).forEach((ep) => Object.values(ep).forEach((d) => {
+    connus.add(d.roi[0] + '|' + d.roi[1]);
+    if (d.conj) connus.add(d.conj[0] + '|' + d.conj[1]);
+    (d.fam || []).forEach((m) => connus.add(m[0] + '|' + m[1]));
+  }));
+  assert.ok(Object.keys(T).length > 50);
+  Object.keys(T).forEach((k) => {
+    assert.ok(connus.has(k), 'personnage inconnu : ' + k);
+    assert.ok(fs.existsSync(new URL('../docs/strategie/tableaux/' + T[k][0], import.meta.url)), T[k][0]);
+  });
+  // Le portrait utilise le tableau quand il existe, et garde le dessin en dessous.
+  globalThis.TABLEAUX = T;
+  const { Portrait } = require('../docs/strategie/portraits.js');
+  const svg = Portrait.svg({ nom: 'Louis XIV', ne: 1638, sexe: 'm', look: { barbe: 'rase', ch: 'perruque', tete: 'aucun' } }, {});
+  assert.ok(svg.includes('tableaux/' + T['Louis XIV|1638'][0]) && svg.includes('<ellipse'));
+  const dessin = Portrait.svg({ nom: 'Héritier inventé', ne: 1700, sexe: 'm' }, {});
+  assert.ok(!dessin.includes('<image'));
+});

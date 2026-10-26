@@ -1,6 +1,8 @@
 /* Imperium of Wars — portraits peints des souverains (SVG dessiné par le code).
    Portrait.svg(personne, { coul, culture, age, taille }) renvoie le code SVG du portrait.
-   personne : { nom, sexe, look: { barbe, ch, tete } } (même format que le moteur). */
+   personne : { nom, ne, sexe, look: { barbe, ch, tete } } (même format que le moteur).
+   Si un vrai tableau existe pour ce personnage (TABLEAUX, dans tableaux.js), il est posé
+   par-dessus le dessin : sans internet ou si l'image manque, le dessin reste visible. */
 (function (root) {
   'use strict';
   var uid = 0;
@@ -19,6 +21,7 @@
 
   function svg(p, o) {
     o = o || {};
+    var tab = typeof TABLEAUX !== 'undefined' && p.nom ? TABLEAUX[p.nom + '|' + p.ne] : null;
     var id = 'pt' + (++uid), h = hash(p.nom || 'x'), look = p.look || {}, femme = p.sexe === 'f';
     var age = o.age == null ? 40 : o.age, enfant = age < 14;
     var coul = o.coul || '#7a1f1f', fonce = assombrir(coul, 0.55), clair = assombrir(coul, 1.25);
@@ -166,6 +169,11 @@
     // Vernis : léger reflet de tableau ancien
     s.push('<rect x="5" y="5" width="90" height="110" fill="#f7d58a" opacity="0.06"/>');
     s.push('</g></g>');
+    if (tab) {
+      // Vrai tableau (domaine public, Wikimedia Commons), recadré sur le visage.
+      s.push('<image href="tableaux/' + tab[0] + '" x="5" y="5" width="90" height="110" preserveAspectRatio="xMidYMid slice" clip-path="url(#' + id + 'c)"><title>' + (p.nom || '').replace(/</g, '') + ' · ' + tab[1].replace(/</g, '') + '</title></image>');
+      s.push('<rect x="5" y="5" width="90" height="110" rx="40" ry="46" fill="none" stroke="#000" stroke-width="5" opacity="0.18"/>');
+    }
     s.push('<rect x="5" y="5" width="90" height="110" rx="40" ry="46" fill="none" stroke="#3a2c10" stroke-width="1.2" opacity="0.7"/>');
     s.push('</svg>');
     return s.join('');

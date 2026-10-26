@@ -1,11 +1,13 @@
 // Imperium of Wars : le jeu marche hors ligne une fois installé.
 // Change VERSION à chaque mise à jour du jeu pour que les joueurs reçoivent la nouvelle version.
-var VERSION = 'imperium-v11';
+var VERSION = 'imperium-v12';
+// La liste des vrais tableaux (portraits), pour les garder aussi hors ligne.
+try { importScripts('tableaux.js?v=12'); } catch (e) {}
 var FICHIERS = [
-  './', 'index.html', 'monde.js?v=9', 'histoire.js?v=9', 'personnages.js?v=9', 'moteur.js?v=9', 'portraits.js?v=9', 'bataille3d.js?v=9', 'jeu.js?v=9',
+  './', 'index.html', 'monde.js?v=12', 'histoire.js?v=12', 'personnages.js?v=12', 'moteur.js?v=12', 'tableaux.js?v=12', 'portraits.js?v=12', 'bataille3d.js?v=12', 'jeu.js?v=12',
   'manifest.webmanifest', 'icone-192.png', 'icone-512.png', '../supabase-config.js', '../site.js',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
-];
+].concat(Object.keys(self.TABLEAUX || {}).map(function (k) { return 'tableaux/' + self.TABLEAUX[k][0]; }));
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) {

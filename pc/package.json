@@ -1,0 +1,67 @@
+{
+  "name": "imperium-of-wars",
+  "productName": "Imperium of Wars",
+  "version": "1.0.0",
+  "description": "Imperium of Wars : jeu de stratégie historique 771-1800, version PC (Steam).",
+  "author": "Les Naufragés",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "preparer": "node preparer.cjs",
+    "start": "npm run preparer && electron .",
+    "build": "npm run preparer && electron-builder --win --x64 --publish never",
+    "build:linux": "npm run preparer && electron-builder --linux --x64 --publish never"
+  },
+  "devDependencies": {
+    "@fontsource/cinzel": "5.2.6",
+    "electron": "44.6.0",
+    "electron-builder": "26.17.0",
+    "three": "0.128.0"
+  },
+  "build": {
+    "appId": "io.github.lesnaufrages.imperium",
+    "productName": "Imperium of Wars",
+    "executableName": "ImperiumOfWars",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "ImperiumOfWars-${version}-windows.zip"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "artifactName": "ImperiumOfWars-${version}-linux.${ext}"
+    },
+    "electronLanguages": [
+      "fr",
+      "en-US"
+    ]
+  },
+  "repository": "https://github.com/lesnaufrages-mc/lesnaufrages-mc.github.io"
+}

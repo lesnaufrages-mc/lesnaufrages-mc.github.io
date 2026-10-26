@@ -95,6 +95,7 @@
   $('bNouvelle').onclick = choisirEpoque;
   $('bContinuer').onclick = function () {
     etat = charger(); choix = null;
+    M.assurerDiplo(etat);
     if (pseudoCompte) etat.pseudo = pseudoCompte;
     if (etat.pseudo) { demarrer(); return; }
     demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); demarrer(); });
@@ -165,11 +166,15 @@
   $('bMenu').onclick = function () {
     feuille('<h2>Pause</h2><p>' + nomF(moi()) + ' · ' + etat.annee + '. Ta campagne est sauvegardée automatiquement.</p>' +
       '<button class="btn" id="fClassement">🏆 Classement des royaumes</button>' +
+      '<button class="btn" id="fChroniques">📜 Chroniques</button>' +
+      '<button class="btn" id="fAide">❓ Aide et FAQ</button>' +
       (pseudoCompte ? '' : '<button class="btn" id="fPseudoChg">🎖️ Changer de pseudo</button>') +
       '<button class="btn" id="fRegles">📖 Comment jouer</button>' +
       '<button class="btn" id="fMenu">🏠 Menu principal</button>' +
       '<button class="btn rouge" id="fNouvelle">🔄 Nouvelle campagne</button>');
     $('fClassement').onclick = classement;
+    $('fChroniques').onclick = chroniques;
+    $('fAide').onclick = function () { aide(); };
     if ($('fPseudoChg')) $('fPseudoChg').onclick = function () {
       demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); dessiner(); toast('Tu es maintenant ' + nom + ' !'); }, true);
     };
@@ -177,7 +182,7 @@
     $('fMenu').onclick = function () { fermer(); menu(); };
     $('fNouvelle').onclick = choisirEpoque;
   };
-  $('bJournal').onclick = function () {
+  function chroniques() {
     feuille('<h2>📜 Chroniques</h2><ul class="journal">' + etat.journal.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
       '<button class="btn" data-fermer>Fermer</button>');
   };
@@ -333,6 +338,8 @@
       var taille = 2 + p.bat.murs * 0.9 + (cap ? 1 : 0);
       t += '<rect class="ville" x="' + (x - taille) + '" y="' + (y - taille) + '" width="' + taille * 2 + '" height="' + taille * 2 + '" rx="' + (p.bat.murs ? 0.6 : taille) + '" fill="' + (p.proprio === moi() ? '#fff' : '#f1f5f9') + '" stroke="' + coul(p.proprio) + '" stroke-width="1.2"/>';
       if (cap) t += '<text class="cour" x="' + x + '" y="' + (y - taille - 1.5) + '" text-anchor="middle">👑</text>';
+      var rel = p.proprio >= 0 && p.proprio !== moi() ? M.relation(etat, p.proprio) : '';
+      if (rel === 'alliance') t += '<text class="cour" x="' + (x - 9) + '" y="' + (y + 2) + '" text-anchor="middle">🤝</text>';
       t += '<text class="nom" x="' + x + '" y="' + (y + taille + 7) + '" text-anchor="middle">' + P.nom + '</text>';
       if (p.armee.length) {
         t += '<g class="armee"><circle cx="' + (x + 9) + '" cy="' + (y - 5) + '" r="5" fill="' + (p.proprio === moi() ? '#fbbf24' : '#f8fafc') + '" stroke="' + coul(p.proprio) + '" stroke-width="1.4"/>' +
@@ -353,7 +360,8 @@
     var el = $('panneau');
     if (choix == null) {
       el.innerHTML = '<h3><span class="pastille" style="background:' + etat.factions[moi()].coul + '"></span>' + (etat.pseudo ? '🎖️ ' + etat.pseudo + ' <small class="sousNom">' + etat.factions[moi()].nom + '</small>' : etat.factions[moi()].nom) + '</h3>' +
-        '<div class="aide">Touche une de tes provinces (couleur vive) pour gérer sa ville et son armée. Fais glisser la carte pour te déplacer. Quand tu as fini, appuie sur <b>Fin du tour</b>.</div>';
+        '<div class="aide">Touche une de tes provinces (couleur vive) pour gérer sa ville et son armée. Quand tu as fini, appuie sur <b>Fin du tour</b>.</div>' +
+        '<div class="conseil">🧙 <b>Conseiller :</b> ' + conseil() + '</div>';
       return;
     }
     var p = etat.provinces[choix], P = PROV[choix], mien = p.proprio === moi();
@@ -370,9 +378,16 @@
       h += '<div class="aide" style="margin-top:6px">' + (mobiles(choix).length ? 'Touche une province au contour jaune pour y envoyer tes troupes.' : 'Ces troupes ont déjà bougé ce tour-ci.') + '</div>';
     } else {
       var voisin = P.voisins.some(function (v) { return etat.provinces[v].proprio === moi(); });
-      h += '<div class="aide">' + (voisin ? 'Sélectionne une de tes provinces voisines pour attaquer ici.' : 'Trop loin de tes terres pour attaquer.') + (p.bat.murs ? ' Ville fortifiée : il faudra un siège (les canons aident !).' : '') + '</div>';
+      var rel = p.proprio >= 0 ? M.relation(etat, p.proprio) : 'guerre';
+      if (p.proprio >= 0) {
+        var D = etat.diplo[p.proprio];
+        h += '<div class="relLigne">' + badge(rel) + ' <span>' + M.humeur(D.att) + '</span><button class="btn mini" id="pNegocier">🤝 Négocier</button></div>';
+      }
+      h += '<div class="aide">' + (rel !== 'guerre' ? 'Vous êtes en ' + (rel === 'paix' ? 'paix' : 'alliance') + ' : pour attaquer ici, il faudra déclarer la guerre.' :
+        voisin ? 'Sélectionne une de tes provinces voisines pour attaquer ici.' : 'Trop loin de tes terres pour attaquer.') + (p.bat.murs ? ' Ville fortifiée : il faudra un siège (les canons aident !).' : '') + '</div>';
     }
     el.innerHTML = h;
+    if ($('pNegocier')) $('pNegocier').onclick = function () { negocier(p.proprio); };
     if (mien) {
       $('pRecruter').onclick = function () { recrutement(choix); };
       $('pConstruire').onclick = function () { chantier(choix); };
@@ -450,6 +465,14 @@
   function envoyer(de, vers) {
     var a = etat.provinces[de], c = etat.provinces[vers];
     var dispo = mobiles(de), pris = dispo.slice(), ami = c.proprio === moi();
+    if (!ami && c.proprio >= 0 && M.relation(etat, c.proprio) !== 'guerre') {
+      var allie = M.relation(etat, c.proprio) === 'alliance';
+      feuille('<h2>' + (allie ? '💔' : '⚔️') + ' Déclarer la guerre ?</h2><p>Tu es en <b>' + (allie ? 'alliance' : 'paix') + '</b> avec <b>' + etat.factions[c.proprio].nom + '</b>. ' +
+        'Pour attaquer ' + PROV[vers].nom + ', tu dois lui déclarer la guerre.' + (allie ? ' Trahir un allié fâche tous les autres royaumes !' : ' Les autres royaumes te feront un peu moins confiance.') + '</p>' +
+        '<button class="btn rouge" id="fGuerre">⚔️ Déclarer la guerre</button><button class="btn" data-fermer>Garder la ' + (allie ? 'alliance' : 'paix') + '</button>');
+      $('fGuerre').onclick = function () { var r = M.proposer(etat, c.proprio, 'guerre'); toast(r.msg); sauver(); dessiner(); envoyer(de, vers); };
+      return;
+    }
     function rendu() {
       var unites = pris.map(function (i) { return a.armee[i]; });
       var siege = !ami && c.bat.murs > 0 && c.armee.length;
@@ -510,12 +533,26 @@
     var defenses = M.finDuTour(etat);
     choix = null; sauver(); dessiner();
     toast('📅 ' + etat.annee + ' · 💰 +' + (etat.factions[moi()].or - avant) + ' or');
-    var suite = function () { traiterDefenses(defenses); };
+    var suite = function () { traiterPropositions(function () { traiterDefenses(defenses); }); };
     if (etat.nouvelles.length) {
       feuille('<h2>📜 Nouvelles de ' + etat.annee + '</h2><ul class="journal">' + etat.nouvelles.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ul><button class="btn or" id="fOk">Continuer</button>');
       $('fOk').onclick = function () { fermer(); suite(); };
     } else suite();
   };
+
+  // Les royaumes te proposent la paix ou une alliance.
+  function traiterPropositions(ensuite) {
+    if (etat.fin || !etat.propositions || !etat.propositions.length) { ensuite(); return; }
+    var P = etat.propositions[0], F = etat.factions[P.f], D = etat.diplo[P.f];
+    var paix = P.type === 'paix';
+    feuille('<h2>' + (paix ? '🕊️' : '🤝') + ' Un messager de ' + F.nom + '</h2>' +
+      '<p><span class="pastille" style="background:' + F.coul + '"></span> <b>' + F.nom + '</b> (' + M.nbProvinces(etat, P.f) + ' provinces, ' + M.humeur(D.att) + ') ' +
+      (paix ? 'est las de la guerre et te propose la <b>paix</b>.' : 'te propose une <b>alliance</b> : vous ne vous attaquerez plus, il défendra tes villes voisines et tu pourras lui demander de l\'or ou des troupes.') + '</p>' +
+      '<button class="btn or" id="fOui">✅ Accepter</button><button class="btn" id="fNon">❌ Refuser</button>');
+    var rep = function (oui) { var msg = M.repondre(etat, 0, oui); fermer(); if (msg) toast(msg); sauver(); dessiner(); traiterPropositions(ensuite); };
+    $('fOui').onclick = function () { rep(true); };
+    $('fNon').onclick = function () { rep(false); };
+  }
 
   function traiterDefenses(liste) {
     if (etat.fin) { finPartie(); return; }
@@ -540,6 +577,162 @@
       '<button class="btn or" id="fDefendre">🎖️ Commander la défense</button><button class="btn" id="fAutoDef">⚡ Résolution automatique</button>');
     $('fDefendre').onclick = function () { fermer(); lancerBataille(att, false, function () { montrer('campagne'); suite(); }); };
     $('fAutoDef').onclick = function () { fermer(); lancerBataille(att, true, function () { montrer('campagne'); suite(); }); };
+  }
+
+  // ---------- Diplomatie ----------
+  function badge(rel) {
+    var c = { paix: 'paix', guerre: 'guerre', alliance: 'alliance' }[rel] || 'paix';
+    return '<span class="rel ' + c + '">' + ({ paix: '🕊️ Paix', guerre: '⚔️ Guerre', alliance: '🤝 Alliance' }[rel] || rel) + '</span>';
+  }
+  function diplomatie() {
+    var liste = M.diplomatie(etat);
+    var n = { alliance: 0, guerre: 0 };
+    liste.forEach(function (d) { if (n[d.rel] != null) n[d.rel]++; });
+    var h = '<h2>🤝 Diplomatie</h2><p>' + n.alliance + ' allié(s) · ' + n.guerre + ' guerre(s). Touche un royaume pour négocier. Les voisins sont en haut.</p><div class="diplo">';
+    liste.forEach(function (d) {
+      h += '<button class="ligneDiplo" data-df="' + d.f + '"><span class="pastille" style="background:' + d.coul + '"></span>' +
+        '<span class="dNom"><b>' + d.nom + '</b><small>' + d.n + ' prov. · ' + d.humeur + (d.voisin ? ' · voisin' : '') + '</small></span>' + badge(d.rel) + '</button>';
+    });
+    h += '</div><button class="btn" id="fAideDiplo">❓ Comment marche la diplomatie ?</button><button class="btn" data-fermer>Fermer</button>';
+    feuille(h);
+    document.querySelectorAll('[data-df]').forEach(function (b) { b.onclick = function () { negocier(+b.getAttribute('data-df')); }; });
+    $('fAideDiplo').onclick = function () { aide('diplo'); };
+  }
+  function negocier(f) {
+    var F = etat.factions[f], D = etat.diplo[f], rel = D.rel, J = etat.factions[moi()];
+    var h = '<h2><span class="pastille" style="background:' + F.coul + '"></span> ' + F.nom + '</h2>' +
+      '<div class="relLigne">' + badge(rel) + ' <span>' + M.humeur(D.att) + '</span></div>' +
+      '<div class="humeurJauge"><i style="left:' + (D.att + 100) / 2 + '%"></i></div>' +
+      '<p class="petitTxt">Humeur envers toi : ' + D.att + ' / 100. ' + M.nbProvinces(etat, f) + ' provinces, 💰 ' + F.or + ' or.</p>';
+    if (rel === 'guerre') h += '<button class="btn or" data-act="paix">🕊️ Proposer la paix</button>';
+    if (rel === 'paix') h += '<button class="btn or" data-act="alliance">🤝 Proposer une alliance' + (D.att < 40 ? ' (humeur 40 requise)' : '') + '</button>';
+    if (rel === 'alliance') {
+      h += '<button class="btn or" data-act="aideOr">💰 Demander de l\'or</button>' +
+        '<button class="btn or" data-act="aideTroupes">🛡️ Demander des renforts</button>' +
+        (D.aideT > etat.tour ? '<p class="petitTxt">Ton allié pourra t\'aider de nouveau dans ' + (D.aideT - etat.tour) + ' tour(s).</p>' : '');
+    }
+    h += '<button class="btn" data-act="cadeau"' + (J.or < 100 ? ' disabled' : '') + '>🎁 Offrir 100 or (humeur +15)</button>';
+    if (rel === 'alliance') h += '<button class="btn" data-act="rompre">💔 Rompre l\'alliance</button>';
+    if (rel !== 'guerre') h += '<button class="btn rouge" data-act="guerre">⚔️ Déclarer la guerre</button>';
+    h += '<button class="btn" id="fRetourDiplo">← Tous les royaumes</button>';
+    feuille(h);
+    document.querySelectorAll('[data-act]').forEach(function (b) {
+      b.onclick = function () {
+        var r = M.proposer(etat, f, b.getAttribute('data-act'));
+        toast((r.ok ? '✅ ' : '❌ ') + r.msg);
+        sauver(); dessiner();
+        if (r.ok && r.province != null) { choix = r.province; dessiner(); }
+        negocier(f);
+      };
+    });
+    $('fRetourDiplo').onclick = diplomatie;
+  }
+  $('bDiplo').onclick = diplomatie;
+
+  // ---------- Aide, conseils et FAQ ----------
+  var AIDE = {
+    carte: ['🗺️ La carte', [
+      'Fais glisser la carte avec un doigt, pince avec deux doigts (ou + / −) pour zoomer. 🎯 recentre sur ta capitale.',
+      'Les couleurs vives sont <b>tes</b> provinces. 👑 = capitale, un carré = ville fortifiée, 🤝 = ville d\'un allié.',
+      'La pastille ronde sur une ville indique combien d\'unités y sont.',
+      'Chaque tour fait avancer le temps de quelques années. La campagne se termine en ' + HIST.FIN + '.']],
+    villes: ['🏰 Villes et or', [
+      'Chaque province rapporte de l\'or à chaque tour. 💰 Marché = plus d\'or, 🌾 Ferme = un peu d\'or et des soldats soignés plus vite.',
+      '⚒️ La caserne débloque les meilleures unités (niveau 2 et 3). 🏰 Les remparts protègent la ville : l\'ennemi doit faire un siège.',
+      'Un seul chantier par ville et par tour : commence par les marchés pour être riche.']],
+    armees: ['⚔️ Armées', [
+      'Touche une de tes provinces puis <b>Recruter</b>. Les unités récentes arrivent avec les siècles (chevaliers 1000, piquiers 1300, canons 1450, mousquets 1600).',
+      'Touche ensuite une province voisine (contour jaune) pour y envoyer tes troupes : déplacement chez toi, attaque chez l\'ennemi.',
+      'Une armée qui a bougé se repose jusqu\'au tour suivant. Maximum ' + M.MAX_UNITES + ' unités par province.',
+      'Pierre-feuille-ciseaux : 🔱 piques battent 🐎 cavaliers, 🐎 cavaliers écrasent 🏹 tireurs, ⚔️ hommes d\'armes solides partout.']],
+    batailles: ['🎖️ Batailles', [
+      'Choisis <b>Commander</b> pour diriger toi-même, ou <b>Résolution automatique</b> pour aller vite.',
+      'Touche une de tes cartes d\'unité en bas, puis un ennemi pour l\'attaquer, ou le sol pour te déplacer.',
+      '⚔️ Charge ! lance tout le monde, 🛡️ Tenir garde la position. Le bouton 🗺️ passe de la 3D à la 2D si ton téléphone rame.',
+      'Contre des remparts, amène des canons : ils ouvrent une brèche. Les défenseurs derrière les murs encaissent beaucoup mieux.']],
+    diplo: ['🤝 Diplomatie et alliances', [
+      'Bouton 🤝 en haut : la liste des royaumes avec ta relation (🕊️ Paix, ⚔️ Guerre, 🤝 Alliance) et leur humeur envers toi (😠 à 😍).',
+      'Un royaume en paix ou allié ne t\'attaque pas, et tu dois lui <b>déclarer la guerre</b> avant de l\'attaquer.',
+      'L\'humeur monte avec les cadeaux 🎁, la paix et l\'alliance. Elle baisse si tu lui prends des villes, si tu es son voisin, ou si tu deviens trop grand.',
+      'Avec une humeur « Amical » (40+), propose une <b>alliance</b>. Un allié défend tes villes voisines quand on les attaque, et tu peux lui demander 💰 de l\'or ou 🛡️ des renforts (puis il faut attendre quelques tours).',
+      'Les royaumes t\'écrivent aussi : propositions de paix ou d\'alliance à la fin du tour. Attention, un voisin hostile peut te déclarer la guerre !',
+      'Trahir un allié (lui déclarer la guerre) fâche tous les autres royaumes.']],
+    faq: ['💬 FAQ', null]
+  };
+  var FAQ = [
+    ['C\'est quoi Imperium of Wars ?', 'Un jeu de stratégie historique gratuit, sur mobile et ordinateur. Tu diriges un vrai royaume sur la carte de l\'Europe et de la Méditerranée, de 771 à 1800 : tu gères tes villes, ta diplomatie, et tu commandes tes armées dans des batailles en 3D.'],
+    ['C\'est gratuit ?', 'Oui, 100 % gratuit, sans achat. Le site affiche quelques publicités pour payer l\'hébergement.'],
+    ['Faut-il un compte ?', 'Non. Tu peux jouer avec un simple pseudo. Si tu es connecté à ton compte du forum, ton pseudo est repris automatiquement.'],
+    ['Comment gagner ?', 'Possède ' + HIST.OBJECTIF + ' provinces avant ' + HIST.FIN + '. Sinon, en ' + HIST.FIN + ', le classement des royaumes décide du vainqueur.'],
+    ['Quelles époques ?', HIST.EPOQUES.map(function (e) { return e.annee + ' ' + e.titre; }).join(', ') + '. Les unités évoluent avec le temps, des chevaliers aux mousquetaires.'],
+    ['Ma partie est-elle sauvegardée ?', 'Oui, automatiquement sur ton appareil, à chaque action. Reviens quand tu veux avec « Continuer la campagne ».'],
+    ['Peut-on le télécharger ?', 'Oui ! Bouton « 📲 Installer le jeu » sur le menu : il s\'ajoute sur ton écran d\'accueil comme une vraie appli et marche même sans internet (sauf la 3D la toute première fois). Sur iPhone : bouton Partager de Safari puis « Sur l\'écran d\'accueil ».'],
+    ['Mon téléphone rame en bataille', 'Touche le bouton 🗺️ 2D pendant la bataille : la vue 2D est beaucoup plus légère.'],
+    ['Le jeu ne s\'est pas mis à jour', 'Recharge la page (ou ferme et rouvre l\'appli installée) : la nouvelle version arrive au lancement suivant.'],
+    ['Où donner mon avis ?', 'Sur le <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a> ou sur le <a href="../forum/">forum</a> du site.']
+  ];
+  function htmlFAQ() {
+    return '<div class="faq">' + FAQ.map(function (q) { return '<details><summary>' + q[0] + '</summary><p>' + q[1] + '</p></details>'; }).join('') + '</div>';
+  }
+  function aide(sujet) {
+    if (!sujet) {
+      var h = '<h2>❓ Centre d\'aide</h2><p>Choisis un sujet. Tu peux revenir ici à tout moment avec le bouton ❓ sur la carte.</p>';
+      Object.keys(AIDE).forEach(function (k) { h += '<button class="btn" data-aide="' + k + '">' + AIDE[k][0] + '</button>'; });
+      h += '<button class="btn" id="fReglesAide">📖 Règles rapides</button><button class="btn or" data-fermer>Fermer</button>';
+      feuille(h);
+      document.querySelectorAll('[data-aide]').forEach(function (b) { b.onclick = function () { aide(b.getAttribute('data-aide')); }; });
+      $('fReglesAide').onclick = regles;
+      return;
+    }
+    var A = AIDE[sujet];
+    feuille('<h2>' + A[0] + '</h2>' + (A[1] ? '<ul class="regles">' + A[1].map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' : htmlFAQ()) +
+      '<button class="btn" id="fAideRetour">← Autres sujets</button><button class="btn or" data-fermer>Compris !</button>');
+    $('fAideRetour').onclick = function () { aide(); };
+  }
+  $('bAide').onclick = function () { aide(); };
+  $('bFAQ').onclick = function () {
+    feuille('<h2>💬 FAQ · Imperium of Wars</h2>' + htmlFAQ() + '<button class="btn or" data-fermer>Fermer</button>');
+  };
+
+  // Un conseil adapté à la situation, affiché dans le panneau.
+  function conseil() {
+    var F = etat.factions[moi()], liste = M.diplomatie(etat);
+    var guerres = liste.filter(function (d) { return d.rel === 'guerre' && d.voisin; });
+    var amis = liste.filter(function (d) { return d.rel === 'paix' && d.att >= 40; });
+    var allies = liste.filter(function (d) { return d.rel === 'alliance' && d.aidePrete && d.att >= 20; });
+    var sansMarche = etat.provinces.some(function (p) { return p.proprio === moi() && !p.bat.marche && !p.construit; });
+    var tips = [];
+    if (allies.length) tips.push(allies[0].nom + ' est ton allié : demande-lui de l\'or ou des renforts avec le bouton 🤝.');
+    if (amis.length) tips.push(amis[0].nom + ' t\'apprécie : propose-lui une alliance (bouton 🤝).');
+    if (guerres.length > 1) tips.push('Tu es en guerre contre ' + guerres.length + ' voisins. Signe la paix avec l\'un d\'eux pour souffler.');
+    if (F.or >= 300) tips.push('Tu as ' + F.or + ' or : recrute une armée ou construis des remparts.');
+    if (sansMarche) tips.push('Construis un 💰 marché dans tes villes : plus d\'or chaque tour.');
+    tips.push('Un voisin en paix ne t\'attaque pas. Choisis bien tes guerres !');
+    tips.push('Les canons ouvrent une brèche dans les remparts lors d\'un siège.');
+    tips.push('Besoin d\'aide ? Touche ❓ sur la carte.');
+    return tips[etat.tour % Math.min(tips.length, 3)];
+  }
+
+  // ---------- Installer le jeu (appli hors ligne) ----------
+  var invite = null;
+  function estInstalle() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone; }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); invite = e; });
+  window.addEventListener('appinstalled', function () { invite = null; $('bInstaller').classList.add('hide'); toast('📲 Imperium of Wars est installé !'); });
+  if (estInstalle()) $('bInstaller').classList.add('hide');
+  $('bInstaller').onclick = function () {
+    if (invite) {
+      invite.prompt();
+      invite.userChoice.then(function () { invite = null; });
+      return;
+    }
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    feuille('<h2>📲 Installer Imperium of Wars</h2><p>Le jeu s\'ajoute sur ton écran d\'accueil comme une appli, en plein écran, et fonctionne même sans internet.</p><ol class="regles">' +
+      (ios ? '<li>Ouvre cette page dans <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> (carré avec une flèche).</li><li>Choisis <b>« Sur l\'écran d\'accueil »</b>, puis <b>Ajouter</b>.</li>'
+           : '<li>Ouvre cette page dans <b>Chrome</b> (Android) ou Edge / Chrome (ordinateur).</li><li>Touche le menu <b>⋮</b> en haut à droite.</li><li>Choisis <b>« Installer l\'application »</b> ou <b>« Ajouter à l\'écran d\'accueil »</b>.</li>') +
+      '</ol><button class="btn or" data-fermer>OK</button>');
+  };
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   }
 
   function finPartie() {

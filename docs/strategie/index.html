@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1220">
+<link rel="apple-touch-icon" href="icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Imperium of Wars – Stratégie historique 771-1800</title>
 <meta name="description" content="Jeu de stratégie historique gratuit sur téléphone : de Charlemagne à Louis XIV, conquiers l'Europe et l'Orient, construis tes villes, assiège les forteresses et commande tes batailles.">
 <meta name="theme-color" content="#0b1220">
@@ -63,7 +67,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 #carte .nom{font-size:6.5px;font-weight:800;fill:#fff;paint-order:stroke;stroke:#111827;stroke-width:1.8px}
 #carte .cour{font-size:6px}
 #carte .armee text{font-size:6.5px;font-weight:900;fill:#111827}
-#carte .ville{pointer-events:none}
+#carte .ville,#carte .armee{pointer-events:none}
 #carte.loin .nom{font-size:10px;stroke-width:2.6px}
 #carte.loin .armee{display:none}
 #carte.tresloin .nom{display:none}
@@ -145,6 +149,28 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .boite h2{margin:0 0 6px;font-size:22px;font-family:Cinzel,Georgia,serif}
 .boite p{color:var(--muted);font-size:14px;margin:0 0 14px}
 .toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#0f172a;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;z-index:40;max-width:92vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:monte .2s}
+.duo{display:flex;gap:8px;width:100%;max-width:320px;margin:0 auto}
+.duo .btn{flex:1;margin:8px 0;font-size:15px;padding:14px 8px}
+.bAideCarte{position:absolute;left:10px;top:10px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(15,23,42,.85);color:#fff;font-size:18px;z-index:5}
+.conseil{margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);font-size:13px;line-height:1.35}
+.rel{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.rel.paix{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.4)}
+.rel.guerre{background:rgba(229,72,77,.15);color:#fca5a5;border:1px solid rgba(229,72,77,.45)}
+.rel.alliance{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.45)}
+.relLigne{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px;flex-wrap:wrap}
+.btn.mini{width:auto;margin:0 0 0 auto;padding:6px 10px;font-size:13px}
+.diplo{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.ligneDiplo{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 10px;color:inherit;font:inherit}
+.ligneDiplo .dNom{flex:1;min-width:0}
+.ligneDiplo .dNom b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ligneDiplo .dNom small{color:var(--muted);font-size:12px}
+.humeurJauge{height:8px;border-radius:99px;background:linear-gradient(90deg,#e5484d,#fbbf24 50%,#22c55e);position:relative;margin:8px 0 4px;opacity:.9}
+.humeurJauge i{position:absolute;top:-4px;width:4px;height:16px;background:#fff;border-radius:2px;transform:translateX(-2px);left:0}
+.petitTxt{font-size:12px;color:var(--muted);margin:4px 0 10px}
+.faq details{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}
+.faq summary{font-weight:700;cursor:pointer;font-size:14px}
+.faq p{margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.faq a{color:#fbbf24}
 </style>
 </head>
 <body>
@@ -157,6 +183,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   <button class="btn or" id="bNouvelle">📜 Nouvelle campagne (771 – 1800)</button>
   <button class="btn hide" id="bContinuer">▶ Continuer la campagne</button>
   <button class="btn" id="bRegles">📖 Comment jouer</button>
+  <div class="duo"><button class="btn" id="bFAQ">💬 FAQ</button><button class="btn bleu" id="bInstaller">📲 Installer le jeu</button></div>
   <p class="pseudoMenu" id="menuPseudo"></p>
   <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a></div>
 </section>
@@ -170,12 +197,13 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
       <span class="or">💰 <span id="tOr">0</span> <span class="petit">(+<span id="tRev">0</span>)</span></span>
       <span class="petit">🏴 <span id="tReg">1</span></span>
     </div>
-    <button id="bJournal" aria-label="Journal">📜</button>
+    <button id="bDiplo" aria-label="Diplomatie">🤝</button>
     <button id="bMenu" aria-label="Menu">☰</button>
     <button class="fin" id="bFinTour">Fin du tour ⏭</button>
   </div>
   <div id="zoneCarte"><svg id="carte" preserveAspectRatio="xMidYMid slice"></svg>
-    <div class="zoom"><button id="zPlus" aria-label="Zoomer">+</button><button id="zMoins" aria-label="Dézoomer">−</button><button id="zMoi" aria-label="Recentrer">🎯</button></div></div>
+    <div class="zoom"><button id="zPlus" aria-label="Zoomer">+</button><button id="zMoins" aria-label="Dézoomer">−</button><button id="zMoi" aria-label="Recentrer">🎯</button></div>
+    <button class="bAideCarte" id="bAide" aria-label="Aide">❓</button></div>
   <div class="panneau" id="panneau"></div>
 </section>
 
@@ -216,12 +244,12 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <script src="../supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="monde.js?v=4"></script>
-<script src="histoire.js?v=4"></script>
-<script src="moteur.js?v=4"></script>
+<script src="monde.js?v=5"></script>
+<script src="histoire.js?v=5"></script>
+<script src="moteur.js?v=5"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js?v=4"></script>
-<script src="jeu.js?v=4"></script>
+<script src="bataille3d.js?v=5"></script>
+<script src="jeu.js?v=5"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

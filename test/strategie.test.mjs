@@ -106,3 +106,66 @@ test('diplomatie : paix, alliance, aide et guerre', () => {
     e2.diplo.forEach((d) => { if (d) { d.rel = d.rel === 'guerre' ? 'paix' : d.rel; d.att = 90; } });
   }
 });
+
+test('chaque royaume a son souverain historique', () => {
+  const P = require('../docs/strategie/personnages.js');
+  H.EPOQUES.forEach((e) => e.factions.forEach((f) => {
+    const d = P.EPOQUES[e.id][f[0]];
+    assert.ok(d, e.id + ' : ' + f[0]);
+    assert.ok(d.roi[1] < e.annee && e.annee - d.roi[1] < 95, d.roi[0]);
+    assert.ok(P.NOMS[d.c], d.c);
+  }));
+  const e = M.nouvellePartie('rois', 'france', 1);
+  const F = e.factions[e.joueur];
+  assert.equal(F.roi.nom, 'Louis XIV');
+  assert.equal(M.heritier(F).nom, 'Louis, le Grand Dauphin');
+});
+
+test('succession, mariage et union des couronnes', () => {
+  const e = M.nouvellePartie('croisades', 'castille', 5);
+  const J = e.factions[e.joueur];
+  const f = e.factions.findIndex((F) => F.id === 'portugal');
+  const P = e.factions[f];
+  // Le mariage demande une bonne entente.
+  e.diplo[f].att = -20;
+  const blanche = J.cour.fam.findIndex((m) => m.nom === 'Blanche de Castille');
+  const alphonse = P.cour.fam.findIndex((m) => m.nom === 'Alphonse');
+  assert.equal(M.proposer(e, f, 'mariage', { a: blanche, b: alphonse }).ok, false);
+  e.tour++;
+  e.diplo[f].att = 80;
+  const r = M.proposer(e, f, 'mariage', { a: blanche, b: alphonse });
+  assert.ok(r.ok, r.msg);
+  assert.ok(e.diplo[f].sang);
+  // Deux personnes du même sexe ou déjà mariées : refus.
+  assert.ok(M.verifMariage(e, f, blanche, alphonse));
+  // Le roi de Portugal meurt : son héritier, marié à une Castillane, apporte le royaume.
+  const avant = M.nbProvinces(e, e.joueur);
+  P.roi.ne = e.annee - 200; P.roi.fragile = true;
+  for (let t = 0; t < 6 && M.nbProvinces(e, f) > 0; t++) M.finDuTour(e);
+  assert.equal(M.nbProvinces(e, f), 0);
+  assert.ok(M.nbProvinces(e, e.joueur) > avant);
+  // Un pape mort laisse la place à un pape élu.
+  const e2 = M.nouvellePartie('conquete', 'france', 3);
+  const pape = e2.factions.find((F) => F.id === 'papaute');
+  pape.roi.ne = e2.annee - 200; pape.roi.fragile = true;
+  M.finDuTour(e2);
+  assert.notEqual(pape.roi.nom, 'Alexandre II');
+});
+
+test('impôts, ordre public, entretien et révoltes', () => {
+  const e = M.nouvellePartie('rois', 'france', 2);
+  const cap = e.factions[e.joueur].capitale;
+  const p = e.provinces[cap];
+  const normal = M.revenuProvince(p);
+  assert.equal(M.changerImpots(e, cap, 2), null);
+  assert.ok(M.revenuProvince(p) > normal);
+  assert.ok(M.cibleOrdre(e, cap) < 100);
+  assert.ok(M.entretien(e, e.joueur) > 0);
+  // Une province pressurée, sans garnison, finit par se révolter.
+  const autre = e.provinces.findIndex((q, i) => q.proprio === e.joueur && i !== cap);
+  const q = e.provinces[autre];
+  q.armee = []; q.impots = 2; q.ordre = 0; q.agit = 60;
+  let revolte = false;
+  for (let t = 0; t < 10 && !revolte; t++) { M.finDuTour(e); revolte = q.proprio !== e.joueur; q.ordre = Math.min(q.ordre, 5); q.armee = []; }
+  assert.ok(revolte);
+});

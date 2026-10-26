@@ -8,6 +8,17 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-10-26",
+    categorie: "site",
+    epingle: true,
+    titre: "Le trailer d'Imperium of Wars est sorti !",
+    texte: "La vraie carte d'Europe, de 771 à 1700. Lève tes armées, assiège des villes et commande tes batailles en 3D et en temps réel. Un jeu de stratégie historique 100 % gratuit, directement dans ton navigateur.",
+    video: "videos/imperium-trailer.mp4",
+    image: "videos/imperium-trailer.jpg",
+    lien: "strategie/",
+    bouton: "Jouer à Imperium of Wars"
+  },
+  {
     date: "2026-10-25",
     categorie: "appli",
     epingle: true,

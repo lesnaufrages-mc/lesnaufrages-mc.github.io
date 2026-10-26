@@ -242,3 +242,78 @@ test('quêtes : aucune n\'est finie au départ, et restaurer un empire renomme l
   assert.ok(J.or > or);
   assert.equal(M.quetes(e, e.joueur).find((y) => y.q.id === 'georgie').faite, e.joueur);
 });
+
+test('marine : ports, transport par la mer et débarquement avec bataille navale', () => {
+  const idx = (id) => M.PROV.findIndex((p) => p.id === id);
+  assert.ok(M.estCotiere(idx('venise')));
+  assert.ok(!M.estCotiere(idx('baviere')));
+  assert.ok(M.PORTEE[idx('venise')].includes(idx('athenes')));
+  const e = M.nouvellePartie('rois', 'france', 3);
+  const J = e.factions[e.joueur];
+  const mars = idx('marseille'), bord = idx('bordeaux');
+  const pm = e.provinces[mars];
+  pm.bat.port = 1; pm.flotte = []; J.or = 5000;
+  assert.equal(M.construireNavire(e, idx('dijon'), 'galere'), 'Pas de côte ici.');
+  assert.equal(M.construireNavire(e, mars, 'galere'), null);
+  pm.flotte.forEach((n) => { n.bouge = false; });
+  pm.armee = [{ t: 'mousquet', hp: 360, bouge: false }, { t: 'mousquet', hp: 360, bouge: false }];
+  // Marseille → Bordeaux par la mer (deux mers voisines)
+  assert.ok(M.PORTEE[mars].includes(bord));
+  assert.equal(M.naviguer(e, mars, bord, [0]), null);
+  assert.equal(e.provinces[bord].flotte.length, 1);
+  // Débarquement contre une côte gardée par une flotte plus forte : échec et retour au port.
+  const pb = e.provinces[bord];
+  pb.flotte.forEach((n) => { n.bouge = false; });
+  pb.armee.forEach((u) => { u.bouge = false; });
+  const cible = idx('lisbonne'), pl = e.provinces[cible], f = pl.proprio;
+  e.diplo[f].rel = 'guerre';
+  pl.flotte = [{ t: 'vaisseau', hp: 230, bouge: false }, { t: 'vaisseau', hp: 230, bouge: false }];
+  const k = pb.armee.findIndex((u) => !u.bouge);
+  const att = M.preparerDebarquement(e, bord, cible, [k]);
+  assert.ok(!att.erreur, att.erreur);
+  assert.ok(att.naval);
+  assert.equal(att.naval.gagnant, 1);
+  assert.ok(att.echec);
+});
+
+test('commerce : accord, revenus, produits de luxe et rupture à la guerre', () => {
+  const e = M.nouvellePartie('constantinople', 'venise', 2);
+  const f = e.factions.findIndex((F) => F.id === 'mamelouks');
+  e.diplo[f].att = 50; e.diplo[f].rel = 'paix';
+  assert.ok(M.valeurAccord(e, f) > 4);
+  const r = M.proposer(e, f, 'commerce');
+  assert.ok(r.ok, r.msg);
+  assert.deepEqual(M.accords(e), [f]);
+  assert.ok(M.revenuCommerce(e) > 0);
+  assert.ok(M.luxes(e, e.joueur).length >= 1);
+  const or = e.factions[e.joueur].or;
+  M.assurerCour(e);
+  e.rapport = { cour: [], revoltes: [] };
+  M.proposer(e, f, 'guerre');
+  assert.deepEqual(M.accords(e), []);
+  assert.ok(e.factions[e.joueur].or === or);
+});
+
+test('cour : conseil, salaires, intendant, événements et complots', () => {
+  const e = M.nouvellePartie('rois', 'france', 6);
+  const J = e.factions[e.joueur];
+  assert.ok(J.cour.nobles.length >= 4);
+  assert.ok(Object.keys(J.cour.conseil).length >= 3);
+  assert.ok(M.salaires(e) > 0);
+  M.nommer(e, 'intendant', null);
+  const sans = M.revenu(e, e.joueur);
+  J.cour.nobles[0].dom = 'int'; J.cour.nobles[0].comp = 10;
+  assert.equal(M.nommer(e, 'intendant', 'n' + J.cour.nobles[0].id), null);
+  assert.ok(M.revenu(e, e.joueur) > sans);
+  // Un courtisan déloyal finit par comploter (complot démasqué ou réussi).
+  J.cour.nobles[1].loy = 0;
+  let trace = false;
+  for (let t = 0; t < 30 && !trace; t++) {
+    J.cour.nobles.forEach((n) => { if (n !== J.cour.nobles[1]) n.loy = 90; });
+    if (J.cour.nobles[1]) J.cour.nobles[1].loy = 0;
+    M.finDuTour(e);
+    trace = (e.evenements || []).some((x) => x.type === 'complot') || e.rapport.cour.some((x) => x.includes('Complot'));
+    while ((e.evenements || []).length) M.choisirEvenement(e, 0);
+  }
+  assert.ok(trace);
+});

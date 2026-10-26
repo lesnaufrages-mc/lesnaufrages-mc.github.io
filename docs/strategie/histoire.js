@@ -229,6 +229,61 @@ var HISTOIRE = {
       pour: ['hongrie', 'avars', 'autriche'],
       texte: "Le royaume de Hongrie au temps de Louis le Grand : la Hongrie, la Croatie, la Transylvanie et les Balkans.",
       provinces: ['bude', 'croatie', 'transylvanie', 'belgrade', 'valachie', 'vienne', 'raguse'] }
-  ]
+  ],
+
+  // Mers : les provinces qui ont une côte sur chaque mer, et les mers voisines.
+  // Une flotte va d'une province côtière à une autre sur la même mer ou une mer voisine.
+  MERS: {
+    atlantique: { nom: 'Océan Atlantique', provinces: 'lisbonne compostelle leon pampelune bordeaux rennes cordoue fes marrakech', voisines: ['manche', 'irlande', 'baleares'] },
+    manche: { nom: 'La Manche', provinces: 'rennes rouen londres bruges', voisines: ['atlantique', 'nord'] },
+    nord: { nom: 'Mer du Nord', provinces: 'londres bruges amsterdam hambourg copenhague oslo gothie edimbourg york', voisines: ['manche', 'irlande', 'baltique'] },
+    irlande: { nom: "Mer d'Irlande", provinces: 'dublin galles edimbourg', voisines: ['atlantique', 'nord'] },
+    baltique: { nom: 'Mer Baltique', provinces: 'copenhague gothie stockholm dantzig riga novgorod hambourg berlin vilnius', voisines: ['nord'] },
+    baleares: { nom: 'Mer des Baléares', provinces: 'barcelone valence grenade cordoue marseille toulouse alger tlemcen sardaigne corse', voisines: ['atlantique', 'tyrrhenienne', 'ionienne'] },
+    tyrrhenienne: { nom: 'Mer Tyrrhénienne', provinces: 'genes florence rome naples palerme sardaigne corse marseille tunis', voisines: ['baleares', 'ionienne'] },
+    ionienne: { nom: 'Mer Ionienne', provinces: 'palerme naples tunis tripoli cyrene athenes crete', voisines: ['baleares', 'tyrrhenienne', 'adriatique', 'egee', 'levant'] },
+    adriatique: { nom: 'Mer Adriatique', provinces: 'venise raguse croatie naples rome', voisines: ['ionienne'] },
+    egee: { nom: 'Mer Égée', provinces: 'athenes thessalonique constantinople smyrne brousse crete', voisines: ['ionienne', 'levant', 'noire'] },
+    levant: { nom: 'Mer du Levant', provinces: 'chypre antioche damas jerusalem alexandrie caire crete konya smyrne', voisines: ['ionienne', 'egee'] },
+    noire: { nom: 'Mer Noire', provinces: 'constantinople bulgarie valachie moldavie crimee steppe don trebizonde ankara tbilissi', voisines: ['egee'] }
+  },
+
+  // Commerce : les marchandises et la province qui les produit. Les produits de luxe calment le peuple.
+  PRODUITS: {
+    ble: { nom: 'Blé', ico: '🌾', prix: 4 },
+    vin: { nom: 'Vin', ico: '🍷', prix: 6 },
+    sel: { nom: 'Sel', ico: '🧂', prix: 5 },
+    fer: { nom: 'Fer', ico: '⛏️', prix: 6 },
+    bois: { nom: 'Bois', ico: '🪵', prix: 4 },
+    laine: { nom: 'Laine', ico: '🐑', prix: 5 },
+    poisson: { nom: 'Poisson', ico: '🐟', prix: 4 },
+    huile: { nom: "Huile d'olive", ico: '🫒', prix: 5 },
+    chevaux: { nom: 'Chevaux', ico: '🐎', prix: 6 },
+    tissus: { nom: 'Draps et tissus', ico: '🧶', prix: 7 },
+    sucre: { nom: 'Sucre', ico: '🍯', prix: 7 },
+    fourrures: { nom: 'Fourrures', ico: '🦊', prix: 9, luxe: true },
+    ambre: { nom: 'Ambre', ico: '🟠', prix: 9, luxe: true },
+    soie: { nom: 'Soie', ico: '🧵', prix: 10, luxe: true },
+    epices: { nom: 'Épices', ico: '🌶️', prix: 11, luxe: true },
+    or: { nom: 'Or et argent', ico: '🪙', prix: 11, luxe: true }
+  },
+  PRODUCTION: {
+    ble: 'saragosse paris toulouse orleans francfort berlin varsovie kiev riazan valachie thessalonique konya caire belgrade palerme alger',
+    vin: 'lisbonne bordeaux dijon cologne vienne rome bude tbilissi crete',
+    sel: 'rennes metz hambourg baviere cracovie galicie raguse sardaigne crimee',
+    fer: 'tolede galles milan stockholm armenie',
+    bois: 'suisse corse oslo vilnius smolensk croatie',
+    laine: 'leon pampelune londres york bulgarie ankara',
+    poisson: 'compostelle edimbourg amsterdam copenhague gothie volga',
+    huile: 'cordoue marseille genes naples athenes smyrne jerusalem tunis',
+    chevaux: 'dublin don steppe moldavie nedjd cyrene',
+    tissus: 'barcelone rouen bruges florence mossoul tabriz fes',
+    sucre: 'valence marrakech chypre',
+    fourrures: 'novgorod moscou tver',
+    ambre: 'dantzig riga',
+    soie: 'grenade lyon constantinople brousse antioche ispahan',
+    epices: 'venise damas bagdad bassora medine alexandrie',
+    or: 'saxe prague transylvanie trebizonde tripoli tlemcen'
+  }
 };
 if (typeof module !== 'undefined') module.exports = HISTOIRE;

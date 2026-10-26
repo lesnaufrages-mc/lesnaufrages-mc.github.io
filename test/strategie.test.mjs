@@ -65,3 +65,44 @@ test('chaque campagne avance jusqu\'au bout sans erreur', () => {
     assert.ok(e.fin, ep.id);
   });
 });
+
+test('diplomatie : paix, alliance, aide et guerre', () => {
+  const e = M.nouvellePartie('charlemagne', 'francs', 7);
+  const liste = M.diplomatie(e);
+  assert.ok(liste.length > 5);
+  liste.forEach((d) => assert.ok(['paix', 'guerre'].includes(d.rel)));
+  const loin = liste.find((d) => !d.voisin);
+  const f = loin.f;
+  // Une alliance demande une bonne humeur.
+  e.diplo[f].att = 10;
+  assert.equal(M.proposer(e, f, 'alliance').ok, false);
+  e.tour++;
+  e.diplo[f].att = 55;
+  assert.equal(M.proposer(e, f, 'alliance').ok, true);
+  assert.equal(M.relation(e, f), 'alliance');
+  // Un allié envoie de l'or puis attend avant d'aider encore.
+  e.tour++;
+  e.factions[f].or = 500;
+  const or = e.factions[e.joueur].or;
+  assert.equal(M.proposer(e, f, 'aideOr').ok, true);
+  assert.ok(e.factions[e.joueur].or > or);
+  e.tour++;
+  assert.equal(M.proposer(e, f, 'aideTroupes').ok, false);
+  // On ne peut pas attaquer un royaume en paix sans déclarer la guerre.
+  const voisin = liste.find((d) => d.voisin);
+  e.diplo[voisin.f].rel = 'paix';
+  const mienne = e.provinces.findIndex((p, i) => p.proprio === e.joueur && M.PROV[i].voisins.some((v) => e.provinces[v].proprio === voisin.f));
+  const cible = M.PROV[mienne].voisins.find((v) => e.provinces[v].proprio === voisin.f);
+  const att = M.preparerAttaque(e, mienne, cible, [0]);
+  assert.ok(att.erreur && att.paix === voisin.f);
+  assert.equal(M.proposer(e, voisin.f, 'guerre').ok, true);
+  assert.equal(M.relation(e, voisin.f), 'guerre');
+  // Une IA en paix n'attaque jamais le joueur.
+  const e2 = M.nouvellePartie('rois', 'france', 3);
+  e2.diplo.forEach((d) => { if (d) { d.rel = 'paix'; d.att = 90; } });
+  for (let t = 0; t < 10; t++) {
+    const def = M.finDuTour(e2);
+    assert.equal(def.length, 0);
+    e2.diplo.forEach((d) => { if (d) { d.rel = d.rel === 'guerre' ? 'paix' : d.rel; d.att = 90; } });
+  }
+});

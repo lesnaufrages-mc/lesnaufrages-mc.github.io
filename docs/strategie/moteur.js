@@ -101,6 +101,7 @@
       journal: [E.annee + ' : ' + E.titre + '. Tu diriges ' + factions[joueur].nom + '.'],
       fin: null, nouvelles: []
     };
+    initDiplo(etat, alea);
     return etat;
   }
 
@@ -174,6 +175,8 @@
     var a = etat.provinces[de], c = etat.provinces[vers];
     if (PROV[de].voisins.indexOf(vers) < 0) return { erreur: 'Pas voisine.' };
     if (c.proprio === a.proprio) return { erreur: 'Déjà à toi.' };
+    if (a.proprio === etat.joueur && c.proprio >= 0 && relation(etat, c.proprio) !== 'guerre')
+      return { erreur: 'Tu es en ' + relation(etat, c.proprio) + ' avec ' + etat.factions[c.proprio].nom + '.', paix: c.proprio };
     var unites = prendre(a, indices);
     if (!unites.length) return { erreur: 'Aucune unité choisie.' };
     return { de: de, vers: vers, camp: a.proprio, unites: unites };
@@ -409,6 +412,7 @@
       c.proprio = att.camp;
       c.armee = survA.slice(0, MAX_UNITES);
       if (b && b.mur && b.mur.segs.some(function (s) { return s.hp <= 0; })) c.bat.murs = Math.max(0, c.bat.murs - 1);
+      if (att.camp === etat.joueur && ancien >= 0) changerAttitude(etat, ancien, -25);
       log(etat, '⚔️ ' + nomF(etat, att.camp) + ' prend ' + PROV[att.vers].nom + ' à ' + nomF(etat, ancien) + '.');
       if (ancien >= 0 && nbProvinces(etat, ancien) === 0) log(etat, '💀 ' + nomF(etat, ancien) + ' a disparu !');
       verifierFin(etat);
@@ -479,9 +483,17 @@
         if (p.proprio !== f) return;
         var dispo = p.armee.map(function (u, k) { return u.bouge ? -1 : k; }).filter(function (k) { return k >= 0; });
         if (!dispo.length) return;
-        var cibles = PROV[i].voisins.filter(function (v) { return etat.provinces[v].proprio !== f; });
+        var cibles = PROV[i].voisins.filter(function (v) {
+          var o = etat.provinces[v].proprio;
+          return o !== f && (o !== etat.joueur || relation(etat, f) === 'guerre');
+        });
         if (!cibles.length) return;
-        cibles.sort(function (x, y) { return forceDefense(etat.provinces[x]) - forceDefense(etat.provinces[y]); });
+        // Un allié du joueur s'en prend d'abord aux ennemis du joueur.
+        var bonusCible = function (v) {
+          var o = etat.provinces[v].proprio;
+          return relation(etat, f) === 'alliance' && o >= 0 && relation(etat, o) === 'guerre' ? 0.5 : 1;
+        };
+        cibles.sort(function (x, y) { return forceDefense(etat.provinces[x]) * bonusCible(x) - forceDefense(etat.provinces[y]) * bonusCible(y); });
         var v = cibles[0], cp = etat.provinces[v];
         var envoi = dispo.slice();
         if (cibles.length > 1 && envoi.length > 1 && p.armee.length === dispo.length) envoi.pop();
@@ -490,7 +502,7 @@
         if (fEnvoi < forceDefense(cp) * audace + 25) return;
         var att = preparerAttaque(etat, i, v, envoi);
         if (att.erreur) return;
-        if (cp.proprio === etat.joueur && cp.armee.length) { pourJoueur.push(att); return; }
+        if (cp.proprio === etat.joueur && cp.armee.length) { renfortAllie(etat, v); pourJoueur.push(att); return; }
         if (!cp.armee.length) { appliquerBataille(etat, att, null); return; }
         var b = batailleAttaque(etat, att, Math.floor(alea() * 1e9));
         resoudreAuto(b);
@@ -506,6 +518,222 @@
       var o = etat.provinces[v];
       return s + (o.proprio !== f && o.proprio >= 0 ? force(o.armee) : 0);
     }, 0);
+  }
+
+  // ---------- Diplomatie ----------
+  // etat.diplo[f] = { rel: 'paix' | 'guerre' | 'alliance', att: -100..100 (humeur envers le joueur),
+  //                   depuis: tour du dernier changement, aideT: tour où l'allié peut de nouveau aider, demande: tour }
+  function voisinDuJoueur(etat, f) {
+    return etat.provinces.some(function (p, i) {
+      return p.proprio === f && PROV[i].voisins.some(function (v) { return etat.provinces[v].proprio === etat.joueur; });
+    });
+  }
+  function initDiplo(etat, alea) {
+    alea = alea || aleaPartie(etat);
+    etat.diplo = etat.factions.map(function (F, f) {
+      if (f === etat.joueur) return null;
+      var voisin = voisinDuJoueur(etat, f);
+      var att = Math.round(voisin ? -35 + alea() * 45 : alea() * 30);
+      return { rel: att < -20 ? 'guerre' : 'paix', att: att, depuis: 0, aideT: 0, demande: 0 };
+    });
+    etat.propositions = [];
+  }
+  function assurerDiplo(etat) { if (!etat.diplo) initDiplo(etat); if (!etat.propositions) etat.propositions = []; }
+  function relation(etat, f) {
+    if (f === etat.joueur) return 'soi';
+    if (f < 0) return 'guerre';
+    assurerDiplo(etat);
+    return etat.diplo[f].rel;
+  }
+  function changerAttitude(etat, f, d) {
+    assurerDiplo(etat);
+    var D = etat.diplo[f];
+    if (D) D.att = Math.max(-100, Math.min(100, Math.round(D.att + d)));
+  }
+  function changerRelation(etat, f, rel) {
+    var D = etat.diplo[f];
+    D.rel = rel;
+    D.depuis = etat.tour;
+  }
+  function humeur(att) {
+    return att < -30 ? '😠 Hostile' : att < 0 ? '😒 Méfiant' : att < 30 ? '😐 Neutre' : att < 60 ? '🙂 Amical' : '😍 Fidèle';
+  }
+  // Liste pour l'écran Diplomatie.
+  function diplomatie(etat) {
+    assurerDiplo(etat);
+    return etat.factions.map(function (F, f) {
+      if (f === etat.joueur) return null;
+      var n = nbProvinces(etat, f);
+      if (!n) return null;
+      var D = etat.diplo[f];
+      return { f: f, nom: F.nom, coul: F.coul, n: n, rel: D.rel, att: D.att, humeur: humeur(D.att), voisin: voisinDuJoueur(etat, f),
+        aidePrete: D.aideT <= etat.tour, dejaDemande: D.demande === etat.tour };
+    }).filter(Boolean).sort(function (a, b) { return (b.voisin - a.voisin) || (b.n - a.n); });
+  }
+  function puissance(etat, f) {
+    return etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? force(p.armee) + 40 : 0); }, 0);
+  }
+  var NOM_REL = { paix: 'Paix', guerre: 'Guerre', alliance: 'Alliance' };
+
+  // Le joueur propose quelque chose à un royaume. Renvoie { ok, msg }.
+  function proposer(etat, f, type) {
+    assurerDiplo(etat);
+    var D = etat.diplo[f], F = etat.factions[f], J = etat.factions[etat.joueur];
+    if (!D || !nbProvinces(etat, f)) return { ok: false, msg: 'Ce royaume a disparu.' };
+    if (type === 'guerre') {
+      if (D.rel === 'guerre') return { ok: false, msg: 'Déjà en guerre.' };
+      var trahison = D.rel === 'alliance';
+      changerRelation(etat, f, 'guerre');
+      changerAttitude(etat, f, -40);
+      etat.diplo.forEach(function (o, k) { if (o && k !== f) changerAttitude(etat, k, trahison ? -15 : -4); });
+      log(etat, '⚔️ ' + nomF(etat, etat.joueur) + ' déclare la guerre à ' + F.nom + (trahison ? ' et trahit son alliance !' : '.'));
+      return { ok: true, msg: 'Guerre déclarée à ' + F.nom + (trahison ? '. Les autres royaumes te font moins confiance.' : '.') };
+    }
+    if (type === 'cadeau') {
+      if (J.or < 100) return { ok: false, msg: "Il faut 100 pièces d'or." };
+      J.or -= 100; F.or += 100;
+      changerAttitude(etat, f, 15);
+      return { ok: true, msg: F.nom + ' apprécie ton cadeau (' + humeur(D.att) + ').' };
+    }
+    if (D.demande === etat.tour) return { ok: false, msg: F.nom + ' a déjà reçu ton messager ce tour-ci.' };
+    if (type === 'paix') {
+      if (D.rel !== 'guerre') return { ok: false, msg: 'Vous êtes déjà en paix.' };
+      D.demande = etat.tour;
+      var ratio = puissance(etat, etat.joueur) / Math.max(1, puissance(etat, f));
+      var score = D.att + 20 * Math.min(2, ratio - 1) + Math.min(25, 4 * (etat.tour - D.depuis)) - 5;
+      if (score < 0) { changerAttitude(etat, f, -3); return { ok: false, msg: F.nom + ' refuse la paix. Reviens plus tard ou envoie un cadeau.' }; }
+      changerRelation(etat, f, 'paix');
+      changerAttitude(etat, f, 10);
+      log(etat, '🕊️ Paix signée avec ' + F.nom + '.');
+      return { ok: true, msg: 'Paix signée avec ' + F.nom + ' !' };
+    }
+    if (type === 'alliance') {
+      if (D.rel === 'alliance') return { ok: false, msg: 'Vous êtes déjà alliés.' };
+      if (D.rel === 'guerre') return { ok: false, msg: "Signe d'abord la paix." };
+      D.demande = etat.tour;
+      if (D.att < 40) { changerAttitude(etat, f, -2); return { ok: false, msg: F.nom + ' refuse : il faut une humeur « Amical » (40) au moins.' }; }
+      changerRelation(etat, f, 'alliance');
+      changerAttitude(etat, f, 10);
+      log(etat, '🤝 Alliance conclue avec ' + F.nom + '.');
+      return { ok: true, msg: 'Alliance conclue avec ' + F.nom + ' !' };
+    }
+    if (type === 'rompre') {
+      if (D.rel !== 'alliance') return { ok: false, msg: "Vous n'êtes pas alliés." };
+      changerRelation(etat, f, 'paix');
+      changerAttitude(etat, f, -20);
+      log(etat, '💔 Alliance rompue avec ' + F.nom + '.');
+      return { ok: true, msg: 'Alliance rompue avec ' + F.nom + '.' };
+    }
+    if (type === 'aideOr' || type === 'aideTroupes') {
+      if (D.rel !== 'alliance') return { ok: false, msg: 'Seul un allié peut t\'aider.' };
+      if (D.aideT > etat.tour) return { ok: false, msg: F.nom + ' t\'a déjà aidé. Encore ' + (D.aideT - etat.tour) + ' tour(s).' };
+      D.demande = etat.tour;
+      if (D.att < 20) return { ok: false, msg: F.nom + ' n\'a pas assez confiance (humeur 20 minimum).' };
+      if (type === 'aideOr') {
+        var don = Math.min(300, Math.floor(F.or * 0.3));
+        if (don < 30) return { ok: false, msg: F.nom + " n'a presque plus d'or." };
+        F.or -= don; J.or += don;
+        D.aideT = etat.tour + 4;
+        changerAttitude(etat, f, -5);
+        log(etat, '💰 ' + F.nom + ' t\'envoie ' + don + " pièces d'or.");
+        return { ok: true, msg: F.nom + ' t\'envoie ' + don + " pièces d'or !" };
+      }
+      var cible = provinceRenfort(etat, f);
+      if (cible < 0) return { ok: false, msg: 'Aucune de tes provinces n\'a de place pour des renforts.' };
+      var types = TYPES.filter(function (t) { return UNITES[t].annee <= etat.annee && UNITES[t].caserne <= 2; })
+        .sort(function (a, b) { return UNITES[b].cout - UNITES[a].cout; });
+      var p = etat.provinces[cible], n = Math.min(2, MAX_UNITES - p.armee.length);
+      for (var k = 0; k < n; k++) p.armee.push(creerUnite(types[k % Math.min(3, types.length)]));
+      D.aideT = etat.tour + 5;
+      changerAttitude(etat, f, -8);
+      log(etat, '🛡️ ' + F.nom + ' envoie ' + n + ' unité(s) à ' + PROV[cible].nom + '.');
+      return { ok: true, msg: F.nom + ' envoie ' + n + ' unité(s) à ' + PROV[cible].nom + ' !', province: cible };
+    }
+    return { ok: false, msg: 'Proposition inconnue.' };
+  }
+
+  // Où un allié envoie ses troupes : une province du joueur voisine de l'allié, sinon la capitale.
+  function provinceRenfort(etat, f) {
+    var best = -1, bestM = -1;
+    etat.provinces.forEach(function (p, i) {
+      if (p.proprio !== etat.joueur || p.armee.length >= MAX_UNITES) return;
+      var proche = PROV[i].voisins.some(function (v) { return etat.provinces[v].proprio === f; });
+      var m = menace(etat, i) + (proche ? 1000 : 0);
+      if (m > bestM) { bestM = m; best = i; }
+    });
+    return best;
+  }
+
+  // Quand l'ennemi attaque une province du joueur, un allié voisin envoie une unité en renfort.
+  function renfortAllie(etat, cible) {
+    var p = etat.provinces[cible];
+    if (p.armee.length >= MAX_UNITES) return;
+    PROV[cible].voisins.some(function (v) {
+      var o = etat.provinces[v];
+      if (o.proprio < 0 || o.proprio === etat.joueur || relation(etat, o.proprio) !== 'alliance' || o.armee.length < 2) return false;
+      if (etat.diplo[o.proprio].att < 20) return false;
+      var u = o.armee.pop();
+      u.bouge = true;
+      p.armee.push(u);
+      var msg = '🤝 ' + etat.factions[o.proprio].nom + ' envoie ' + UNITES[u.t].nom.toLowerCase() + ' défendre ' + PROV[cible].nom + ' !';
+      log(etat, msg);
+      etat.nouvelles.push(msg);
+      return true;
+    });
+  }
+
+  // Chaque tour : les humeurs bougent, les royaumes proposent la paix, l'alliance, déclarent la guerre…
+  function tourDiplo(etat) {
+    assurerDiplo(etat);
+    var alea = aleaPartie(etat), grand = nbProvinces(etat, etat.joueur) >= 18;
+    etat.propositions = [];
+    etat.diplo.forEach(function (D, f) {
+      if (!D || !nbProvinces(etat, f)) return;
+      var F = etat.factions[f], voisin = voisinDuJoueur(etat, f);
+      var d = voisin ? -2 : 1;
+      if (D.rel === 'alliance') d += 3;
+      if (D.rel === 'guerre') d += 2;
+      if (grand) d -= 2;
+      changerAttitude(etat, f, d);
+      var nb = etat.propositions.length + etat.nouvelles.length;
+      if (D.rel === 'guerre' && D.att > 5 && etat.tour - D.depuis >= 3 && alea() < 0.35 && nb < 6) {
+        etat.propositions.push({ f: f, type: 'paix' });
+      } else if (D.rel === 'paix' && D.att >= 50 && alea() < 0.25 && nb < 6) {
+        etat.propositions.push({ f: f, type: 'alliance' });
+      } else if (D.rel === 'paix' && voisin && D.att <= -40 && etat.tour - D.depuis >= 2 && alea() < 0.5) {
+        changerRelation(etat, f, 'guerre');
+        var m = '⚔️ ' + F.nom + ' te déclare la guerre !';
+        log(etat, m); etat.nouvelles.push(m);
+      } else if (D.rel === 'alliance' && D.att < 0) {
+        changerRelation(etat, f, 'paix');
+        var m2 = '💔 ' + F.nom + ' rompt votre alliance.';
+        log(etat, m2); etat.nouvelles.push(m2);
+      } else if (D.rel === 'alliance' && D.att >= 45 && D.aideT <= etat.tour && alea() < 0.15) {
+        var don = Math.min(150, Math.floor(F.or * 0.25));
+        if (don >= 30) {
+          F.or -= don; etat.factions[etat.joueur].or += don;
+          D.aideT = etat.tour + 3;
+          var m3 = '💰 Ton allié ' + F.nom + ' t\'offre ' + don + " pièces d'or.";
+          log(etat, m3); etat.nouvelles.push(m3);
+        }
+      }
+    });
+  }
+
+  // Réponse du joueur à une proposition d'un royaume.
+  function repondre(etat, k, oui) {
+    var P = etat.propositions[k];
+    if (!P) return null;
+    etat.propositions.splice(k, 1);
+    var F = etat.factions[P.f], D = etat.diplo[P.f];
+    if (!nbProvinces(etat, P.f)) return F.nom + ' a disparu.';
+    if (!oui) {
+      changerAttitude(etat, P.f, P.type === 'alliance' ? -10 : -5);
+      return 'Tu refuses ' + (P.type === 'paix' ? 'la paix' : "l'alliance") + ' de ' + F.nom + '.';
+    }
+    if (P.type === 'paix' && D.rel === 'guerre') { changerRelation(etat, P.f, 'paix'); changerAttitude(etat, P.f, 10); log(etat, '🕊️ Paix signée avec ' + F.nom + '.'); return 'Paix signée avec ' + F.nom + ' !'; }
+    if (P.type === 'alliance' && D.rel === 'paix') { changerRelation(etat, P.f, 'alliance'); changerAttitude(etat, P.f, 10); log(etat, '🤝 Alliance conclue avec ' + F.nom + '.'); return 'Alliance conclue avec ' + F.nom + ' !'; }
+    return 'La situation a changé.';
   }
 
   // Fin du tour du joueur : revenus, soins, années qui passent, événements, puis l'IA joue.
@@ -532,6 +760,7 @@
       var U = UNITES[t];
       if (U.annee > avant && U.annee <= etat.annee) etat.nouvelles.push('🆕 Nouvelle unité : ' + U.ico + ' ' + U.nom + ' (caserne niv. ' + U.caserne + ')');
     });
+    tourDiplo(etat);
     var defenses = tourIA(etat);
     etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); });
     verifierFin(etat);
@@ -547,7 +776,9 @@
     blocageRecrue: blocageRecrue, recruter: recruter, construire: construire, deplacer: deplacer,
     preparerAttaque: preparerAttaque, creerBataille: creerBataille, batailleAttaque: batailleAttaque,
     etape: etape, resoudreAuto: resoudreAuto, vivant: vivant, abrite: abrite,
-    appliquerBataille: appliquerBataille, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log
+    appliquerBataille: appliquerBataille,
+    relation: relation, diplomatie: diplomatie, proposer: proposer, repondre: repondre, humeur: humeur, NOM_REL: NOM_REL,
+    assurerDiplo: assurerDiplo, changerAttitude: changerAttitude, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = M;
   else root.Moteur = M;

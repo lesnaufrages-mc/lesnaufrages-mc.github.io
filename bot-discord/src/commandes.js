@@ -26,6 +26,10 @@ export const commandes = [
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
   new SlashCommandBuilder().setName('staff').setDescription('Liste des membres du staff'),
   new SlashCommandBuilder()
+    .setName('actus')
+    .setDescription('Poste tout de suite la dernière actu du site dans ce salon')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  new SlashCommandBuilder()
     .setName('candidature')
     .setDescription('Postuler pour rejoindre le staff')
     .addStringOption((o) => o.setName('poste').setDescription('Quel poste ?').setRequired(true)

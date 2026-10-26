@@ -22,6 +22,7 @@ export const config = {
   guildId: env.GUILD_ID,
   salonBienvenue: env.SALON_BIENVENUE_ID || null,
   salonMotDuJour: env.SALON_MOT_DU_JOUR_ID || null,
+  salonActus: env.SALON_ACTUS_ID || null,
   roleArrivant: env.ROLE_ARRIVANT_ID || null,
   roleNotif: env.ROLE_NOTIF_ID || null,
   rappelHeure: Number(env.RAPPEL_HEURE ?? 9),

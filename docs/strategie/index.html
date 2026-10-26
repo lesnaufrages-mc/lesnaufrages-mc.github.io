@@ -189,6 +189,16 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .gestion .ordre small{color:var(--muted)}
 .barreOrdre{display:block;height:6px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}
 .barreOrdre i{display:block;height:100%;border-radius:9px}
+.resumeQuete{display:flex;flex-direction:column;gap:5px;width:100%;margin-top:8px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:7px 9px;color:inherit;text-align:left;font-size:13px}
+.resumeQuete small{color:var(--muted)}
+.tagQuete{font-size:12px;color:#fde68a;background:rgba(251,191,36,.08);border-left:3px solid var(--or);border-radius:6px;padding:5px 8px;margin:6px 0}
+.carteQuete{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0}
+.carteQuete h4{margin:0 0 4px}.carteQuete.faite{opacity:.75}
+.progQuete{display:flex;align-items:center;gap:8px}.progQuete .barreOrdre{flex:1;height:8px}
+.provsQuete{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.provsQuete .lienProv{text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.provsQuete .lienProv.tenue{border-color:rgba(34,197,94,.5);color:#86efac}
+.rapport section.quete{border-color:rgba(251,191,36,.45)}
 .impots{display:flex;gap:6px}
 .impots button{flex:1;padding:7px 4px;border-radius:9px;background:var(--card);border:1px solid var(--line);font-size:12px;font-weight:700;color:inherit}
 .impots button.on{border-color:var(--or);background:rgba(251,191,36,.15);color:#fde68a}
@@ -216,6 +226,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .membre b{font-size:14px}.membre small{color:var(--muted);font-size:12px}
 .tag{font-size:11px;background:rgba(251,191,36,.15);color:#fde68a;border-radius:6px;padding:1px 5px;margin-left:4px}
 .choixM{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.choixLignee{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}.choixLignee .carteM{width:auto;padding:8px;justify-content:flex-start}
 .carteM{flex:none;width:96px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 4px;color:inherit;text-align:center}
 .carteM.on{border-color:var(--or);box-shadow:0 0 0 2px rgba(251,191,36,.3)}
 .carteM b{font-size:12px;line-height:1.2}.carteM small{font-size:11px;color:var(--muted)}
@@ -309,14 +320,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <script src="../supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="monde.js?v=7"></script>
-<script src="histoire.js?v=7"></script>
-<script src="personnages.js?v=7"></script>
-<script src="moteur.js?v=7"></script>
-<script src="portraits.js?v=7"></script>
+<script src="monde.js?v=8"></script>
+<script src="histoire.js?v=8"></script>
+<script src="personnages.js?v=8"></script>
+<script src="moteur.js?v=8"></script>
+<script src="portraits.js?v=8"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js?v=7"></script>
-<script src="jeu.js?v=7"></script>
+<script src="bataille3d.js?v=8"></script>
+<script src="jeu.js?v=8"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

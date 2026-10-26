@@ -145,6 +145,8 @@
     var taille = Math.min(25, Math.floor(nbProvinces(etat, f) * 0.7));
     if (taille) d.push(['🗺️ Taille du royaume', -taille]);
     if (p.agit) d.push(['🔥 Conquête récente', -p.agit]);
+    var F = etat.factions[f];
+    if (F.empires && F.empires.length) d.push(['🦅 Empire restauré', 5 * Math.min(2, F.empires.length)]);
     return d;
   }
   function cibleOrdre(etat, i) {
@@ -215,7 +217,7 @@
   var PAPES = ['Grégoire', 'Innocent', 'Clément', 'Urbain', 'Benoît', 'Léon', 'Boniface', 'Pie', 'Alexandre', 'Jean'];
   var ROMAINS = ['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
   var LIENS_ENFANT = { m: 'fils', f: 'fille' };
-  var PRIORITE = ['fils', 'petit-fils', 'frère', 'neveu', 'fille', 'sœur', 'belle-sœur', 'oncle', 'cousin', 'petit-neveu', 'tante', 'cousine'];
+  var PRIORITE = ['fils', 'petit-fils', 'frère', 'neveu', 'fille', 'petite-fille', 'sœur', 'nièce', 'belle-sœur', 'oncle', 'cousin', 'petit-neveu', 'tante', 'cousine'];
 
   function age(etat, p) { return etat.annee - p.ne; }
   function nomsCulture(c) { return PERSOS.NOMS[c] || PERSOS.NOMS.franc; }
@@ -264,22 +266,29 @@
   function membre(F, k) { return k < 0 ? F.roi : F.cour.fam[k]; }
 
   // Mariage entre un membre de la famille de a et un membre de celle de b (k = -1 : le souverain lui-même).
-  function marier(etat, fa, ka, fb, kb) {
+  // matri : mariage matrilinéaire, la femme (côté a) garde sa dynastie et son mari la rejoint.
+  function marier(etat, fa, ka, fb, kb, matri) {
     var A = etat.factions[fa], B = etat.factions[fb], pa = membre(A, ka), pb = membre(B, kb);
+    matri = !!matri && pa.sexe === 'f' && kb >= 0;
     if (ka < 0) { // le souverain de a épouse pb, qui rejoint sa cour
-      A.conj = { nom: pb.nom, ne: pb.ne, sexe: pb.sexe, de: fb };
+      A.conj = { nom: pb.nom, ne: pb.ne, sexe: pb.sexe, de: fb, dyn: B.cour.dyn, matri: matri };
+      if (pa.sexe === 'f') A.cour.dynEnfants = matri ? null : B.cour.dyn;
       B.cour.fam.splice(kb, 1);
     } else if (kb < 0) {
-      B.conj = { nom: pa.nom, ne: pa.ne, sexe: pa.sexe, de: fa };
+      B.conj = { nom: pa.nom, ne: pa.ne, sexe: pa.sexe, de: fa, dyn: A.cour.dyn };
+      if (pb.sexe === 'f') B.cour.dynEnfants = A.cour.dyn;
       A.cour.fam.splice(ka, 1);
+    } else if (matri) { // le prince quitte sa cour pour celle de sa femme
+      pa.epoux = { nom: pb.nom, f: fb, ne: pb.ne, dyn: B.cour.dyn, matri: true };
+      B.cour.fam.splice(kb, 1);
     } else {
-      pa.epoux = { nom: pb.nom, f: fb, ne: pb.ne };
-      pb.epoux = { nom: pa.nom, f: fa, ne: pa.ne };
+      pa.epoux = { nom: pb.nom, f: fb, ne: pb.ne, dyn: B.cour.dyn };
+      pb.epoux = { nom: pa.nom, f: fa, ne: pa.ne, dyn: A.cour.dyn };
     }
     var a = etat.diplo[fa === etat.joueur ? fb : fa];
     if (a) { a.sang = true; }
   }
-  function verifMariage(etat, f, ka, kb) {
+  function verifMariage(etat, f, ka, kb, matri) {
     var J = etat.factions[etat.joueur], F = etat.factions[f];
     if (J.cour.elu || F.cour.elu) return 'Un souverain élu ne se marie pas.';
     var pa = membre(J, ka), pb = membre(F, kb);
@@ -288,14 +297,17 @@
     if (pa.sexe === pb.sexe) return 'Il faut un homme et une femme.';
     if ((ka < 0 && J.conj) || (ka >= 0 && pa.epoux)) return pa.nom + ' est déjà marié(e).';
     if ((kb < 0 && F.conj) || (kb >= 0 && pb.epoux)) return pb.nom + ' est déjà marié(e).';
+    if (matri && pa.sexe !== 'f') return 'Un mariage matrilinéaire se fait avec une femme de ta famille.';
+    if (matri && kb < 0) return 'Un souverain ne quitte pas son trône pour un mariage matrilinéaire.';
     return null;
   }
-  function chanceMariage(etat, f, kb) {
+  function chanceMariage(etat, f, kb, matri) {
     var D = etat.diplo[f], F = etat.factions[f];
     var score = D.att + (D.rel === 'alliance' ? 15 : 0) + Math.min(20, 10 * (puissance(etat, etat.joueur) / Math.max(1, puissance(etat, f)) - 1));
     var h = heritier(F);
     if (kb >= 0 && h && F.cour.fam[kb] === h) score -= 30; // donner son héritier coûte cher
     if (kb < 0) score -= 10;
+    if (matri) score -= 15 + (kb >= 0 && h && F.cour.fam[kb] === h ? 20 : 0); // perdre un prince (et ses enfants) coûte plus
     return Math.round(score);
   }
 
@@ -323,6 +335,7 @@
       F.roi = { nom: nomAlea(etat, F, 'm', alea), ne: etat.annee - 22 - Math.floor(alea() * 15), sexe: 'm', look: lookCulture(F.cour.c, alea) };
       F.conj = null;
       F.cour.fam = [];
+      F.cour.dynEnfants = null;
       if (alea() < 0.6) F.cour.fam.push({ nom: nomAlea(etat, F, 'm', alea), ne: F.roi.ne + 3 + Math.floor(alea() * 6), sexe: 'm', lien: 'frère' });
       msgs.push('⚠️ Crise de succession : ' + F.roi.nom + ', un lointain cousin, s\'empare du trône de ' + F.nom + '. Le royaume s\'agite (ordre public −15).');
       var pire = -1;
@@ -338,13 +351,25 @@
       }
       return msgs;
     }
+    var enfantDuRoi = /^(fils|fille)$/.test(h.lien), dynAvant = F.cour.dyn;
     F.cour.fam.splice(F.cour.fam.indexOf(h), 1);
     F.cour.fam.forEach(function (m) {
-      m.lien = m.lien === 'fils' ? 'frère' : m.lien === 'fille' ? 'sœur' : m.lien === 'petit-fils' ? 'fils' : /^(frère|sœur)$/.test(m.lien) ? (m.sexe === 'm' ? 'oncle' : 'tante') : m.sexe === 'm' ? 'cousin' : 'cousine';
+      if (m.parent === h.nom) { m.lien = LIENS_ENFANT[m.sexe]; delete m.parent; return; }
+      m.lien = m.lien === 'fils' ? 'frère' : m.lien === 'fille' ? 'sœur' : /^petit/.test(m.lien) ? (m.sexe === 'm' ? 'neveu' : 'nièce') : /^(frère|sœur)$/.test(m.lien) ? (m.sexe === 'm' ? 'oncle' : 'tante') : m.sexe === 'm' ? 'cousin' : 'cousine';
     });
+    // Les enfants d'une reine mariée de façon patrilinéaire appartiennent à la dynastie de leur père.
+    if (ancien.sexe === 'f' && enfantDuRoi && F.cour.dynEnfants && F.cour.dynEnfants !== dynAvant) {
+      F.cour.dyn = F.cour.dynEnfants;
+      msgs.push('🏰 La dynastie ' + dynAvant + ' s\'éteint sur le trône de ' + F.nom + ' : ' + h.nom + ' est de la maison ' + F.cour.dyn + ', celle de son père.');
+      if (f !== etat.joueur && F.cour.dyn === etat.factions[etat.joueur].cour.dyn && etat.diplo[f]) {
+        changerAttitude(etat, f, 25);
+        msgs.push('🩸 Ta dynastie règne désormais aussi sur ' + F.nom + ' !');
+      }
+    }
+    F.cour.dynEnfants = h.sexe === 'f' && h.epoux && !h.epoux.matri && h.epoux.dyn ? h.epoux.dyn : null;
     var look = h.look || (function () { var l = lookCulture(F.cour.c, alea); if (ancien.look.tete !== 'turban' && ancien.look.tete !== 'byzance') l.tete = ancien.look.tete; if (ancien.look.ch === 'perruque') l.ch = 'perruque'; return l; })();
     F.roi = { nom: h.nom, ne: h.ne, sexe: h.sexe, look: look };
-    F.conj = h.epoux ? { nom: h.epoux.nom, ne: h.epoux.ne || h.ne, sexe: h.sexe === 'm' ? 'f' : 'm', de: h.epoux.f } : null;
+    F.conj = h.epoux ? { nom: h.epoux.nom, ne: h.epoux.ne || h.ne, sexe: h.sexe === 'm' ? 'f' : 'm', de: h.epoux.f, dyn: h.epoux.dyn, matri: !!h.epoux.matri } : null;
     msgs.push('👑 ' + (h.sexe === 'f' ? 'La reine ' : 'Le roi ') + h.nom + ' monte sur le trône de ' + F.nom + '. Vive ' + (h.sexe === 'f' ? 'la reine' : 'le roi') + ' !');
     // Union des couronnes : l'héritier a épousé un membre de la famille du joueur.
     if (f !== etat.joueur && F.conj && F.conj.de === etat.joueur && nbProvinces(etat, f) > 0) {
@@ -372,7 +397,7 @@
         // Un souverain sans conjoint finit par épouser un(e) noble de sa cour.
         if (!F.conj && !F.cour.elu && an - F.roi.ne >= 16 && an - F.roi.ne < 60 && alea() < (moi ? 0.1 : 0.25)) {
           var sx = F.roi.sexe === 'm' ? 'f' : 'm';
-          F.conj = { nom: nomAlea(etat, F, sx, alea), ne: sx === 'f' ? an - 17 - Math.floor(alea() * 8) : F.roi.ne - Math.floor(alea() * 5), sexe: sx, de: -1 };
+          F.conj = { nom: nomAlea(etat, F, sx, alea), ne: sx === 'f' ? an - 17 - Math.floor(alea() * 8) : F.roi.ne - Math.floor(alea() * 5), sexe: sx, de: -1, matri: sx === 'm' };
           if (moi) etat.rapport.cour.push('💍 ' + F.roi.nom + ' épouse ' + F.conj.nom + ', ' + (sx === 'f' ? 'une noble' : 'un noble') + ' de la cour.');
         }
         // Naissances
@@ -385,6 +410,18 @@
             if (moi) etat.rapport.cour.push('👶 Naissance ' + (sexe === 'm' ? 'du prince ' : 'de la princesse ') + enfant.nom + ' !');
           }
         }
+        // Les princes mariés (et les princesses mariées de façon matrilinéaire) ont des enfants dans la dynastie.
+        F.cour.fam.slice().forEach(function (m) {
+          if (!m.epoux || (m.sexe === 'f') !== !!m.epoux.matri) return;
+          var am = an - (m.sexe === 'f' ? m.ne : (m.epoux.ne || m.ne));
+          var nb = F.cour.fam.filter(function (x) { return x.parent === m.nom; }).length;
+          if (am < 16 || am > 40 || nb >= 4 || F.cour.fam.length >= 14 || alea() >= 0.15) return;
+          var sx2 = alea() < 0.5 ? 'm' : 'f';
+          var lien = /^(fils|fille)$/.test(m.lien) ? (sx2 === 'm' ? 'petit-fils' : 'petite-fille') : /^(frère|sœur)$/.test(m.lien) ? (sx2 === 'm' ? 'neveu' : 'nièce') : (sx2 === 'm' ? 'cousin' : 'cousine');
+          var bebe = { nom: nomAlea(etat, F, sx2, alea), ne: an, sexe: sx2, lien: lien, parent: m.nom };
+          F.cour.fam.push(bebe);
+          if (moi) etat.rapport.cour.push('👶 ' + m.nom + ' et ' + m.epoux.nom + ' ont ' + (sx2 === 'm' ? 'un fils, ' : 'une fille, ') + bebe.nom + (m.epoux.matri ? ' (mariage matrilinéaire : de ta dynastie).' : '.'));
+        });
         // Morts dans la famille
         for (var k = F.cour.fam.length - 1; k >= 0; k--) {
           var m = F.cour.fam[k];
@@ -407,6 +444,46 @@
             msgs.forEach(function (t) { (moi ? etat.rapport.cour : etat.nouvelles).push(t); });
         }
       }
+    });
+  }
+
+  // ---------- Quêtes : restaurer un empire historique ----------
+  var QUETES = HISTOIRE.QUETES || [];
+  function quetes(etat, f) {
+    var F = etat.factions[f], faites = etat.quetes || {};
+    return QUETES.filter(function (q) { return q.pour.indexOf(F.id) >= 0; }).map(function (q) {
+      var manque = q.provinces.filter(function (id) { return etat.provinces[INDEX[id]].proprio !== f; }).map(function (id) { return INDEX[id]; });
+      return { q: q, tenues: q.provinces.length - manque.length, total: q.provinces.length, manque: manque, faite: faites[q.id] != null ? faites[q.id] : null };
+    });
+  }
+  function accomplirQuete(etat, f, q) {
+    var F = etat.factions[f], ancien = F.nom, moi = f === etat.joueur;
+    etat.quetes = etat.quetes || {};
+    etat.quetes[q.id] = f;
+    F.empires = (F.empires || []).concat(q.id);
+    F.nom = q.nom;
+    F.or += q.or;
+    etat.provinces.forEach(function (p) { if (p.proprio === f) { p.ordre = Math.min(100, (p.ordre == null ? 60 : p.ordre) + 15); p.agit = 0; } });
+    var m = q.ico + ' ' + (moi ? 'Quête accomplie ! ' : '') + ancien + ' devient l\'' + q.nom + ' (' + q.titre.toLowerCase() + ').' + (moi ? ' +' + q.or + ' or, ordre public +15 partout.' : '');
+    log(etat, m);
+    if (moi) {
+      (etat.rapport.quetes = etat.rapport.quetes || []).push(m);
+      etat.factions.forEach(function (o, k) { if (k !== f && etat.diplo[k]) changerAttitude(etat, k, -8); }); // un empire inquiète ses voisins
+    } else etat.nouvelles.push(m);
+  }
+  function tourQuetes(etat) {
+    etat.quetes = etat.quetes || {};
+    etat.quetesMoitie = etat.quetesMoitie || {};
+    etat.factions.forEach(function (F, f) {
+      if (!nbProvinces(etat, f)) return;
+      quetes(etat, f).forEach(function (x) {
+        if (x.faite != null) return;
+        if (!x.manque.length) { accomplirQuete(etat, f, x.q); return; }
+        if (f === etat.joueur && x.tenues * 2 >= x.total && !etat.quetesMoitie[x.q.id]) {
+          etat.quetesMoitie[x.q.id] = true;
+          (etat.rapport.quetes = etat.rapport.quetes || []).push(x.q.ico + ' ' + x.q.titre + ' : tu tiens déjà ' + x.tenues + ' provinces sur ' + x.total + '. Plus que ' + x.manque.length + ' !');
+        }
+      });
     });
   }
 
@@ -920,17 +997,17 @@
     }
     if (type === 'mariage') {
       var o = arguments[3] || {};
-      var err = verifMariage(etat, f, o.a, o.b);
+      var err = verifMariage(etat, f, o.a, o.b, o.matri);
       if (err) return { ok: false, msg: err };
       if (D.rel === 'guerre') return { ok: false, msg: 'Impossible en pleine guerre : signe d\'abord la paix.' };
       D.demande = etat.tour;
-      var chance = chanceMariage(etat, f, o.b);
+      var chance = chanceMariage(etat, f, o.b, o.matri);
       if (chance < 15) { changerAttitude(etat, f, -2); return { ok: false, msg: F.nom + ' refuse ce mariage. Améliore d\'abord ses sentiments (cadeaux, alliance).' }; }
       var pa = membre(J, o.a), pb = membre(F, o.b);
-      marier(etat, etat.joueur, o.a, f, o.b);
+      marier(etat, etat.joueur, o.a, f, o.b, o.matri);
       changerAttitude(etat, f, 20);
-      log(etat, '💍 Mariage de ' + pa.nom + ' et ' + pb.nom + ' (' + F.nom + ').');
-      return { ok: true, msg: '💍 ' + pa.nom + ' épouse ' + pb.nom + ' ! ' + F.nom + ' devient ta famille.' };
+      log(etat, '💍 Mariage ' + (o.matri ? 'matrilinéaire ' : '') + 'de ' + pa.nom + ' et ' + pb.nom + ' (' + F.nom + ').');
+      return { ok: true, msg: '💍 ' + pa.nom + ' épouse ' + pb.nom + ' ! ' + F.nom + ' devient ta famille.' + (o.matri ? ' ' + pb.nom + ' rejoint ta cour et leurs enfants seront de ta dynastie.' : '') };
     }
     if (type === 'rompre') {
       if (D.rel !== 'alliance') return { ok: false, msg: "Vous n'êtes pas alliés." };
@@ -1098,6 +1175,7 @@
     tourDiplo(etat);
     var defenses = tourIA(etat);
     etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); });
+    tourQuetes(etat);
     verifierFin(etat);
     return defenses;
   }
@@ -1114,6 +1192,7 @@
     appliquerBataille: appliquerBataille,
     IMPOTS: IMPOTS, entretien: entretien, entretienUnite: entretienUnite, detailOrdre: detailOrdre, cibleOrdre: cibleOrdre,
     changerImpots: changerImpots, estCapitale: estCapitale, assurerCour: assurerCour, heritier: heritier, age: age,
+    QUETES: QUETES, quetes: quetes, tourQuetes: tourQuetes,
     membresLibres: membresLibres, membre: membre, verifMariage: verifMariage, chanceMariage: chanceMariage, PERSOS: PERSOS,
     relation: relation, diplomatie: diplomatie, proposer: proposer, repondre: repondre, humeur: humeur, NOM_REL: NOM_REL,
     assurerDiplo: assurerDiplo, changerAttitude: changerAttitude, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log

@@ -167,3 +167,11 @@ a.staff-card.libre:hover{opacity:1}
 .plus-tard{margin-top:10px}
 .pp-edit input[type=file]{display:none}
 .pp-edit label.btn{white-space:nowrap}
+.role.staff{background:rgba(255,140,60,.14);color:#ffc9a0}
+.staff-card.discord{cursor:default}
+.staff-card.discord:hover{transform:none;border-color:var(--line)}
+.staff-card.discord b{overflow-wrap:anywhere}
+.staff-card .roles{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.staff-card .roles .role{margin:0;font-size:11px}
+.staff-site{margin:10px 0 28px}
+.staff-card span.av-xl{font-size:38px;font-weight:800;color:#fff;line-height:1}

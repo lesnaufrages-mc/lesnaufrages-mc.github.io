@@ -1,7 +1,7 @@
 # Mot Mystère
 
 Jeu de mots gratuit en français : un mot de 5 lettres par jour, le même pour tout le monde,
-6 essais. À la fin, on partage sa grille d'emojis (🟩🟨⬛) sans spoiler le mot. C'est ce
+6 essais. À la fin, on partage sa grille d'emojis (🟩🟨🟦) sans spoiler le mot. C'est ce
 partage qui a rendu Wordle viral (des millions de joueurs en quelques semaines, sans pub payée).
 
 ## Pourquoi cette idée (et pas une autre)
@@ -40,6 +40,11 @@ Tests de la logique du jeu : `npm test`
 - Statistiques et série de jours (🔥) sauvegardées sur le téléphone
 - Bouton « Partager mon score » (WhatsApp, Insta, SMS…)
 - Bouton « Rejouer (partie bonus) » derrière une vraie pub récompensée AdMob (simulée dans Expo Go)
+- **Journal du naufragé** (ce qui nous démarque) : chaque mot du jour est un mot d'une histoire suivie,
+  le trouver débloque la page du jour (`src/journal.js`, saison 1 = 30 pages, jours 1 à 30). Page ratée ou
+  manquée : on la « repêche » avec une pub récompensée (gratuit sur le web). Après la page 30, le jeu reprend
+  `src/words.js` : pour la saison 2, ajoute les pages à la suite dans `PAGES`.
+- **Bouteille à la mer** : un indice sur le mot, qui coûte un essai (🍾 dans la grille partagée)
 - Consentement RGPD au démarrage, icône de l'appli, politique de confidentialité, config de build `eas.json`
 
 ## Pour gagner de l'argent (prochaines étapes)

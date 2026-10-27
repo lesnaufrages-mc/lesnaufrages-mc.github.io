@@ -92,7 +92,7 @@ h2{font-size:clamp(30px,4.4vw,46px);letter-spacing:-1px;margin-bottom:14px}
 .tile{aspect-ratio:1;border:2px solid var(--grey);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;border-radius:4px;color:#fff}
 .tile.g,.tile.y,.tile.x{border-color:transparent}
 .board .tile.g,.board .tile.y,.board .tile.x{animation:flip .6s both}
-.tile.g{background:var(--green)}.tile.y{background:var(--yellow)}.tile.x{background:var(--grey)}
+.tile.g{background:var(--green)}.tile.y{background:var(--yellow)}.tile.x{background:#1f4a5c}
 @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
 .phone .won{text-align:center;font-weight:800;margin:16px 0 0}
 @media(prefers-reduced-motion:reduce){.board .tile{animation:none!important}}

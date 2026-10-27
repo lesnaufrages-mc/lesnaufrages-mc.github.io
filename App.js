@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   MAX_TRIES, WORD_LENGTH, dayNumber, evaluate, keyboardStates, normalize, randomWord, shareText, wordOfTheDay,
 } from './src/game';
 import { initAds, showRewardedAd } from './src/ads';
+import { PAGES, SAISON, pageDuJour } from './src/journal';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', '⌫WXCVBN↵'];
-const COLORS = { correct: '#3aa757', present: '#e2b93b', absent: '#3a3a3c', empty: '#121213' };
+// Couleurs « Les Naufragés » : le gris des autres jeux devient le bleu de la mer.
+const COLORS = { correct: '#3aa757', present: '#e2b93b', absent: '#1f4a5c', empty: '#0d1b21' };
 const STORAGE_KEY = 'motmystere:v1';
+// Sur le web il n'y a pas de pub dans le jeu : la page se repêche gratuitement.
+const FISH_LABEL = Platform.OS === 'web' ? 'Repêcher la page' : 'Repêcher la page (pub)';
 
 const emptyStats = { played: 0, wins: 0, streak: 0, best: 0, lastDay: 0 };
 
@@ -20,9 +24,14 @@ export default function App() {
   const [guesses, setGuesses] = useState([]);
   const [current, setCurrent] = useState('');
   const [stats, setStats] = useState(emptyStats);
+  const [bouteille, setBouteille] = useState(false); // indice ouvert (coûte un essai)
+  const [pages, setPages] = useState([]); // jours dont la page du journal est débloquée
+  const [journal, setJournal] = useState(false); // écran « Mon journal » ouvert
 
+  const page = mode === 'daily' ? pageDuJour(day) : null;
+  const maxTries = MAX_TRIES - (bouteille ? 1 : 0);
   const won = guesses.includes(answer);
-  const over = won || guesses.length >= MAX_TRIES;
+  const over = won || guesses.length >= maxTries;
 
   // Recharge la partie du jour et les stats.
   useEffect(() => {
@@ -31,13 +40,46 @@ export default function App() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       setStats(saved.stats || emptyStats);
-      if (saved.day === day) setGuesses(saved.guesses || []);
+      setPages(saved.pages || []);
+      if (saved.day === day) {
+        setGuesses(saved.guesses || []);
+        setBouteille(!!saved.bouteille);
+      }
     });
   }, []);
 
-  function save(nextGuesses, nextStats) {
-    if (mode !== 'daily') return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ day, guesses: nextGuesses, stats: nextStats }));
+  function save(nextGuesses, nextStats, { nextBouteille = bouteille, nextPages = pages } = {}) {
+    // Les pages du journal se gardent aussi après une partie bonus.
+    const daily = mode === 'daily';
+    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+      const old = raw ? JSON.parse(raw) : {};
+      const data = daily
+        ? { day, guesses: nextGuesses, bouteille: nextBouteille, stats: nextStats, pages: nextPages }
+        : { ...old, pages: nextPages };
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    });
+  }
+
+  function unlock(n) {
+    if (pages.includes(n)) return pages;
+    const next = [...pages, n].sort((a, b) => a - b);
+    setPages(next);
+    return next;
+  }
+
+  // Bouteille à la mer : un indice sur le mot, contre un essai.
+  function openBottle() {
+    if (bouteille || over || guesses.length >= MAX_TRIES - 1) return;
+    setBouteille(true);
+    save(guesses, stats, { nextBouteille: true });
+  }
+
+  // Page perdue (partie ratée ou jour manqué) : on la repêche avec une pub récompensée.
+  async function fishPage(n) {
+    const ok = await showRewardedAd();
+    if (!ok) return;
+    const nextPages = unlock(n);
+    save(guesses, stats, { nextPages });
   }
 
   function submit() {
@@ -45,8 +87,9 @@ export default function App() {
     const next = [...guesses, current];
     setGuesses(next);
     setCurrent('');
-    const finished = current === answer || next.length >= MAX_TRIES;
+    const finished = current === answer || next.length >= maxTries;
     let nextStats = stats;
+    let nextPages = pages;
     if (finished && mode === 'daily') {
       const win = current === answer;
       const streak = win ? (stats.lastDay === day - 1 ? stats.streak + 1 : 1) : 0;
@@ -55,12 +98,13 @@ export default function App() {
         streak, best: Math.max(stats.best, streak), lastDay: day,
       };
       setStats(nextStats);
+      if (win && page) nextPages = unlock(day);
     }
-    save(next, nextStats);
+    save(next, nextStats, { nextPages });
   }
 
   function press(key) {
-    if (over) return;
+    if (over || journal) return;
     if (key === '↵') return submit();
     if (key === '⌫') return setCurrent(current.slice(0, -1));
     if (current.length < WORD_LENGTH) setCurrent(normalize(current + key));
@@ -68,7 +112,7 @@ export default function App() {
 
   async function share() {
     const rows = guesses.map((g) => evaluate(g, answer));
-    const message = shareText(rows, won, day);
+    const message = shareText(rows, won, day, { bouteille, page });
     // Sur ordinateur, le navigateur ne sait souvent pas partager : on copie le texte à la place.
     if (Platform.OS === 'web' && !navigator.share) {
       await navigator.clipboard.writeText(message);
@@ -100,18 +144,73 @@ export default function App() {
     setAnswer(randomWord());
     setGuesses([]);
     setCurrent('');
+    setBouteille(false);
   }
 
   const keys = keyboardStates(guesses, answer);
-  const rows = Array.from({ length: MAX_TRIES }, (_, i) => guesses[i] ?? (i === guesses.length ? current : ''));
+  const rows = Array.from({ length: maxTries }, (_, i) => guesses[i] ?? (i === guesses.length ? current : ''));
+
+  if (journal) {
+    // « Mon journal » : toutes les pages de la saison jusqu'à aujourd'hui.
+    const visibles = PAGES.slice(0, Math.max(0, Math.min(day, PAGES.length)));
+    return (
+      <SafeAreaView style={styles.screen}>
+        <StatusBar style="light" />
+        <Text style={styles.title}>MON JOURNAL</Text>
+        <Text style={styles.subtitle}>
+          Saison {SAISON} · {pages.length}/{PAGES.length} pages retrouvées
+        </Text>
+        <ScrollView style={styles.journal} contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
+          {visibles.map((p, i) => {
+            const n = i + 1;
+            const found = pages.includes(n);
+            const today = n === day && mode === 'daily' && !over;
+            return (
+              <View key={n} style={[styles.page, !found && styles.pageLost]}>
+                <Text style={styles.pageNum}>Page {n}</Text>
+                {found ? (
+                  <>
+                    <Text style={styles.pageTitle}>{p.titre}</Text>
+                    <Text style={styles.pageText}>{p.texte}</Text>
+                  </>
+                ) : today ? (
+                  <Text style={[styles.pageText, styles.lostText]}>Trouve le mot du jour pour lire cette page.</Text>
+                ) : (
+                  <>
+                    <Text style={[styles.pageText, styles.lostText]}>Cette page a été emportée par la marée…</Text>
+                    <Pressable style={styles.small} onPress={() => fishPage(n)}>
+                      <Text style={styles.smallText}>{FISH_LABEL}</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            );
+          })}
+          {day > PAGES.length && (
+            <Text style={styles.stats}>La saison {SAISON + 1} arrive bientôt. Le naufragé n'a pas dit son dernier mot.</Text>
+          )}
+        </ScrollView>
+        <Pressable style={[styles.button, { marginBottom: 24 }]} onPress={() => setJournal(false)}>
+          <Text style={styles.buttonText}>Retour au jeu</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  const pageOuverte = page && pages.includes(day);
 
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
       <Text style={styles.title}>MOT MYSTÈRE</Text>
       <Text style={styles.subtitle}>
-        {mode === 'daily' ? `Mot du jour #${day}` : 'Partie bonus'} · 🔥 série {stats.streak}
+        {mode === 'daily'
+          ? (page ? `Journal du naufragé · page ${day}` : `Mot du jour #${day}`)
+          : 'Partie bonus'} · série {stats.streak}
       </Text>
+      <Pressable style={styles.link} onPress={() => setJournal(true)}>
+        <Text style={styles.linkText}>Mon journal ({pages.length}/{PAGES.length})</Text>
+      </Pressable>
 
       <View style={styles.grid}>
         {rows.map((word, r) => {
@@ -132,21 +231,46 @@ export default function App() {
         })}
       </View>
 
+      {page && !over && (
+        bouteille ? (
+          <Text style={styles.hint}>Bouteille à la mer : « {page.indice} »</Text>
+        ) : guesses.length < MAX_TRIES - 1 && (
+          <Pressable style={styles.link} onPress={openBottle}>
+            <Text style={styles.linkText}>Ouvrir la bouteille à la mer (indice, coûte 1 essai)</Text>
+          </Pressable>
+        )
+      )}
+
       {over ? (
-        <View style={styles.end}>
-          <Text style={styles.endText}>{won ? 'Bravo ! 🎉' : `Le mot était ${answer}`}</Text>
+        <ScrollView style={styles.endScroll} contentContainerStyle={styles.end}>
+          <Text style={styles.endText}>{won ? 'Bravo !' : `Le mot était ${answer}`}</Text>
+          {page && (pageOuverte ? (
+            <View style={styles.page}>
+              <Text style={styles.pageNum}>Page {day} débloquée</Text>
+              <Text style={styles.pageTitle}>{page.titre}</Text>
+              <Text style={styles.pageText}>{page.texte}</Text>
+              <Text style={styles.pageNext}>La suite demain…</Text>
+            </View>
+          ) : (
+            <View style={[styles.page, styles.pageLost]}>
+              <Text style={[styles.pageText, styles.lostText]}>La page {day} du journal a coulé avec ta partie…</Text>
+              <Pressable style={styles.small} onPress={() => fishPage(day)}>
+                <Text style={styles.smallText}>{FISH_LABEL}</Text>
+              </Pressable>
+            </View>
+          ))}
           {mode === 'daily' && (
             <Pressable style={[styles.button, styles.share]} onPress={share}>
               <Text style={styles.buttonText}>Partager mon score</Text>
             </Pressable>
           )}
           <Pressable style={styles.button} onPress={playBonus}>
-            <Text style={styles.buttonText}>🎬 Rejouer (partie bonus)</Text>
+            <Text style={styles.buttonText}>Rejouer (partie bonus)</Text>
           </Pressable>
           <Text style={styles.stats}>
             {stats.played} parties · {stats.played ? Math.round((stats.wins / stats.played) * 100) : 0}% gagnées · record {stats.best}
           </Text>
-        </View>
+        </ScrollView>
       ) : (
         <View style={styles.keyboard}>
           {KEY_ROWS.map((row) => (
@@ -169,23 +293,39 @@ export default function App() {
   );
 }
 
+// Couleurs du site « Les Naufragés » : nuit en mer, sable et corde.
+const SAND = '#e3c98f';
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#121213', alignItems: 'center', paddingTop: 24 },
-  title: { color: '#fff', fontSize: 30, fontWeight: '800', letterSpacing: 3 },
-  subtitle: { color: '#aaa', marginTop: 4, marginBottom: 16 },
+  screen: { flex: 1, backgroundColor: '#0d1b21', alignItems: 'center', paddingTop: 20 },
+  title: { color: '#f1ead8', fontSize: 30, fontWeight: '800', letterSpacing: 3 },
+  subtitle: { color: '#9db1ae', marginTop: 4 },
+  link: { paddingVertical: 8, paddingHorizontal: 12 },
+  linkText: { color: SAND, fontWeight: '700', textDecorationLine: 'underline' },
   grid: { gap: 6 },
   row: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
-  cell: { width: 58, height: 58, borderWidth: 2, borderColor: '#3a3a3c', alignItems: 'center', justifyContent: 'center' },
-  cellTyped: { borderColor: '#777' },
-  cellText: { color: '#fff', fontSize: 28, fontWeight: '700' },
+  cell: { width: 54, height: 54, borderWidth: 2, borderColor: '#22404a', alignItems: 'center', justifyContent: 'center' },
+  cellTyped: { borderColor: SAND },
+  cellText: { color: '#fff', fontSize: 26, fontWeight: '700' },
+  hint: { color: SAND, marginTop: 10, paddingHorizontal: 20, textAlign: 'center', maxWidth: 420, fontStyle: 'italic' },
   keyboard: { marginTop: 'auto', marginBottom: 24, gap: 8 },
-  key: { backgroundColor: '#818384', borderRadius: 4, minWidth: 32, height: 52, alignItems: 'center', justifyContent: 'center' },
+  key: { backgroundColor: '#4a6a70', borderRadius: 4, minWidth: 32, height: 52, alignItems: 'center', justifyContent: 'center' },
   keyWide: { minWidth: 48 },
   keyText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  end: { marginTop: 24, alignItems: 'center', gap: 12 },
+  endScroll: { marginTop: 16, alignSelf: 'stretch' },
+  end: { alignItems: 'center', gap: 12, paddingBottom: 24, paddingHorizontal: 16 },
   endText: { color: '#fff', fontSize: 22, fontWeight: '700' },
-  button: { backgroundColor: '#3a3a3c', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 8, minWidth: 260, alignItems: 'center' },
+  page: { backgroundColor: '#f1e3bf', borderLeftWidth: 6, borderLeftColor: '#d9774b', borderRadius: 6, padding: 14, maxWidth: 420, alignSelf: 'center', width: '100%' },
+  pageLost: { backgroundColor: '#142b33', borderLeftColor: '#22404a' },
+  lostText: { color: '#9db1ae', fontStyle: 'italic' },
+  pageNum: { color: '#b85f37', fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+  pageTitle: { color: '#2a1d10', fontSize: 18, fontWeight: '800', marginTop: 2 },
+  pageText: { color: '#3b2c1a', fontSize: 15, lineHeight: 21, marginTop: 4 },
+  pageNext: { color: '#b85f37', fontStyle: 'italic', marginTop: 6 },
+  small: { backgroundColor: '#d9774b', borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14, marginTop: 8, alignSelf: 'flex-start' },
+  smallText: { color: '#fff', fontWeight: '700' },
+  journal: { alignSelf: 'stretch', paddingHorizontal: 16, marginTop: 12 },
+  button: { backgroundColor: '#1b3740', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 8, minWidth: 260, alignItems: 'center' },
   share: { backgroundColor: '#3aa757' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  stats: { color: '#aaa', marginTop: 8 },
+  stats: { color: '#9db1ae', marginTop: 8, textAlign: 'center' },
 });

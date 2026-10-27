@@ -1,4 +1,5 @@
 import { WORDS } from './words.js';
+import { pageDuJour } from './journal.js';
 
 export const WORD_LENGTH = 5;
 export const MAX_TRIES = 6;
@@ -15,8 +16,11 @@ export function dayNumber(date = new Date()) {
 }
 
 // Tout le monde a le même mot le même jour : c'est ce qui rend le partage viral.
+// Pendant une saison du journal, le mot du jour est celui de la page de l'histoire.
 export function wordOfTheDay(date = new Date()) {
   const n = dayNumber(date);
+  const page = pageDuJour(n);
+  if (page) return page.mot;
   return WORDS[(((n - 1) % WORDS.length) + WORDS.length) % WORDS.length];
 }
 
@@ -42,12 +46,18 @@ export function evaluate(guess, answer) {
   return result;
 }
 
-const EMOJI = { correct: '🟩', present: '🟨', absent: '⬛' };
+// Bleu = la mer : notre grille ne ressemble pas à celle des autres jeux.
+const EMOJI = { correct: '🟩', present: '🟨', absent: '🟦' };
 
-export function shareText(rows, won, day) {
-  const score = won ? `${rows.length}/${MAX_TRIES}` : `X/${MAX_TRIES}`;
+// bouteille = le joueur a ouvert la bouteille à la mer (l'indice compte comme un essai).
+// Garde le début « Mot Mystère #N X/6 » : le bot Discord le lit pour le classement.
+export function shareText(rows, won, day, { bouteille = false, page = null } = {}) {
+  const used = rows.length + (bouteille ? 1 : 0);
+  const score = won ? `${used}/${MAX_TRIES}` : `X/${MAX_TRIES}`;
   const grid = rows.map((r) => r.map((s) => EMOJI[s]).join('')).join('\n');
-  return `Mot Mystère #${day} ${score}\n\n${grid}\n\nTu fais mieux ? 👉 lesnaufrages-mc.github.io/jouer/`;
+  const titre = page ? `\n📖 Journal du naufragé, page ${day} : « ${page.titre} »` : '';
+  const indice = bouteille ? ' 🍾' : '';
+  return `Mot Mystère #${day} ${score}${indice}${titre}\n\n${grid}\n\nTu fais mieux ? 👉 lesnaufrages-mc.github.io/jouer/`;
 }
 
 // Meilleur état connu de chaque lettre, pour colorer le clavier.

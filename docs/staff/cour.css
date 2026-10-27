@@ -1,0 +1,57 @@
+/* Page Staff en style « trône de fer » : le staff présenté comme un conseil, chaque membre sous sa bannière.
+   Ne s'applique qu'à cette page (body.cour). */
+@font-face{font-family:Cinzel;font-weight:700;font-display:swap;src:url(../fonts/cinzel-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:Cinzel;font-weight:900;font-display:swap;src:url(../fonts/cinzel-latin-900-normal.woff2) format("woff2")}
+@font-face{font-family:"Cormorant Garamond";font-weight:600;font-display:swap;src:url(../fonts/cormorant-garamond-latin-600-normal.woff2) format("woff2")}
+
+body.cour{
+  --bg:#0d0c0a;--bg2:#15120e;--card:#1a1612;--card2:#262019;--field:#090807;--line:#3b3224;
+  --txt:#ece4d3;--muted:#a89d88;--sand:#c9a24a;--sand2:#8e6b26;--rope:#8f1b1b;--rope2:#5e1010;
+  --or:#c9a24a;--or2:#e6cf8f;--sang:#7a1515;
+  --f-titre:Cinzel,Georgia,serif;
+}
+.cour h1,.cour h2,.cour h3{letter-spacing:.04em}
+.cour .eyebrow{font-family:Cinzel,Georgia,serif;font-weight:700;letter-spacing:.2em;color:var(--or)}
+.cour .eyebrow:before,.cour .center .eyebrow:after{height:1px;width:40px;background:var(--or)}
+.cour .lead{font-family:"Cormorant Garamond",Georgia,serif;font-size:21px;line-height:1.4}
+
+/* En-tête : bannières suspendues */
+.cour .page-head{position:relative;padding-top:40px;background:radial-gradient(ellipse 60% 70% at 50% 20%,#211c15,transparent 75%),var(--bg)}
+.bannieres{display:flex;justify-content:center;gap:clamp(10px,3vw,28px);margin:0 auto 18px}
+.bannieres svg{width:clamp(40px,8vw,62px);height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.bannieres svg:nth-child(2),.bannieres svg:nth-child(4){margin-top:14px}
+.cour .page-head h1{font-weight:900;color:#e3dccb;text-shadow:0 2px 0 #000}
+
+/* Boutons */
+.cour .btn{border-radius:3px;font-family:Cinzel,Georgia,serif;letter-spacing:.04em}
+.cour .btn-play{background:linear-gradient(180deg,#c9a24a,#8e6b26);color:#140e05;border:1px solid #e6cf8f;box-shadow:0 4px 0 #4a3510}
+.cour .btn-play:hover{box-shadow:0 5px 0 #4a3510}
+.cour .links .btn-play{color:#140e05}
+.cour .links a.on{box-shadow:0 2px 0 var(--or)}
+
+/* Chaque membre sous sa bannière (rouge sang ou noir, en alternance) */
+.cour .grade-bloc h2,.cour .staff-site{font-family:Cinzel,Georgia,serif}
+.cour .staff-grid{gap:18px}
+.cour .staff-card{border-radius:0;border:1px solid #4a3e2a;border-top:4px solid var(--or);padding:22px 14px 40px;
+  background:linear-gradient(180deg,#3a1111,#1d0a0a);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 22px),0 100%)}
+.cour .staff-card:nth-child(even){background:linear-gradient(180deg,#24201a,#100e0b)}
+.cour .staff-card:hover{border-color:#4a3e2a;border-top-color:var(--or2);transform:none;filter:brightness(1.12)}
+.cour .staff-card b{font-family:Cinzel,Georgia,serif;letter-spacing:.03em}
+.cour .staff-card .av-l{box-shadow:0 0 0 3px var(--or),0 0 0 5px #000;background:var(--card2);color:var(--or2)}
+.cour .staff-card span.av-xl{color:var(--or2);font-family:Cinzel,Georgia,serif}
+.cour .staff-card.libre{border-style:dashed;opacity:.75}
+.cour .staff-card.discord:hover{border-color:#4a3e2a}
+
+/* Recrutement : un décret royal sur parchemin */
+.cour .final.recrute{display:block;text-align:center;background:linear-gradient(180deg,#efe3c4,#ddc99c);color:#2a1d0c;border-radius:2px;
+  box-shadow:0 0 0 1px #8e6b26,0 0 0 6px #1a1612,0 0 0 7px #8e6b26,0 20px 50px rgba(0,0,0,.6)}
+.cour .recrute h2{color:#3b0c0c}
+.cour .recrute .eyebrow{color:#7a1515}
+.cour .recrute .eyebrow:before,.cour .recrute .eyebrow:after{background:#7a1515}
+.cour .recrute .lead,.cour .recrute .attentes,.cour .recrute .muted,.cour .recrute .postes span{color:#5b4826}
+.cour .recrute .etapes{color:#2a1d0c}
+.cour .postes div{background:rgba(122,21,21,.07);border:1px solid rgba(142,107,38,.45);border-radius:2px}
+.cour .postes b{font-family:Cinzel,Georgia,serif;color:#3b0c0c}
+.cour .recrute code{background:rgba(0,0,0,.08);color:#2a1d0c}
+.cour .recrute .btn-discord{box-shadow:0 4px 0 #2b3380}

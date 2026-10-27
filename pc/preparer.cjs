@@ -2,7 +2,7 @@
 // Lancé tout seul par « npm start » et « npm run build » : le jeu PC reste toujours
 // identique au jeu du site, il n'y a qu'un seul code à modifier.
 // Ce qui change pour le PC : pas de pub AdSense, pas de compteur de visites,
-// three.js et la police Cinzel inclus (marche sans internet), boutons Quitter et Plein écran.
+// three.js inclus (marche sans internet), boutons Quitter et Plein écran.
 const fs = require('fs');
 const path = require('path');
 
@@ -12,7 +12,7 @@ const APP = path.join(ICI, 'app');
 const SITE = 'https://lesnaufrages-mc.github.io';
 
 fs.rmSync(APP, { recursive: true, force: true });
-fs.mkdirSync(path.join(APP, 'vendor', 'fonts'), { recursive: true });
+fs.mkdirSync(path.join(APP, 'vendor'), { recursive: true });
 
 // 1. Fichiers du jeu (sauf ceux de l'appli web installable, inutiles ici).
 const IGNORES = ['sw.js', 'manifest.webmanifest'];
@@ -31,14 +31,7 @@ for (const f of ['index.html', 'jeu.js']) {
 // 2. Bibliothèques incluses dans le jeu au lieu d'être chargées sur internet.
 const mod = (p) => require.resolve(p, { paths: [ICI] });
 fs.copyFileSync(mod('three/build/three.min.js'), path.join(APP, 'vendor', 'three.min.js'));
-const cinzel = path.dirname(mod('@fontsource/cinzel/package.json'));
-let css = '';
-for (const poids of [700, 900]) {
-  const nom = `cinzel-latin-${poids}-normal.woff2`;
-  fs.copyFileSync(path.join(cinzel, 'files', nom), path.join(APP, 'vendor', 'fonts', nom));
-  css += `@font-face{font-family:Cinzel;font-style:normal;font-weight:${poids};font-display:swap;src:url(fonts/${nom}) format("woff2")}\n`;
-}
-fs.writeFileSync(path.join(APP, 'vendor', 'cinzel.css'), css);
+// Les polices (Cinzel…) sont déjà dans docs/strategie/polices/ : copiées avec le jeu.
 
 // 3. Icône de l'exécutable.
 fs.mkdirSync(path.join(ICI, 'build'), { recursive: true });
@@ -67,8 +60,6 @@ const ligne = (re, nom) => {
 remplacer('index.html', [
   [ligne(/<script[^>]*adsbygoogle[^>]*><\/script>\n/, 'pub AdSense'), '', 'pub AdSense'],
   [ligne(/<link rel="manifest"[^>]*>\n/, 'manifest'), '', 'manifest'],
-  [ligne(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n/, 'preconnect'), '', 'preconnect polices'],
-  [ligne(/<link href="https:\/\/fonts\.googleapis\.com[^>]*>/, 'police Cinzel'), '<link href="vendor/cinzel.css" rel="stylesheet">', 'police Cinzel'],
   [ligne(/<script src="\.\.\/supabase-config\.js"><\/script>\n/, 'supabase-config'), '', 'supabase-config'],
   [ligne(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase[^>]*><\/script>\n/, 'supabase'), '', 'supabase'],
   [ligne(/<script src="https:\/\/cdnjs\.cloudflare\.com[^"]*three\.min\.js"><\/script>/, 'three.js'), '<script src="vendor/three.min.js"></script>', 'three.js'],

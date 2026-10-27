@@ -1,0 +1,3 @@
+/* Police des sous-titres du jeu, incluse (pas de Google Fonts) : marche hors ligne et sur la version PC.
+   Cinzel est déclarée dans index.html (polices/cinzel-latin*.woff2). */
+@font-face{font-family:"Cormorant Garamond";font-weight:600;font-display:swap;src:url(polices/cormorant-garamond-latin-600-normal.woff2) format("woff2")}

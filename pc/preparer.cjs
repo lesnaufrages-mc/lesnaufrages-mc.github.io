@@ -2,7 +2,7 @@
 // Lancé tout seul par « npm start » et « npm run build » : le jeu PC reste toujours
 // identique au jeu du site, il n'y a qu'un seul code à modifier.
 // Ce qui change pour le PC : pas de pub AdSense, pas de compteur de visites,
-// three.js et la police Cinzel inclus (marche sans internet), boutons Quitter et Plein écran.
+// three.js inclus (marche sans internet), boutons Quitter et Plein écran.
 const fs = require('fs');
 const path = require('path');
 
@@ -31,7 +31,7 @@ for (const f of ['index.html', 'jeu.js']) {
 // 2. Bibliothèques incluses dans le jeu au lieu d'être chargées sur internet.
 const mod = (p) => require.resolve(p, { paths: [ICI] });
 fs.copyFileSync(mod('three/build/three.min.js'), path.join(APP, 'vendor', 'three.min.js'));
-// La police Cinzel est déjà dans docs/strategie/polices/ (copiée avec le reste).
+// Les polices (Cinzel…) sont déjà dans docs/strategie/polices/ : copiées avec le jeu.
 
 // 3. Icône de l'exécutable.
 fs.mkdirSync(path.join(ICI, 'build'), { recursive: true });

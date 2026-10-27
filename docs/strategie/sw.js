@@ -5,7 +5,7 @@ var VERSION = 'imperium-v13';
 try { importScripts('tableaux.js?v=13'); } catch (e) {}
 var FICHIERS = [
   './', 'index.html', 'monde.js?v=13', 'histoire.js?v=13', 'personnages.js?v=13', 'moteur.js?v=13', 'tableaux.js?v=13', 'portraits.js?v=13', 'bataille3d.js?v=13', 'jeu.js?v=13',
-  'polices.css?v=13', 'polices/cinzel-latin-700-normal.woff2', 'polices/cinzel-latin-900-normal.woff2', 'polices/cormorant-garamond-latin-600-normal.woff2',
+  'polices.css?v=13', 'polices/cinzel-latin.woff2', 'polices/cinzel-latin-ext.woff2', 'polices/cormorant-garamond-latin-600-normal.woff2',
   'manifest.webmanifest', 'icone-192.png', 'icone-512.png', '../supabase-config.js', '../site.js',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
 ].concat(Object.keys(self.TABLEAUX || {}).map(function (k) { return 'tableaux/' + self.TABLEAUX[k][0]; }));

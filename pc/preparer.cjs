@@ -65,6 +65,9 @@ remplacer('index.html', [
   [ligne(/<script src="https:\/\/cdnjs\.cloudflare\.com[^"]*three\.min\.js"><\/script>/, 'three.js'), '<script src="vendor/three.min.js"></script>', 'three.js'],
   [ligne(/<script src="\.\.\/site\.js"[^>]*><\/script>/, 'site.js'), '<script src="pc.js"></script>', 'site.js'],
   ['<link rel="icon" href="../icon.png">', '<link rel="icon" href="icone-192.png">', 'icône'],
+  ['<a href="../conditions.html">', '<a href="' + SITE + '/conditions.html" target="_blank">', 'lien Conditions'],
+  ['<a href="../confidentialite.html">', '<a href="' + SITE + '/confidentialite.html" target="_blank">', 'lien Confidentialité'],
+  ['<a href="../cookies.html" data-cookies>', '<a href="' + SITE + '/cookies.html" target="_blank">', 'lien Cookies'],
   ['<a href="../">← Retour au site</a>', '<a href="#" id="bPleinEcran">⛶ Plein écran (F11)</a> · <a href="#" id="bQuitter">✖ Quitter</a>', 'lien Retour au site']
 ]);
 

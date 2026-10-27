@@ -201,7 +201,7 @@
         '<label>E-mail<input type="email" name="email" required autocomplete="email"></label>' +
         '<p class="small">Ton e-mail reste privé : il sert seulement à te connecter.</p>' +
         '<label>Mot de passe<input type="password" name="mdp" required minlength="8" autocomplete="new-password"></label>' +
-        '<label class="check"><input type="checkbox" required> J\'accepte de rester respectueux et la <a href="' + racine() + 'confidentialite.html#forum" target="_blank">politique de confidentialité</a>.</label>' +
+        '<label class="check"><input type="checkbox" required> J\'ai au moins 13 ans et j\'accepte les <a href="' + racine() + 'conditions.html" target="_blank">conditions d\'utilisation</a> (règles du forum) et la <a href="' + racine() + 'confidentialite.html#forum" target="_blank">politique de confidentialité</a>.</label>' +
         '<p class="err" data-err></p><button class="btn btn-play full">Créer mon compte</button></form>' +
         '<p class="small center">Déjà inscrit ? <a href="#" data-ouvrir="connexion">Connecte-toi</a></p>';
     },

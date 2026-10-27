@@ -9,7 +9,7 @@
 .warn{color:var(--yellow)}
 .err{color:var(--red);font-weight:700;font-size:14px;min-height:20px;margin:8px 0}
 .err:empty{min-height:0;margin:0}
-code{background:#26262a;padding:1px 6px;border-radius:6px;font-size:.9em}
+code{background:var(--card2);padding:1px 6px;border-radius:6px;font-size:.9em}
 .btn-sm{padding:7px 14px;font-size:14px;border-radius:10px}
 .btn-danger{background:var(--red);color:#fff}
 .btn-danger:hover{background:#c73a3f}
@@ -21,7 +21,7 @@ code{background:#26262a;padding:1px 6px;border-radius:6px;font-size:.9em}
 /* Formulaires */
 form label{display:block;font-weight:700;font-size:14px;color:var(--muted);margin:14px 0 6px}
 form label:first-child{margin-top:0}
-input:not([type=checkbox]),select,textarea{display:block;width:100%;font:inherit;font-size:16px;color:var(--txt);background:#111113;border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;margin-top:6px}
+input:not([type=checkbox]),select,textarea{display:block;width:100%;font:inherit;font-size:16px;color:var(--txt);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;margin-top:6px}
 textarea{resize:vertical;min-height:90px}
 input:focus,select:focus,textarea:focus{border-color:var(--green)}
 label.check{display:flex;gap:10px;align-items:flex-start;font-weight:500}
@@ -40,9 +40,9 @@ form .btn{margin-top:12px}
 .chip{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .menu-in{position:absolute;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;min-width:210px;box-shadow:0 20px 50px rgba(0,0,0,.5);display:flex;flex-direction:column;z-index:60}
 .menu-in a,.menu-in button{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;font-size:15px;font-weight:600;color:var(--txt)!important}
-.menu-in a:hover,.menu-in button:hover{background:#26262a}
+.menu-in a:hover,.menu-in button:hover{background:var(--card2)}
 .menu-in p{margin:6px 12px}
-.av-l{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,var(--discord),var(--green));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff}
+.av-l{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:var(--sand2);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#2a1d0c}
 @media(max-width:820px){.links{gap:10px}}
 .links .btn{white-space:nowrap}
 @media(max-width:560px){
@@ -70,7 +70,7 @@ details.danger form{padding-bottom:16px}
 .invite a{color:#c9cdfb;font-weight:700}
 .topics{display:flex;flex-direction:column;gap:10px}
 .topic{display:flex;gap:16px;align-items:center;justify-content:space-between;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;transition:border-color .15s}
-.topic:hover{border-color:#4a4a50}
+.topic:hover{border-color:var(--sand2)}
 .topic.pin{border-color:rgba(58,167,87,.5)}
 .t-main{min-width:0}
 .t-title{font-weight:800;font-size:17px;margin-bottom:6px;overflow-wrap:anywhere}
@@ -81,8 +81,8 @@ details.danger form{padding-bottom:16px}
 .role{margin-left:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:6px}
 .role.admin{background:rgba(229,72,77,.2);color:#ff9ea1}
 .role.modo{background:rgba(58,167,87,.2);color:#9fe0b0}
-.role.ban{background:#3a3a3c;color:var(--muted)}
-.tag[class*="cat-"]{background:#26262a}
+.role.ban{background:var(--grey);color:var(--muted)}
+.tag[class*="cat-"]{background:var(--card2)}
 
 /* Un sujet */
 .back{color:var(--green);text-decoration:none;font-weight:700}
@@ -103,7 +103,7 @@ details.danger form{padding-bottom:16px}
 .tabs{margin:18px 0 22px}
 .row-a{margin-bottom:12px;padding:18px}
 .row-a p{margin:10px 0}
-blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid var(--line);background:#141416;border-radius:8px;color:var(--muted);overflow-wrap:anywhere}
+blockquote{margin:10px 0;padding:10px 14px;border-left:3px solid var(--line);background:var(--field);border-radius:8px;color:var(--muted);overflow-wrap:anywhere}
 .acts{display:flex;flex-wrap:wrap;gap:8px}
 .acts .btn{margin:0}
 .search{display:flex;gap:8px;margin-bottom:10px}
@@ -128,7 +128,7 @@ button.who{all:unset;cursor:pointer;font-weight:700;color:var(--txt)}
 button.who:hover{text-decoration:underline}
 
 /* Photo de profil et bio */
-img.av-l{object-fit:cover;background:#26262a}
+img.av-l{object-fit:cover;background:var(--card2)}
 .av-xl{width:96px;height:96px;font-size:40px}
 .pp-edit{display:flex;gap:16px;align-items:center;margin-bottom:6px}
 .pp-edit label.btn{display:inline-flex;margin:0;color:var(--txt);font-size:14px;cursor:pointer}
@@ -149,7 +149,7 @@ img.av-l{object-fit:cover;background:#26262a}
 .grade-bloc>p{margin:8px 0 16px}
 .staff-grid{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
 .staff-card{all:unset;box-sizing:border-box;cursor:pointer;width:190px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:border-color .15s,transform .15s}
-.staff-card:hover{border-color:#4a4a50;transform:translateY(-2px)}
+.staff-card:hover{border-color:var(--sand2);transform:translateY(-2px)}
 .staff-card span{color:var(--muted);font-size:13px;line-height:1.4}
 @media(max-width:440px){.staff-card{width:calc(50% - 7px)}.av-xl{width:72px;height:72px}}
 .recrute .lead{margin:6px auto 24px}
@@ -163,7 +163,7 @@ img.av-l{object-fit:cover;background:#26262a}
 .staff-card.libre{border-style:dashed;cursor:default;opacity:.7}
 a.staff-card.libre{cursor:pointer;opacity:.85}
 a.staff-card.libre:hover{opacity:1}
-.staff-card.libre .av-l{background:#26262a;color:var(--muted)}
+.staff-card.libre .av-l{background:var(--card2);color:var(--muted)}
 .plus-tard{margin-top:10px}
 .pp-edit input[type=file]{display:none}
 .pp-edit label.btn{white-space:nowrap}
@@ -174,4 +174,4 @@ a.staff-card.libre:hover{opacity:1}
 .staff-card .roles{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
 .staff-card .roles .role{margin:0;font-size:11px}
 .staff-site{margin:10px 0 28px}
-.staff-card span.av-xl{font-size:38px;font-weight:800;color:#fff;line-height:1}
+.staff-card span.av-xl{font-size:38px;font-weight:800;color:#2a1d0c;line-height:1}

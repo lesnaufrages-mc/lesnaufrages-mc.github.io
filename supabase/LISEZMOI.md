@@ -63,6 +63,11 @@ Lance **une fois** [`securite.sql`](securite.sql) (SQL Editor → New query → 
 Ça renforce l'anti-spam, protège les photos et bios, verrouille les liens des actus.
 Le reste des réglages de sécurité (2FA, e-mails, mots de passe) est expliqué dans [`SECURITE.md`](../SECURITE.md).
 
+## Édition Couronne (version payante d'Imperium)
+
+Tout est expliqué pas à pas dans [`COURONNE.md`](COURONNE.md) : table `premium`, compte Lemon Squeezy,
+fonction `lemonsqueezy` et test d'achat.
+
 ## Grades du staff
 
 Les mêmes noms que les rôles du Discord (le bot les crée avec `/staff-setup`).

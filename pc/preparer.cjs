@@ -23,7 +23,7 @@ for (const f of fs.readdirSync(SOURCE)) {
 fs.copyFileSync(path.join(ICI, 'pc.js'), path.join(APP, 'pc.js'));
 // Sous Windows, git peut fournir des fins de ligne \r\n : on remet des \n pour que
 // les remplacements ci-dessous trouvent leurs lignes partout.
-for (const f of ['index.html', 'jeu.js']) {
+for (const f of ['index.html', 'jeu.js', 'couronne-ui.js']) {
   const p = path.join(APP, f);
   fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n'));
 }
@@ -74,6 +74,12 @@ remplacer('index.html', [
 remplacer('jeu.js', [
   ['href="../forum/"', `href="${SITE}/forum/" target="_blank" rel="noopener"`, 'liens forum'],
   [ligneJeu(/\['Peut-on le télécharger \?'.*\],\n/), "['Le jeu marche sans internet ?', 'Oui ! Toute la campagne et les batailles en 3D marchent hors ligne. Touche F11 pour passer en plein écran.'],\n", 'FAQ téléchargement']
+]);
+
+// L'Édition Couronne est incluse dans la version PC (le jeu Steam est payant) : couronne.js la débloque
+// toute seule (window.imperiumPC). Le seul lien vers la page d'achat ouvre le site dans le navigateur.
+remplacer('couronne-ui.js', [
+  ["var PAGE = '../couronne/';", `var PAGE = '${SITE}/couronne/';`, 'page de l\'Édition Couronne']
 ]);
 
 function ligneJeu(re) {

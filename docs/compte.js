@@ -136,7 +136,7 @@
         '<button type="button" data-deconnexion>🚪 Se déconnecter</button></div></details>';
     });
   }
-  function racine() { return /\/(forum|admin|staff)\/[^/]*$/.test(location.pathname) ? '../' : './'; }
+  function racine() { return /\/(forum|admin|staff|couronne)\/[^/]*$/.test(location.pathname) ? '../' : './'; }
 
   document.addEventListener('click', function (e) {
     var o = e.target.closest('[data-ouvrir]');

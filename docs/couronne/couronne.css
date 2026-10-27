@@ -1,0 +1,24 @@
+/* Page de l'Édition Couronne (en plus de staff/cour.css, le style « trône de fer »). */
+.cc-sec{padding:28px 0}
+.cc-video{display:block;width:100%;max-width:860px;margin:0 auto;border:1px solid #4a3e2a;border-top:3px solid var(--or);background:#000;aspect-ratio:16/9}
+.cc-grid{margin-top:24px}
+.cc-grid .card{border-radius:2px;border-color:#4a3e2a;border-top:3px solid var(--or);padding:0 0 18px;overflow:hidden}
+.cc-grid .card img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;object-position:top;border-bottom:1px solid #4a3e2a;margin-bottom:14px}
+.cc-grid .card h3,.cc-grid .card p{padding:0 18px}
+.cc-grid .card h3{font-family:Cinzel,Georgia,serif;color:var(--or2);margin:0 0 6px}
+.cc-grid .card p{margin:0;color:var(--muted)}
+.cc-achat{max-width:620px;margin:0 auto;text-align:center;padding:30px 22px;background:linear-gradient(180deg,#221c15,#14110d);
+  border:1px solid #4a3e2a;box-shadow:0 0 0 6px #120f0b,0 0 0 7px #4a3e2a,0 20px 50px rgba(0,0,0,.6)}
+.cc-achat h2{font-family:Cinzel,Georgia,serif;margin:4px 0}
+.cc-prix{font-family:Cinzel,Georgia,serif;font-size:34px;color:var(--or2);margin:6px 0 16px}
+.cc-prix small{display:block;font-family:inherit;font-size:13px;color:var(--muted);letter-spacing:.05em}
+.cc-form{display:flex;flex-direction:column;gap:12px;text-align:left;margin:0 auto 14px;max-width:520px}
+.cc-form label{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;cursor:pointer}
+.cc-form input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--or)}
+.cc-form a{color:var(--or)}
+.cc-form .btn{align-self:center}
+.cc-form .btn:disabled{opacity:.45;cursor:not-allowed}
+.cc-ok{color:#86efac;font-size:17px}
+#etat-achat{margin-bottom:16px}
+#etat-achat .btn{margin:4px}
+.cc-achat .small a,.faq a{color:var(--or)}

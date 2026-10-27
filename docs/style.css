@@ -209,3 +209,21 @@ footer a:hover{color:var(--txt)}
 .prose strong{color:var(--txt)}
 .prose a{color:var(--green)}
 .links a.on{color:var(--txt)}
+
+/* Pages légales (conditions, confidentialité, cookies) */
+.prose ul{padding-left:20px}
+.prose li{margin:6px 0}
+.prose code{font-size:13px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--txt);overflow-wrap:anywhere}
+.prose td:first-child{min-width:150px}
+.callout{background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:4px 20px;margin:24px 0}
+.toc{display:flex;flex-wrap:wrap;gap:8px 18px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:24px 0;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--txt)}
+.table-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:12px}
+.prose table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+.prose th,.prose td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+.prose th{color:var(--txt);background:var(--bg2);font-weight:700}
+.prose tr:last-child td{border-bottom:0}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px}
+.prose .btn{font-size:15px;padding:12px 18px}
+.prose .small{font-size:13px}

@@ -1,4 +1,4 @@
-// Mot Mystère Esport : une question par jour, la réponse est le mot à trouver.
+// CLUTCH (le Mot Mystère esport) : une question par jour, la réponse est le mot à trouver.
 // m = mot (lettres A-Z seulement, 4 à 8 lettres), c = catégorie, s = scène,
 // q = la question affichée, i = l'anecdote montrée à la fin.
 // Faits vérifiés le 2026-10-28. Pour ajouter des questions : les mettre à la fin
@@ -12,9 +12,9 @@ export const QUESTIONS = [
   { m: 'KARMINE', c: 'Équipe', s: '🇫🇷 France',
     q: "Quel club français, dont les fans forment la « Blue Wall », a été cofondé en 2020 par le streamer Kameto ?",
     i: "La Karmine Corp a remporté trois European Masters de LoL d'affilée (2021-2022) avant d'entrer en LEC en 2024." },
-  { m: 'CLUTCH', c: 'Lexique', s: '🌍 Tous jeux',
-    q: "Comment appelle-t-on le fait de gagner une manche alors qu'on est le dernier survivant de son équipe face à plusieurs adversaires ?",
-    i: "Un « 1v5 clutch » sur Counter-Strike est l'action la plus rare et la plus célébrée de l'esport." },
+  { m: 'OVERTIME', c: 'Lexique', s: '🌍 Tous jeux',
+    q: "Quel mot anglais désigne les prolongations, quand un match de Counter-Strike ou de Valorant finit à égalité ?",
+    i: "Sur CS2, l'overtime se joue en manches de 3 par camp, et certains matchs en ont enchaîné plus de cinq." },
   { m: 'ZYWOO', c: 'Joueur', s: '🇫🇷 France',
     q: "Quel AWPer français de Team Vitality a été élu meilleur joueur du monde de Counter-Strike par HLTV en 2019, 2020, 2023 et 2025 ?",
     i: "Mathieu Herbaut a aussi été MVP des Majors de Paris 2023, Austin 2025 et Budapest 2025." },

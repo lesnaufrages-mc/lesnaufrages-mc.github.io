@@ -1,4 +1,4 @@
-// Mot Mystère Esport : une question esport par jour, la réponse est le mot à trouver.
+// CLUTCH, le mot du jour esport : une question esport par jour, la réponse est le mot à trouver.
 // Même règles que le Mot Mystère classique (vert = bonne place, jaune = ailleurs dans le mot),
 // mais le mot fait de 4 à 8 lettres et peut être un nom propre : tout essai de la bonne longueur est accepté.
 import { QUESTIONS, DEBUT } from './questions.js';
@@ -50,7 +50,7 @@ let current = '';
 
 // ---------- Affichage ----------
 function renderQuestion() {
-  $('num').textContent = '#' + NUM;
+  $('num').textContent = 'ROUND #' + NUM;
   $('cat').textContent = Q.c;
   $('scene').textContent = Q.s;
   $('question').textContent = Q.q;
@@ -133,7 +133,7 @@ function finir(gagne) {
 $('indice').onclick = () => {
   if (S.indice || S.fini) return;
   S.indice = true; sauver(); renderBoard();
-  toast('Indice pris : tu as maintenant ' + maxEssais() + ' essais');
+  toast('Indice pris : ' + maxEssais() + ' essais restants au total');
 };
 
 document.addEventListener('keydown', (e) => {
@@ -145,16 +145,18 @@ document.addEventListener('keydown', (e) => {
 function texteRes() {
   const e = { correct: '🟩', present: '🟨', absent: '⬛' };
   const score = S.gagne ? S.essais.length : 'X';
-  return 'Mot Mystère Esport #' + NUM + ' ' + score + '/' + maxEssais() + (S.indice ? ' 💡' : '') + '\n' +
+  return 'CLUTCH #' + NUM + ' ' + score + '/' + maxEssais() + (S.indice ? ' 💡' : '') + '\n' +
     S.essais.map((g) => evaluate(g, ANSWER).map((r) => e[r]).join('')).join('\n') + '\n' + URL_JEU;
 }
 
 function renderFin() {
   $('v-fin').classList.remove('hide');
   $('voir-res').classList.remove('hide');
-  $('fin-titre').textContent = S.gagne ? (S.essais.length === 1 ? 'Du premier coup, légende ! 🏆' : 'GG, bien joué ! 🎮') : 'Perdu… le mot était :';
+  $('fin-titre').textContent = S.gagne ? (S.essais.length === 1 ? 'ACE ! Du premier coup' : 'VICTORY') : 'DEFEAT';
   const w = $('fin-mot'); w.textContent = '';
   [...ANSWER].forEach((l) => w.appendChild(el('div', 't correct', l)));
+  $('fin-sous').textContent = S.gagne ? 'GG, trouvé en ' + S.essais.length + ' essai' + (S.essais.length > 1 ? 's' : '') + (S.indice ? ' (avec indice)' : '') : 'La réponse était :';
+  $('v-fin').classList.toggle('lose', !S.gagne);
   $('fin-info').textContent = Q.i;
   const st = S.stats;
   $('st-joues').textContent = st.joues;

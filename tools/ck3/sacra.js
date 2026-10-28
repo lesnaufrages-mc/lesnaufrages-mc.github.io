@@ -127,19 +127,22 @@ for (const [rel] of religions) {
   rels.push(rel);
   outFaiths.push(...styleFaiths(st => `sacra_${rel}_${st}_style`, rel, ...baseFaith(rel)));
 }
-// A pack that replaces a vanilla religion (e.g. Polytheism Reborn and germanic_religion) often moves
-// the god names from the religion to each faith. Each of its faiths then gets its own style faiths,
-// so a rite keeps its own gods when it changes temples.
+// In a pack, every faith of its religions (new ones, and vanilla ones it replaces) gets its own style
+// faiths, so a rite keeps its own gods, holy sites and tenets when it changes temples. The religion's
+// main faith uses the religion's style faiths. A pack that replaces a vanilla religion (e.g. Polytheism
+// Reborn and germanic_religion) often moves the god names from the religion to each faith.
 const perFaith = [];
-for (const rel of overridden) {
+if (PACK) for (const rel of rels.concat(overridden)) {
   if (!byRel.has(rel)) continue;
+  const [mainKey] = baseFaith(rel);
   for (const [fk, fv] of byRel.get(rel)) {
+    if (fk === mainKey) continue;
     perFaith.push([rel, fk]);
     outFaiths.push(...styleFaiths(st => `${PK}_${fk}_${st}_style`, rel, fk, fv));
   }
 }
 const FAITHS = outFaiths.join('\n\n') + '\n';
-const VERSION = PACK ? '1.0.3' : '1.0.2';
+const VERSION = PACK ? '1.0.4' : '1.0.2';
 const BASE_NAME = 'Sacred Architecture - Choose Your Temples';
 const NAME = PACK ? `Sacred Architecture - ${PACK[2]} Compatibility` : BASE_NAME;
 const FOLDER = PACK ? `sacred_architecture_${PACK[0]}` : 'sacred_architecture';
@@ -185,23 +188,25 @@ function moveEffect(name, branches) {
   return e + '}\n';
 }
 const relBranches = list => list.map(r => [`religion_tag = ${r}`, `faith:sacra_${r}_$STYLE$_style`]);
-let e = HEAD + "# Moves scope:sacra_rite into the $STYLE$ faith of scope:sacra_old_faith's religion.\n";
-e += moveEffect(`${PK}_move_rite_effect`, relBranches(rels));
+const faithBranches = list => list.map(([rel, fk]) => [
+  'OR = { ' + [`this = faith:${fk}`].concat(STYLE_KEYS.map(st => `this = faith:${PK}_${fk}_${st}_style`)).join(' ') + ' }',
+  `faith:${PK}_${fk}_$STYLE$_style`]);
+const ownFaiths = new Set(rels);
+let e = HEAD + (PACK ? "# Moves scope:sacra_rite into the $STYLE$ faith of its own faith, or else of scope:sacra_old_faith's religion.\n" : "# Moves scope:sacra_rite into the $STYLE$ faith of scope:sacra_old_faith's religion.\n");
+e += moveEffect(`${PK}_move_rite_effect`, faithBranches(perFaith.filter(x => ownFaiths.has(x[0]))).concat(relBranches(rels)));
 if (!PACK) e += FIX_OLD;
 write(`common/scripted_effects/zz_${PK}_effects.txt`, e);
 
-if (perFaith.length) {
+const replaced = perFaith.filter(x => !ownFaiths.has(x[0]));
+if (overridden.length) {
   // Same file names as the base mod: they replace its faiths and its move effect.
   const baseRels = vanillaReligions.map(x => x[0]).filter(r => byRel.has(r));
   const baseFaiths = baseRels.map(r => styleFaiths(st => `sacra_${r}_${st}_style`, r, ...baseFaith(r)).join('\n\n')).join('\n\n');
   const OH = HEAD + `# Replaces the file of the same name in ${BASE_NAME}: same faiths, built with the faiths of ${PACK[2]}.\n\n`;
   write('common/religion/faith_types/zz_sacra_faiths.txt', OH + baseFaiths + '\n');
-  const own = perFaith.map(([rel, fk]) => [
-    'OR = { ' + [`this = faith:${fk}`].concat(STYLE_KEYS.map(st => `this = faith:${PK}_${fk}_${st}_style`)).join(' ') + ' }',
-    `faith:${PK}_${fk}_$STYLE$_style`]);
   write('common/scripted_effects/zz_sacra_effects.txt', OH +
     "# A rite of a faith of a replaced religion goes to the style faith of its own faith (its own gods).\n" +
-    moveEffect('sacra_move_rite_effect', own.concat(relBranches(baseRels))) + FIX_OLD);
+    moveEffect('sacra_move_rite_effect', faithBranches(replaced).concat(relBranches(baseRels))) + FIX_OLD);
 }
 
 const DK = `${PK}_choose_sacred_architecture_decision`;
@@ -331,6 +336,6 @@ write(`localization/french/zz_${PK}_l_french.yml`, locf('french', fr));
 const deps = PACK ? `dependencies={\n\t"${BASE_NAME}"\n\t"${PACK[2]}"\n}\n` : '';
 const desc = `version="${VERSION}"\ntags={\n\t"Gameplay"\n\t"Religion"\n\t"Decisions"\n\t"Graphics"\n}\nname="${NAME}"\n${deps}supported_version="1.20.*"\n`;
 write('descriptor.mod', desc, false);
-console.log('ok', rels.length, 'religions,', perFaith.length, 'faiths of replaced religions,', (rels.length + perFaith.length) * STYLE_KEYS.length, 'style faiths');
+console.log('ok', rels.length, 'religions,', perFaith.length, 'faiths with their own style faiths,', (rels.length + perFaith.length) * STYLE_KEYS.length, 'style faiths');
 fs.writeFileSync(OUT.replace(/[\\/]+$/, '') + '.mod', desc + `path="mod/${FOLDER}"\n`, 'utf8');
 console.log('Done:', OUT);

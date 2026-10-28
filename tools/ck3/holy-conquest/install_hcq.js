@@ -32,8 +32,12 @@ const S={
 "thumbnail.png": "e01686cb8fe44e44d9574a5449fcd9f16fa72b989118422cfdfd2548963cf675"
 };
 const root=path.join(MOD,'holy_conquest');
+// Keep the Steam Workshop id that the launcher adds after an upload
+function rid(p){try{const m=fs.readFileSync(p,'utf8').match(/remote_file_id="?(\d+)"?/);return m?m[1]:null;}catch(e){return null;}}
+const RID=rid(path.join(root,'descriptor.mod'))||rid(path.join(MOD,'holy_conquest.mod'));
 let ok=0;
 for(const [rel,b64] of Object.entries(F)){const p=path.join(root,...rel.split('/'));fs.mkdirSync(path.dirname(p),{recursive:true});const buf=Buffer.from(b64,'base64');fs.writeFileSync(p,buf);
  const h=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); if(h!==S[rel]){console.log('BAD',rel);process.exitCode=1;} else ok++;}
 fs.writeFileSync(path.join(MOD,'holy_conquest.mod'),'version="1.1.0"\ntags={\n\t"Gameplay"\n\t"Religion"\n\t"Decisions"\n\t"Events"\n\t"Game Rules"\n}\nname="Holy Conquest - Sanctify and Exile Holy Sites"\nsupported_version="1.20.*"\npicture="thumbnail.png"\npath="mod/holy_conquest"\n');
+if(RID){for(const p of [path.join(root,'descriptor.mod'),path.join(MOD,'holy_conquest.mod')]){fs.appendFileSync(p,'remote_file_id="'+RID+'"\n');}console.log('Workshop id kept:',RID);}
 console.log('Holy Conquest 1.1.0 - OK files:',ok,'/',Object.keys(F).length);

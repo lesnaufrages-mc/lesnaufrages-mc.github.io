@@ -10,7 +10,8 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <meta property="og:title" content="CLUTCH – The daily esport word">
 <meta property="og:description" content="Une question esport par jour. Tu la clutch en combien d'essais ?">
-<meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
+<meta property="og:image" content="https://lesnaufrages-mc.github.io/videos/clutch-trailer.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="../fonts/orbitron-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:Orbitron;font-weight:900;font-display:swap;src:url(../fonts/orbitron-latin-900-normal.woff2) format("woff2")}
@@ -139,6 +140,7 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 <header class="top"><div class="in">
   <a class="brand" href="./"><img src="logo.svg" alt=""><span><b>CLUTCH</b><small>The daily esport word</small></span></a>
   <div class="icons">
+    <button class="cut" id="trailer-btn" title="Voir le trailer" aria-label="Voir le trailer">🎬</button>
     <button class="cut" id="regles-btn" title="Règles" aria-label="Règles">?</button>
     <button class="cut hide" id="voir-res" title="Résultat et stats" aria-label="Résultat et statistiques">📊</button>
     <a class="cut" href="../" title="Les Naufragés : tous nos jeux" aria-label="Accueil du site">🏠</a>
@@ -183,6 +185,16 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
     <a class="btn btn-blue full" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">💬 Comparer sur le Discord</a>
     <div style="height:10px"></div>
     <a class="btn btn-pink full" href="../jouer/">🏝️ Jouer aussi au Mot Mystère</a>
+  </div>
+</div>
+
+<div class="modal hide" id="v-trailer">
+  <div class="box cut">
+    <button class="x" id="trailer-fermer" aria-label="Fermer">✕</button>
+    <h2 class="banner" style="font-size:24px">TRAILER</h2>
+    <video id="trailer-video" controls playsinline preload="none" poster="../videos/clutch-trailer.jpg" style="display:block;width:100%;margin-top:12px;background:#000">
+      <source src="../videos/clutch-trailer.mp4" type="video/mp4">
+    </video>
   </div>
 </div>
 

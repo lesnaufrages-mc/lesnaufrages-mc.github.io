@@ -137,7 +137,7 @@ $('indice').onclick = () => {
 };
 
 document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey || e.metaKey || e.altKey || !$('v-fin').classList.contains('hide')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || !$('v-fin').classList.contains('hide') || !$('v-trailer').classList.contains('hide')) return;
   if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zà-ÿ]$/i.test(e.key)) { e.preventDefault(); key(e.key); }
 });
 
@@ -192,6 +192,8 @@ $('partager').onclick = async () => {
 };
 $('fermer').onclick = () => $('v-fin').classList.add('hide');
 $('voir-res').onclick = renderFin;
+$('trailer-btn').onclick = () => $('v-trailer').classList.remove('hide');
+$('trailer-fermer').onclick = () => { $('trailer-video').pause(); $('v-trailer').classList.add('hide'); };
 $('regles-btn').onclick = () => $('regles').classList.toggle('hide');
 
 renderQuestion();

@@ -36,11 +36,13 @@
         box.innerHTML = '<p>L\'activation prend plus de temps que prévu. Recharge la page dans quelques minutes ; si rien ne change, écris-nous sur le <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a> avec ton reçu.</p>';
         return;
       }
-      if (!cfg.LIEN) { box.innerHTML = '<p class="muted">La boutique ouvre très bientôt. Reviens dans quelques jours !</p>'; return; }
+      // En mode test, seuls les admins voient le bouton (pour essayer avec la carte 4242…).
+      if (!cfg.LIEN || (cfg.TEST && C.rang() < 4)) { box.innerHTML = '<p class="muted">La boutique ouvre très bientôt. Reviens dans quelques jours !</p>'; return; }
       box.innerHTML = '<form class="cc-form" data-payer>' +
         '<label><input type="checkbox" name="cgv" required> J\'ai lu et j\'accepte les <a href="../conditions.html#vente" target="_blank">conditions de vente</a>.</label>' +
         '<label><input type="checkbox" name="retract" required> Je demande l\'accès immédiat à l\'Édition Couronne et je reconnais que je perds mon droit de rétractation de 14 jours dès qu\'elle est débloquée.</label>' +
         '<p class="small muted">Moins de 18 ans ? Demande l\'accord d\'un parent.</p>' +
+        (cfg.TEST ? '<p class="small muted">Mode test : paie avec la carte 4242 4242 4242 4242.</p>' : '') +
         '<button class="btn btn-play" disabled>Payer ' + esc(cfg.PRIX || '') + '</button></form>';
     }).catch(function (x) {
       box.innerHTML = '<p class="err">' + esc(C.erreur(x)) + '</p>';
@@ -54,7 +56,7 @@
     var f = e.target.closest('form[data-payer]');
     if (!f) return;
     e.preventDefault();
-    if (!(f.cgv.checked && f.retract.checked) || !C.user || !cfg.LIEN) return;
+    if (!(f.cgv.checked && f.retract.checked) || !C.user || !cfg.LIEN || (cfg.TEST && C.rang() < 4)) return;
     var url = cfg.LIEN + (cfg.LIEN.indexOf('?') < 0 ? '?' : '&') +
       'checkout[custom][user_id]=' + encodeURIComponent(C.user.id) +
       (C.user.email ? '&checkout[email]=' + encodeURIComponent(C.user.email) : '') +

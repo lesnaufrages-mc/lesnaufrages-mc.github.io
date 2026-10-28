@@ -65,6 +65,10 @@ var COURONNE = {
 };
 ```
 
+Tant que c'est le lien du **mode test**, laisse `TEST: true` : seuls les admins voient le
+bouton « Payer » (les autres lisent « bientôt »). Une fois la boutique validée, copie le produit
+en mode réel (« … » → *Copy to live mode*), mets **son** lien dans `LIEN` et `TEST: false`.
+
 Si tu changes le prix un jour : change-le dans Lemon Squeezy, dans `config.js` **et** dans
 `docs/strategie/couronne-donnees.js` (`PRIX`, le prix affiché dans le jeu).
 
@@ -74,6 +78,9 @@ Si tu changes le prix un jour : change-le dans Lemon Squeezy, dans `config.js` *
    hasard. Garde-le pour l'étape 6. **Ne le mets jamais dans le site ni sur Discord.**
 2. Supabase → **Edge Functions** → **Secrets** → **Add new secret** :
    - Nom `LEMONSQUEEZY_SECRET`, valeur : ton mot de passe.
+   - Pendant les tests seulement : `LEMONSQUEEZY_TESTS` = `1` (accepte les achats avec la
+     carte de test). **Supprime-le après les tests**, sinon n'importe qui pourrait débloquer
+     l'édition gratuitement avec la carte 4242.
 3. Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor** :
    - Nom de la fonction : `lemonsqueezy`
    - Remplace tout le code par celui de

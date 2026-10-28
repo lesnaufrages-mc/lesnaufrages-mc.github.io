@@ -80,11 +80,21 @@
   function membres() {
     var q = C.sb.from('profils').select('*').order('cree_le', { ascending: false }).limit(100);
     if (recherche) q = q.ilike('pseudo', '%' + recherche.replace(/[%_\\]/g, '\\$&') + '%');
+    // Qui a l'Édition Couronne (si la table premium existe : supabase/couronne.sql).
+    var couronne = null;
     q.then(verifie).then(function (r) {
+      var ids = r.data.map(function (p) { return p.id; });
+      if (!ids.length) return r;
+      return C.sb.from('premium').select('id, source').in('id', ids).then(function (x) {
+        if (!x.error) { couronne = {}; x.data.forEach(function (c) { couronne[c.id] = c.source; }); }
+        return r;
+      }, function () { return r; });
+    }).then(function (r) {
       panneau('<form class="search" data-recherche><input name="q" placeholder="Chercher un pseudo…" value="' + esc(recherche) + '"><button class="btn btn-ghost btn-sm">Chercher</button></form>' +
         '<p class="small muted"><b>Modo / Responsable</b> : suppriment les messages, épinglent et verrouillent les sujets. <b>Admin / Fondateur</b> : tout, y compris les membres, les grades et les actus. ' +
         '<b>Helper, Builder, Dev, Animateur</b> : badge staff (mêmes droits qu\'un membre sur le site). Tu ne peux gérer que les grades inférieurs au tien.</p>' +
-        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Grade</th><th>Statut</th></tr></thead><tbody>' +
+        (couronne ? '<p class="small muted"><b>⚜️ Couronne</b> : l\'Édition Couronne d\'Imperium of Wars. Elle s\'active toute seule après un paiement ; ici tu peux l\'offrir ou la retirer à la main (cadeau, paiement par un autre moyen, remboursement).</p>' : '') +
+        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Grade</th><th>Statut</th>' + (couronne ? '<th>⚜️ Couronne</th>' : '') + '</tr></thead><tbody>' +
         r.data.map(function (p) {
           var moi = p.id === C.user.id;
           var monRang = C.rang(), fondateur = C.profil.role === 'fondateur';
@@ -97,7 +107,9 @@
               return '<option value="' + g.id + '"' + (p.role === g.id ? ' selected' : '') + '>' + g.nom + '</option>';
             }).join('') + '</select></td>' +
             '<td>' + (!gerable ? '—' : '<button type="button" class="btn btn-sm ' + (p.banni ? 'btn-ghost' : 'btn-danger') + '" data-ban="' + !p.banni + '">' +
-              (p.banni ? 'Débannir' : 'Bannir') + '</button>' + (p.banni ? ' <span class="role ban">Banni</span>' : '')) + '</td></tr>';
+              (p.banni ? 'Débannir' : 'Bannir') + '</button>' + (p.banni ? ' <span class="role ban">Banni</span>' : '')) + '</td>' +
+            (couronne ? '<td>' + (couronne[p.id] ? '<span class="small">✔ ' + (couronne[p.id] === 'admin' ? 'offerte' : 'achetée') + '</span> <button type="button" class="btn btn-sm btn-ghost" data-couronne="non">Retirer</button>' :
+              '<button type="button" class="btn btn-sm btn-ghost" data-couronne="oui">Offrir</button>') + '</td>' : '') + '</tr>';
         }).join('') + '</tbody></table></div>');
     }).catch(function (x) { panneau('<p class="err">' + esc(C.erreur(x)) + '</p>'); });
   }
@@ -145,6 +157,13 @@
       var pseudo = b.closest('tr').querySelector('b').textContent;
       if (ban && !confirm('Bannir ' + pseudo + ' ? Il pourra lire le forum mais plus écrire.')) return;
       return C.sb.from('profils').update({ banni: ban }).eq('id', b.closest('tr').getAttribute('data-membre')).then(verifie).then(affiche).catch(oups);
+    }
+    if (b.hasAttribute('data-couronne')) {
+      var donner = b.getAttribute('data-couronne') === 'oui', idM = b.closest('tr').getAttribute('data-membre');
+      var nomM = b.closest('tr').querySelector('b').textContent;
+      if (!confirm((donner ? 'Offrir' : 'Retirer') + ' l\'Édition Couronne ' + 'à ' + nomM + ' ?')) return;
+      return (donner ? C.sb.from('premium').insert({ id: idM, source: 'admin' }) : C.sb.from('premium').delete().eq('id', idM))
+        .then(verifie).then(affiche).catch(oups);
     }
     if (b.hasAttribute('data-suppr-actu')) {
       if (!confirm('Supprimer cette actualité du site ?')) return;

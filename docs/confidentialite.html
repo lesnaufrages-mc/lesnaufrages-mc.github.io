@@ -52,6 +52,7 @@ selon le Règlement général sur la protection des données (RGPD) et la loi be
 <li>Tu peux jouer et lire le forum <strong>sans donner aucune donnée personnelle</strong>. Tes parties restent sur ton appareil.</li>
 <li>Si tu crées un compte sur le forum, on garde ton pseudo, ton e-mail (privé) et ce que tu publies, jusqu'à ce que tu supprimes ton compte.</li>
 <li>Les pubs Google n'utilisent des cookies que si tu acceptes. Les statistiques de visite n'utilisent aucun cookie.</li>
+<li>Si tu achètes l'Édition Couronne, le paiement se fait chez Lemon Squeezy : on ne voit jamais tes données bancaires.</li>
 <li>On ne vend jamais tes données.</li>
 </ul>
 </div>
@@ -66,6 +67,7 @@ Pour toute question ou demande sur tes données, voir la partie <a href="#contac
 <tbody>
 <tr><td>Jeux (Mot Mystère, Imperium of Wars)</td><td>Parties, série, statistiques, pseudo de jeu</td><td>Faire marcher le jeu</td><td>Exécution du service (art. 6.1.b)</td><td>Sur ton appareil uniquement, jusqu'à ce que tu les effaces</td></tr>
 <tr><td>Forum et comptes</td><td>Pseudo, e-mail, mot de passe chiffré, photo, bio, messages, grade, date d'inscription</td><td>Te permettre d'avoir un compte et de participer</td><td>Exécution du service (art. 6.1.b)</td><td>Tant que ton compte existe</td></tr>
+<tr><td>Achat de l'Édition Couronne</td><td>Chez nous : identifiant de ton compte, date, numéro de commande. Chez Lemon Squeezy : nom, e-mail, pays, adresse IP, moyen de paiement</td><td>Te vendre l'édition, l'activer sur ton compte, factures, TVA et lutte contre la fraude</td><td>Exécution du contrat (art. 6.1.b) et obligations légales comptables et fiscales (art. 6.1.c)</td><td>Chez nous : tant que ton compte existe. Factures : durée légale fixée par Lemon Squeezy</td></tr>
 <tr><td>Signalements et modération</td><td>Message signalé, raison, auteur du signalement, sanctions</td><td>Garder un forum sûr et respecter la loi</td><td>Intérêt légitime et obligation légale (art. 6.1.f et 6.1.c)</td><td>Supprimés avec le message ou le compte concerné</td></tr>
 <tr><td>Statistiques (GoatCounter)</td><td>Page vue, site d'origine, navigateur, taille d'écran, pays (IP non conservée)</td><td>Savoir combien de personnes visitent le site</td><td>Intérêt légitime (art. 6.1.f)</td><td>Chiffres globaux, sans donnée qui t'identifie</td></tr>
 <tr><td>Publicité (Google AdSense / AdMob)</td><td>Cookies ou identifiant publicitaire, adresse IP, infos sur l'appareil</td><td>Financer le site et l'appli</td><td>Ton consentement (art. 6.1.a)</td><td>Voir la <a href="cookies.html">politique de cookies</a></td></tr>
@@ -132,7 +134,23 @@ du compte, ce n'est pas un cookie publicitaire.</li>
 signalements sont alors effacés. Les modérateurs peuvent supprimer les messages qui ne respectent pas les <a href="conditions.html#regles">règles du forum</a>
 et bannir un compte.</p>
 
-<h2 id="destinataires">11. Qui reçoit tes données (sous-traitants)</h2>
+<h2 id="achats">11. Achat de l'Édition Couronne</h2>
+<p>L'Édition Couronne d'Imperium of Wars est vendue par <strong>Lemon Squeezy, LLC</strong>, notre revendeur officiel (« Merchant of Record »).
+Quand tu cliques sur « Payer », tu quittes notre site pour la page de paiement de Lemon Squeezy. Notre site lui transmet seulement
+l'<strong>identifiant de ton compte</strong> (pour activer l'édition sur le bon compte) et ton <strong>adresse e-mail</strong> (pour pré-remplir le formulaire).</p>
+<ul>
+<li><strong>Chez Lemon Squeezy</strong> (et son prestataire de paiement Stripe) : ton nom, ton e-mail, ton pays, ton adresse IP et ton moyen de paiement,
+pour encaisser le paiement, t'envoyer le reçu, calculer la TVA, tenir la comptabilité et lutter contre la fraude. Lemon Squeezy agit comme
+responsable de traitement indépendant : voir sa <a href="https://www.lemonsqueezy.com/privacy" target="_blank" rel="noopener">politique de confidentialité</a>.</li>
+<li><strong>Chez nous</strong> (base Supabase) : une ligne qui dit que ton compte a l'édition, avec la date et le numéro de commande. Nous recevons aussi
+de Lemon Squeezy un récapitulatif de la commande (nom, e-mail, montant), qui sert uniquement au suivi des ventes et au service après-vente.
+Nous ne recevons <strong>jamais</strong> tes données bancaires.</li>
+<li><strong>Sur ton appareil</strong> : le jeu retient que ton compte a l'édition (stockage local <code>imperium-couronne</code>) pour que tu puisses jouer hors ligne.</li>
+</ul>
+<p>Si tu supprimes ton compte, la ligne de l'édition est effacée avec lui (et l'édition est perdue). Les factures restent chez Lemon Squeezy
+pendant la durée imposée par la loi.</p>
+
+<h2 id="destinataires">12. Qui reçoit tes données (sous-traitants)</h2>
 <p>Nous ne vendons, ne louons et ne donnons tes données à personne. Seuls ces prestataires les traitent, pour faire marcher le site :</p>
 <ul>
 <li><strong>Supabase</strong> (base de données du forum et comptes, serveurs en <strong>Irlande</strong>, UE) : <a href="https://supabase.com/privacy" target="_blank" rel="noopener">confidentialité</a>.</li>
@@ -141,22 +159,23 @@ et bannir un compte.</p>
 <li><strong>PeerJS</strong> (mise en relation pour Jouer entre amis) et les serveurs publics <strong>jsDelivr</strong>, <strong>unpkg</strong> et <strong>cdnjs</strong> qui fournissent
 certaines bibliothèques du site : ils voient ton adresse IP le temps de la connexion.</li>
 <li><strong>Google</strong> (publicité AdSense et AdMob), uniquement selon ton choix sur les cookies, comme responsable indépendant.</li>
+<li><strong>Lemon Squeezy</strong> (Lemon Squeezy, LLC, États-Unis, avec Stripe) : uniquement si tu achètes l'Édition Couronne, comme revendeur et responsable indépendant (partie 11).</li>
 </ul>
 <p>Certains de ces prestataires sont aux <strong>États-Unis</strong>. Les transferts se font dans le cadre du EU-US Data Privacy Framework
 (décision d'adéquation de la Commission européenne) ou des clauses contractuelles types de la Commission européenne.</p>
 <p>Si la loi l'exige (par exemple sur demande d'une autorité judiciaire), nous pouvons devoir transmettre certaines données.</p>
 
-<h2 id="securite">12. Sécurité</h2>
+<h2 id="securite">13. Sécurité</h2>
 <p>Le site est en HTTPS. Les mots de passe sont chiffrés, chaque membre ne peut modifier que ses propres données (règles de sécurité de la base de données),
 l'espace d'administration est réservé au staff, et les comptes du staff sont protégés. Aucun système n'est parfait : en cas de fuite de données qui présente
 un risque pour toi, nous préviendrons l'Autorité de protection des données et, si nécessaire, les personnes concernées.</p>
 
-<h2 id="enfants">13. Enfants</h2>
+<h2 id="enfants">14. Enfants</h2>
 <p>Les jeux sont ouverts à tous, mais il faut avoir <strong>au moins 13 ans</strong> pour créer un compte sur le forum (âge fixé par la loi belge).
 Nous ne collectons pas sciemment de données sur des enfants plus jeunes. Si tu es parent et que ton enfant de moins de 13 ans a créé un compte,
 contacte-nous : nous le supprimerons.</p>
 
-<h2 id="droits">14. Tes droits</h2>
+<h2 id="droits">15. Tes droits</h2>
 <p>Selon le RGPD, tu as le droit :</p>
 <ul>
 <li>d'<strong>accéder</strong> à tes données et d'en recevoir une copie (<strong>portabilité</strong>) ;</li>
@@ -165,18 +184,18 @@ contacte-nous : nous le supprimerons.</p>
 <li>de <strong>limiter</strong> leur utilisation ou de t'y <strong>opposer</strong> (par exemple aux statistiques) ;</li>
 <li>de <strong>retirer ton consentement</strong> à tout moment (lien « Gérer mes cookies » sur le site, réglages du téléphone pour l'appli), sans que ça remette en cause ce qui a été fait avant.</li>
 </ul>
-<p>Pour exercer ces droits, contacte-nous (partie 16). Nous répondons dans un délai d'<strong>un mois</strong>. Nous pouvons te demander de prouver que le compte est
+<p>Pour exercer ces droits, contacte-nous (partie 17). Nous répondons dans un délai d'<strong>un mois</strong>. Nous pouvons te demander de prouver que le compte est
 bien le tien (par exemple en écrivant depuis ce compte). Aucune décision automatisée (profilage) n'est prise sur toi par Les Naufragés. Pour les données
 publicitaires, tu peux aussi t'adresser directement à Google.</p>
 <p>Si tu penses que tes droits ne sont pas respectés, tu peux porter plainte auprès de l'<strong>Autorité de protection des données</strong> (APD) :
 rue de la Presse 35, 1000 Bruxelles, <a href="https://www.autoriteprotectiondonnees.be" target="_blank" rel="noopener">autoriteprotectiondonnees.be</a>
 (ou auprès de l'autorité de ton pays, par exemple la CNIL en France).</p>
 
-<h2 id="changements">15. Changements</h2>
+<h2 id="changements">16. Changements</h2>
 <p>Cette politique peut évoluer, par exemple quand on ajoute un jeu ou un service. La date de mise à jour est indiquée en haut de la page, et les changements
 importants sont annoncés dans les <a href="actualites.html">actualités</a>.</p>
 
-<h2 id="contact">16. Contact</h2>
+<h2 id="contact">17. Contact</h2>
 <p>Pour toute question ou demande sur tes données : <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">notre serveur Discord</a>
 (message privé à un membre du staff) ou <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X (@NaufrageeC)</a>.
 Voir aussi les <a href="conditions.html">conditions d'utilisation</a> et la <a href="cookies.html">politique de cookies</a>.</p>

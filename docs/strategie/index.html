@@ -17,7 +17,7 @@
 <meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
 <meta property="og:url" content="https://lesnaufrages-mc.github.io/strategie/">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="polices.css?v=13">
+<link rel="stylesheet" href="polices.css?v=14">
 <style>
 /* Police Cinzel hébergée sur le site (licence SIL OFL) : aucun appel à Google Fonts. */
 @font-face{font-family:'Cinzel';font-style:normal;font-weight:700 900;font-display:swap;src:url(polices/cinzel-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -254,6 +254,24 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .rapport h4{margin:0 0 6px;font-family:Cinzel,Georgia,serif;font-size:14px;color:#e6cf8f}
 .rapport ul{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
 .rapport p{margin:0;font-size:13px}
+.couronneMenu{border-color:#8e6b26;color:var(--or2)}
+.couronneMenu small{display:block;font-family:system-ui,sans-serif;font-weight:600;font-size:11px;color:#86efac;letter-spacing:0}
+.btn.couronne{border-color:var(--or);color:var(--or2)}
+.carteChoix.verrou{opacity:.8;border-style:dashed}
+.tagCouronne{display:inline-block;font-size:11px;font-weight:700;color:#140e05;background:var(--or);border-radius:3px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.traits{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0}
+.trait{font-size:11px;font-weight:700;background:rgba(201,162,74,.12);border:1px solid rgba(201,162,74,.35);border-radius:6px;padding:1px 6px;color:#e6cf8f}
+.ligneTrait{display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin:4px 0}
+.ligneTrait small{color:var(--muted);font-size:12px}
+.siege small.acquis{color:#86efac;opacity:1}
+.siege .btn.mini:disabled{opacity:.4}
+.tagFoi{font-size:12px;color:var(--muted);margin:2px 0 6px}
+.alerteFoi{color:#fca5a5}
+.alerteCouronne{color:#fde68a!important;background:rgba(201,162,74,.1);border-left:3px solid var(--or);padding:6px 10px;border-radius:4px}
+.listeCouronne{font-size:14px;line-height:1.5;color:#e7dfcd;padding-left:18px;margin:0 0 10px}
+.listeCouronne li{margin-bottom:5px}
+a.btn{text-align:center;text-decoration:none;color:inherit}
+a.btn.or{color:#140e05}
 .calme{color:var(--muted);font-size:13px}
 .lignes{display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:13px;margin:6px 0}
 .lignes .plus{color:#86efac}.lignes .moins{color:#fca5a5}
@@ -322,6 +340,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   <button class="btn or" id="bNouvelle">Nouvelle campagne</button>
   <button class="btn hide" id="bContinuer">Continuer la campagne</button>
   <button class="btn" id="bRegles">Comment jouer</button>
+  <button class="btn couronneMenu" id="bCouronne">⚜️ Édition Couronne</button>
   <div class="duo"><button class="btn" id="bFAQ">FAQ</button><button class="btn bleu" id="bInstaller">Installer le jeu</button></div>
   <p class="pseudoMenu" id="menuPseudo"></p>
   <div class="liens"><a href="../">← Retour au site</a> · <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a> · <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X</a><br><a href="../conditions.html">Conditions</a> · <a href="../confidentialite.html">Confidentialité</a> · <a href="../cookies.html" data-cookies>Cookies</a></div>
@@ -384,15 +403,18 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 
 <script src="../supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script src="monde.js?v=13"></script>
-<script src="histoire.js?v=13"></script>
-<script src="personnages.js?v=13"></script>
-<script src="moteur.js?v=13"></script>
-<script src="tableaux.js?v=13"></script>
-<script src="portraits.js?v=13"></script>
+<script src="monde.js?v=14"></script>
+<script src="histoire.js?v=14"></script>
+<script src="personnages.js?v=14"></script>
+<script src="moteur.js?v=14"></script>
+<script src="tableaux.js?v=14"></script>
+<script src="portraits.js?v=14"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="bataille3d.js?v=13"></script>
-<script src="jeu.js?v=13"></script>
+<script src="bataille3d.js?v=14"></script>
+<script src="couronne-donnees.js?v=14"></script>
+<script src="couronne.js?v=14"></script>
+<script src="jeu.js?v=14"></script>
+<script src="couronne-ui.js?v=14"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 (function () {
   'use strict';
   var M = window.Moteur, U = M.UNITES, PROV = M.PROV, MONDE = M.MONDE, HIST = M.HISTOIRE;
+  var CR = window.Couronne; // Édition Couronne (couronne.js) : absente = jeu gratuit seul
+  function cui() { return window.CouronneUI; }
   var CLE = 'strategie-partie-v2';
   var etat = null, choix = null;   // choix = index de la province sélectionnée
   var $ = function (id) { return document.getElementById(id); };
@@ -38,21 +40,36 @@
   function pseudo() { return pseudoCompte || pseudoLocal(); }
   (function chercherCompte() {
     var cfg = window.SUPABASE;
-    if (!cfg || !cfg.URL || !window.supabase) return;
+    if (!cfg || !cfg.URL) { if (CR) CR.definir(false); return; }
+    if (!window.supabase) { if (CR) CR.definir(false, null, true); return; } // hors ligne : on garde l'achat mémorisé
     try {
       var sb = window.supabase.createClient(cfg.URL, cfg.CLE);
       sb.auth.getSession().then(function (r) {
         var u = r.data && r.data.session && r.data.session.user;
-        if (!u) return null;
+        if (!u) { if (CR) { CR.definir(false); menuCouronne(); } return null; }
+        // Édition Couronne : une ligne dans la table « premium » = achat fait.
+        if (CR) sb.from('premium').select('id').eq('id', u.id).maybeSingle().then(function (q) {
+          if (q.error) CR.definir(false, u.id, true); else CR.definir(!!q.data, u.id);
+          menuCouronne();
+        }, function () { CR.definir(false, u.id, true); });
         return sb.from('profils').select('pseudo').eq('id', u.id).maybeSingle();
       }).then(function (r) {
         if (!r || !r.data || !r.data.pseudo) return;
         pseudoCompte = nettoyer(r.data.pseudo);
         $('menuPseudo').innerHTML = '🔑 Connecté : <b>' + pseudoCompte + '</b>';
         if (etat && !etat.fin && etat.pseudo !== pseudoCompte) { etat.pseudo = pseudoCompte; sauver(); if (!$('campagne').classList.contains('hide')) dessiner(); }
-      }).catch(function () {});
-    } catch (e) {}
+      }).catch(function () { if (CR && !CR.connu()) CR.definir(false, null, true); });
+    } catch (e) { if (CR) CR.definir(false, null, true); }
   })();
+  // Bouton du menu : « Édition Couronne » (achat) ou « ✔ Couronne débloquée ».
+  function menuCouronne() {
+    var b = $('bCouronne');
+    if (!b) return;
+    if (!CR || !cui()) { b.classList.add('hide'); return; }
+    var ok = CR.actif();
+    b.innerHTML = ok ? '⚜️ Édition Couronne <small>débloquée</small>' : '⚜️ Édition Couronne';
+    b.classList.toggle('debloquee', ok);
+  }
 
   // Demande le nom du commandant (sauf si le compte du site le donne déjà).
   function demanderPseudo(suite, forcer) {
@@ -113,28 +130,56 @@
   // ---------- Menu : époque puis royaume ----------
   function menu() {
     $('bContinuer').classList.toggle('hide', !charger());
+    menuCouronne();
     if (!pseudoCompte) $('menuPseudo').innerHTML = pseudoLocal() ? '🎖️ Commandant : <b>' + pseudoLocal() + '</b>' : '';
     montrer('menu');
   }
   $('bNouvelle').onclick = choisirEpoque;
   $('bContinuer').onclick = function () {
+    var s = charger();
+    // Une campagne de l'Édition Couronne demande l'édition (vérifiée avec le compte du site).
+    if (s && s.couronne && CR) {
+      CR.attendre(function (ok) {
+        if (ok) continuer();
+        else if (cui()) cui().boutique('Cette campagne a été lancée avec l\'Édition Couronne. Connecte-toi au compte qui l\'a achetée pour la continuer.');
+      });
+      return;
+    }
+    continuer();
+  };
+  if ($('bCouronne')) $('bCouronne').onclick = function () {
+    if (!cui()) return;
+    if (CR.actif()) toast('⚜️ Édition Couronne débloquée : lance une nouvelle campagne pour en profiter !');
+    else cui().boutique();
+  };
+  function continuer() {
     etat = charger(); choix = null;
+    if (CR && etat.couronne) CR.assurer(etat);
     M.assurerDiplo(etat);
     M.assurerCour(etat);
     if (pseudoCompte) etat.pseudo = pseudoCompte;
     if (etat.pseudo) { demarrer(); return; }
     demanderPseudo(function (nom) { etat.pseudo = nom; sauver(); demarrer(); });
-  };
+  }
   $('bRegles').onclick = regles;
 
   function choisirEpoque() {
     var h = '<h2>📅 Choisis ton époque</h2><p>Chaque campagne se termine en ' + HIST.FIN + '. Les unités évoluent avec les siècles : chevaliers, arbalètes, puis canons et mousquets.</p>';
+    var avecCouronne = CR && cui() && CR.actif();
+    if (avecCouronne) h += '<p class="tagQuete">⚜️ Édition Couronne active : religions, intrigues, dynastie et traits de caractère dans toutes tes nouvelles campagnes.</p>';
     HIST.EPOQUES.forEach(function (e) {
-      h += '<button class="carteChoix" data-ep="' + e.id + '"><span class="an">' + e.annee + '</span><b>' + e.titre + '</b><small>' + e.texte + '</small></button>';
+      if (e.couronne && !cui()) return;
+      h += '<button class="carteChoix' + (e.couronne && !avecCouronne ? ' verrou' : '') + '" data-ep="' + e.id + '"><span class="an">' + (e.couronne && !avecCouronne ? '🔒 ' : '') + e.annee + '</span><b>' + e.titre + '</b>' + (cui() ? cui().etiquette(e) : '') + '<small>' + e.texte + '</small></button>';
     });
     h += '<button class="btn" data-fermer>Annuler</button>';
     feuille(h);
-    document.querySelectorAll('[data-ep]').forEach(function (b) { b.onclick = function () { choisirFaction(b.getAttribute('data-ep')); }; });
+    document.querySelectorAll('[data-ep]').forEach(function (b) {
+      b.onclick = function () {
+        var E = M.epoque(b.getAttribute('data-ep'));
+        if (E.couronne && !avecCouronne) { cui().boutique('La campagne « ' + E.titre + ' » fait partie de l\'Édition Couronne.'); return; }
+        choisirFaction(E.id);
+      };
+    });
   }
 
   function choisirFaction(epId) {
@@ -154,7 +199,7 @@
       b.onclick = function () {
         var fid = b.getAttribute('data-f');
         demanderPseudo(function (nom) {
-          etat = M.nouvellePartie(epId, fid);
+          etat = M.nouvellePartie(epId, fid, null, { couronne: !!(CR && cui() && CR.actif()) });
           etat.pseudo = nom;
           etat.journal[0] = E.annee + ' : ' + E.titre + '. ' + nom + ' prend la tête de ' + etat.factions[etat.joueur].nom + '.';
           choix = etat.factions[etat.joueur].capitale;
@@ -505,10 +550,11 @@
     if (choix == null) {
       var J = etat.factions[moi()], h0 = M.heritier(J);
       el.innerHTML = '<div class="carteRoi">' + portrait(J.roi, moi(), 58) + '<div class="infoRoi">' +
-        '<b>' + J.roi.nom + '</b><small>' + M.age(etat, J.roi) + ' ans · ' + J.cour.dyn + ' · ' + J.nom + '</small>' +
+        '<b>' + J.roi.nom + '</b><small>' + M.age(etat, J.roi) + ' ans · ' + J.cour.dyn + ' · ' + J.nom + '</small>' + (cui() ? cui().badgesTraits(J.roi) : '') +
         '<small>' + (J.conj ? '💍 ' + J.conj.nom : J.cour.elu ? '🗳️ Souverain élu' : '💍 Pas marié(e)') + (h0 ? ' · 👑 Héritier : ' + h0.nom : J.cour.elu ? '' : ' · ⚠️ Pas d\'héritier') + '</small>' +
         (etat.pseudo ? '<small>🎖️ Joué par ' + etat.pseudo + '</small>' : '') + '</div></div>' +
-        '<div class="actions wrap"><button class="btn" id="pCour">👑 Ma cour</button><button class="btn" id="pRoyaume">🏛️ Royaume</button><button class="btn" id="pCommerce">📦 Commerce</button>' + (M.quetes(etat, moi()).length ? '<button class="btn" id="pQuetes">📜 Quêtes</button>' : '') + '</div>' +
+        '<div class="actions wrap"><button class="btn" id="pCour">👑 Ma cour</button><button class="btn" id="pRoyaume">🏛️ Royaume</button><button class="btn" id="pCommerce">📦 Commerce</button>' + (M.quetes(etat, moi()).length ? '<button class="btn" id="pQuetes">📜 Quêtes</button>' : '') +
+        (cui() ? '<button class="btn' + (cui().jeu() ? ' couronne' : '') + '" id="pCouronne">⚜️ Couronne' + (cui().jeu() ? '' : ' 🔒') + '</button>' : '') + '</div>' +
         resumeQuete() +
         '<div class="conseil">🧙 <b>Conseiller :</b> ' + conseil() + '</div>';
       $('pCour').onclick = function () { cour(); };
@@ -516,6 +562,7 @@
       $('pCommerce').onclick = commerce;
       if ($('pQuetes')) $('pQuetes').onclick = ecranQuetes;
       if ($('pQuete1')) $('pQuete1').onclick = ecranQuetes;
+      if ($('pCouronne')) $('pCouronne').onclick = function () { cui().ouvrir(); };
       return;
     }
     var p = etat.provinces[choix], P = PROV[choix], mien = p.proprio === moi();
@@ -523,6 +570,7 @@
       '<div class="meta">' + nomF(p.proprio) + ' · 💰 +' + M.revenuProvince(p) + '/tour · ' + p.armee.length + '/' + M.MAX_UNITES + ' unités' +
       (M.PRODUIT_DE[choix] ? ' · ' + M.PRODUITS[M.PRODUIT_DE[choix]].ico + ' ' + M.PRODUITS[M.PRODUIT_DE[choix]].nom : '') + (M.estCotiere(choix) ? ' · 🌊 côte' : '') + '</div>';
     var qProv = M.quetes(etat, moi()).filter(function (x) { return x.faite == null && x.q.provinces.indexOf(P.id) >= 0; });
+    if (cui()) h += cui().infoProvince(choix);
     if (qProv.length) h += '<div class="tagQuete">' + qProv.map(function (x) { return x.q.ico + ' ' + (mien ? 'Fait partie de' : 'À prendre pour') + ' : <b>' + x.q.titre + '</b>'; }).join('<br>') + '</div>';
     if (mien) {
       var ordre = Math.round(p.ordre == null ? 60 : p.ordre), cible = M.cibleOrdre(etat, choix);
@@ -873,6 +921,7 @@
       '<span>Trésor</span><b>' + J.or + ' or</b></div></section>';
     h += '<section><h4>👑 Cour</h4>' + (R.cour && R.cour.length ? '<ul>' + R.cour.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' :
       '<p class="calme">Rien à signaler. ' + J.roi.nom + ' a ' + M.age(etat, J.roi) + ' ans.</p>') + '</section>';
+    if (R.couronne && R.couronne.length) h += '<section class="quete"><h4>⚜️ Couronne</h4><ul>' + R.couronne.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></section>';
     if (R.quetes && R.quetes.length) h += '<section class="quete"><h4>📜 Quêtes</h4><ul>' + R.quetes.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></section>';
     h += '<section><h4>🌍 Nouvelles du monde</h4>' + (etat.nouvelles.length ? '<ul>' + etat.nouvelles.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' : '<p class="calme">Le monde est calme.</p>') + '</section>';
     if (risques.length) h += '<section class="alerte"><h4>⚠️ Ordre public</h4><p>Risque de révolte à ' + risques.map(function (i) { return '<button class="lienProv" data-prov="' + i + '">' + PROV[i].nom + '</button>'; }).join(', ') + '. Baisse les impôts ou place une garnison.</p></section>';
@@ -954,6 +1003,7 @@
     onglet = mien && F.cour.conseil ? onglet || 'famille' : 'famille';
     var h = '<h2>👑 ' + (mien ? 'Ta cour' : 'Cour de ' + F.nom) + '</h2>' +
       '<div class="trone">' + portrait(F.roi, f, 110) + '<div><b>' + F.roi.nom + '</b><small>' + (F.roi.sexe === 'f' ? 'Reine' : F.cour.elu ? 'Souverain élu' : 'Roi') + ' · ' + M.age(etat, F.roi) + ' ans</small><small>Dynastie : ' + F.cour.dyn + '</small>' +
+      (cui() && cui().jeu() ? cui().badgesTraits(F.roi) + (F.foi ? '<small>' + CR.RELIGIONS[F.foi].ico + ' ' + CR.RELIGIONS[F.foi].nom + '</small>' : '') : '') +
       (F.conj ? '<small>💍 ' + F.conj.nom + (F.conj.de >= 0 ? ' (' + (F.conj.de === moi() ? 'ta famille' : etat.factions[F.conj.de].nom) + ')' : '') + ', ' + M.age(etat, F.conj) + ' ans' + (F.roi.sexe === 'f' && F.conj.matri ? ' · ♀ matrilinéaire' : '') + '</small>' : '') +
       (F.roi.sexe === 'f' && F.cour.dynEnfants ? '<small>⚠️ Mariage patrilinéaire : ses enfants seront de la maison ' + F.cour.dynEnfants + '</small>' : '') + '</div>' +
       (F.conj ? portrait(looksMembre(F.conj, F), f, 64) : '') + '</div>';
@@ -1282,7 +1332,8 @@
   };
   var FAQ = [
     ['C\'est quoi Imperium of Wars ?', 'Un jeu de stratégie historique gratuit, sur mobile et ordinateur. Tu diriges un vrai royaume sur la carte de l\'Europe et de la Méditerranée, de 771 à 1800 : tu gères tes villes, ta diplomatie, et tu commandes tes armées dans des batailles en 3D.'],
-    ['C\'est gratuit ?', 'Oui, 100 % gratuit, sans achat. Le site affiche quelques publicités pour payer l\'hébergement.'],
+    ['C\'est gratuit ?', 'Oui : tout le jeu de base est gratuit, sans limite. Le site affiche quelques publicités pour payer l\'hébergement. Si tu veux soutenir le jeu, il existe une Édition Couronne facultative (voir la question suivante).'],
+    ['C\'est quoi l\'Édition Couronne ?', 'Un contenu en plus, à acheter une seule fois avec ton compte du site : 3 nouvelles campagnes (867, 1337, 1519), les religions et les croisades, les intrigues (assassinats, revendications…), la renommée et les héritages de ta dynastie, les traits de caractère des souverains et l\'éducation de l\'héritier. Bouton « ⚜️ Édition Couronne » sur le menu.'],
     ['Faut-il un compte ?', 'Non. Tu peux jouer avec un simple pseudo. Si tu es connecté à ton compte du forum, ton pseudo est repris automatiquement.'],
     ['Comment gagner ?', 'Possède ' + HIST.OBJECTIF + ' provinces avant ' + HIST.FIN + '. Sinon, en ' + HIST.FIN + ', le classement des royaumes décide du vainqueur.'],
     ['Quelles époques ?', HIST.EPOQUES.map(function (e) { return e.annee + ' ' + e.titre; }).join(', ') + '. Les unités évoluent avec le temps, des chevaliers aux mousquetaires.'],
@@ -1699,6 +1750,12 @@
       ctx.beginPath(); ctx.arc(f.x, f.y, 10 + (0.6 - f.t) * 20, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
     });
   }
+
+  // Outils d'affichage prêtés à l'Édition Couronne (couronne-ui.js).
+  window.Imperium = {
+    etat: function () { return etat; }, feuille: feuille, fermer: fermer, toast: toast, sauver: sauver,
+    dessiner: dessiner, allerA: allerA, portrait: function (p, f, t) { return portrait(p, f, t); }, majMenu: function () { menuCouronne(); }
+  };
 
   menu();
 })();

@@ -8,6 +8,17 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-10-28",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouveau jeu : CLUTCH, le mot du jour esport !",
+    texte: "Une question esport par jour, la même pour tout le monde : LoL, CS2, Valorant, Dota 2, Fortnite, de la scène française à la Corée. La réponse est le mot à trouver, en 6 essais. Regarde le trailer, puis viens prouver que tu connais la scène.",
+    video: "videos/clutch-trailer.mp4",
+    image: "videos/clutch-trailer.jpg",
+    lien: "esport/",
+    bouton: "Jouer à CLUTCH"
+  },
+  {
     date: "2026-10-26",
     categorie: "site",
     epingle: true,

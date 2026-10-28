@@ -9,14 +9,24 @@
 //   les autres produits de la boutique.
 //   LEMONSQUEEZY_TESTS (facultatif) : mettre 1 pour accepter les achats du mode test (carte 4242…).
 //   À supprimer une fois les tests finis, sinon n'importe qui pourrait débloquer l'édition gratuitement.
-// SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont fournis tout seuls par Supabase.
+// SUPABASE_URL et la clé secrète du projet (SUPABASE_SERVICE_ROLE_KEY, ou SUPABASE_SECRET_KEYS
+// pour les projets avec les nouvelles clés sb_secret_…) sont fournis tout seuls par Supabase.
 // IMPORTANT : désactiver « Verify JWT » pour cette fonction (Lemon Squeezy n'a pas de compte Supabase).
 
 const SECRET = Deno.env.get('LEMONSQUEEZY_SECRET') ?? '';
 const PRODUIT = Deno.env.get('LEMONSQUEEZY_PRODUIT') ?? '';
 const TESTS = Deno.env.get('LEMONSQUEEZY_TESTS') === '1';
 const URL_BASE = Deno.env.get('SUPABASE_URL') ?? '';
-const CLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+// Nouvelles clés : SUPABASE_SECRET_KEYS = {"default": "sb_secret_…"} ; anciennes : un jeton JWT « service_role ».
+function cleSecrete(): string {
+  try {
+    const cles = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}');
+    const k = cles.default ?? Object.values(cles)[0];
+    if (typeof k === 'string' && k) return k;
+  } catch { /* format inattendu : on essaie l'ancienne clé */ }
+  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+}
+const CLE = cleSecrete();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function signature(corps: string): Promise<string> {
@@ -34,7 +44,8 @@ function egal(a: string, b: string): boolean {
 function base(chemin: string, init: RequestInit) {
   return fetch(URL_BASE + '/rest/v1/' + chemin, {
     ...init,
-    headers: { apikey: CLE, Authorization: 'Bearer ' + CLE, 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+    // Une clé sb_secret_… passe seulement dans « apikey » ; un ancien jeton JWT va aussi dans Authorization.
+    headers: { apikey: CLE, ...(CLE.startsWith('eyJ') ? { Authorization: 'Bearer ' + CLE } : {}), 'Content-Type': 'application/json', ...(init.headers ?? {}) },
   });
 }
 const reponse = (txt: string, status = 200) => new Response(txt, { status });

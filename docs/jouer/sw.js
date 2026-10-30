@@ -1,8 +1,9 @@
 // Mot Mystère : le jeu marche hors ligne une fois installé.
 // Change VERSION si tu veux forcer la mise à jour du cache chez les joueurs.
-var VERSION = 'motmystere-v3';
+var VERSION = 'motmystere-v4';
 var FICHIERS = ['/jouer/', '/jouer/index.html', '/jouer/installer.js', '/jouer/manifest.webmanifest',
-  '/jouer/icone-192.png', '/jouer/icone-512.png', '/jouer/favicon.ico', '/site.js'];
+  '/jouer/icone-192.png', '/jouer/icone-512.png', '/jouer/favicon.ico', '/site.js',
+  '/supabase-config.js', '/sauvegarde.js'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) {

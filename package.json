@@ -4,7 +4,7 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "test": "node --test test/game.test.mjs test/strategie.test.mjs test/couronne.test.mjs"
+    "test": "node --test test/game.test.mjs test/strategie.test.mjs test/couronne.test.mjs test/sauvegarde.test.mjs"
   },
   "private": true,
   "dependencies": {

@@ -25,7 +25,7 @@
   function chargeProfil() {
     if (!C.user) { C.profil = null; return Promise.resolve(); }
     return sb.from('profils').select('*').eq('id', C.user.id).maybeSingle()
-      .then(function (r) { C.profil = r.data || null; });
+      .then(function (r) { C.profil = r.data || null; }).then(compteDemandes);
   }
 
   // Grades du staff, du plus haut au plus bas (mêmes noms que les rôles Discord).
@@ -110,6 +110,7 @@
       [/row-level security|permission denied/i, 'Tu n\'as pas le droit de faire ça (compte banni ou sujet verrouillé ?).'],
       [/grade|propre grade/i, null],
       [/Failed to fetch|NetworkError|Load failed/i, 'Pas de connexion au serveur. Vérifie ton Internet.'],
+      [/amis_paire|duplicate key/i, 'Une demande d\'ami existe déjà entre vous deux.'],
       [/check constraint/i, 'Texte trop court ou trop long.']
     ];
     for (var i = 0; i < T.length; i++) if (T[i][0].test(m)) return T[i][1] || m;
@@ -127,11 +128,12 @@
       var p = C.profil;
       el.innerHTML = '<details class="menu"><summary class="chip">' +
         C.avatar(p) +
-        C.esc(p ? p.pseudo : 'Mon compte') + '</summary><div class="menu-in">' +
+        C.esc(p ? p.pseudo : 'Mon compte') + (C.demandes ? '<span class="nb" title="Demandes d\'ami">' + C.demandes + '</span>' : '') + '</summary><div class="menu-in">' +
         (p && p.banni ? '<p class="small warn">Ton compte est banni du forum.</p>' : '') +
         (C.estModo() ? '<a href="' + racine() + 'admin/">🛡️ Espace admin</a>' : '') +
         '<a href="' + racine() + 'staff/">⭐ Le staff</a>' +
         '<a href="' + racine() + 'forum/">💬 Forum</a>' +
+        '<button type="button" data-ouvrir="amis">👥 Mes amis' + (C.demandes ? ' <span class="nb">' + C.demandes + '</span>' : '') + '</button>' +
         '<button type="button" data-ouvrir="mon-compte">⚙️ Mon compte</button>' +
         '<button type="button" data-deconnexion>🚪 Se déconnecter</button></div></details>';
     });
@@ -180,6 +182,92 @@
   });
   document.addEventListener('DOMContentLoaded', function () { C.pret.then(function () { dessineBarre(); proposerProfil(); }); });
   C.surChangement(function () { setTimeout(proposerProfil, 0); });
+
+  /* ---------- Amis (table « amis », voir supabase/amis-parties.sql) ---------- */
+  // Une demande en attente reçue = petit chiffre rouge sur le bouton du compte.
+  C.demandes = 0;
+  function compteDemandes() {
+    if (!C.user) { C.demandes = 0; return Promise.resolve(); }
+    return sb.from('amis').select('demandeur', { count: 'exact', head: true }).eq('destinataire', C.user.id).eq('accepte', false)
+      .then(function (r) { C.demandes = r.error ? 0 : r.count || 0; }, function () { C.demandes = 0; });
+  }
+  // liens[id de l'autre] = { accepte, recue (true si c'est lui qui a demandé), p (son profil) }
+  var liens = {};
+  var PROFIL_AMI = 'id, pseudo, avatar, role, banni';
+  function chargerAmis() {
+    return sb.from('amis').select('demandeur, destinataire, accepte, accepte_le, de:profils!demandeur(' + PROFIL_AMI + '), a:profils!destinataire(' + PROFIL_AMI + ')')
+      .order('cree_le', { ascending: false }).then(function (r) {
+        if (r.error) throw r.error;
+        liens = {};
+        r.data.forEach(function (l) {
+          var recue = l.destinataire === C.user.id;
+          var p = recue ? l.de : l.a;
+          if (p) liens[p.id] = { accepte: l.accepte, recue: recue, p: p };
+        });
+        C.demandes = Object.keys(liens).filter(function (k) { return liens[k].recue && !liens[k].accepte; }).length;
+        dessineBarre();
+        dessineAmis();
+      }).catch(function (x) {
+        var b = modal && modal.querySelector('[data-amis-liste]');
+        if (b) b.innerHTML = '<p class="err">' + C.esc(C.erreur(x)) + '</p>';
+      });
+  }
+  function boutonsAmi(id, l) {
+    var d = ' data-ami-id="' + C.esc(id) + '"';
+    if (!l) return '<button type="button" class="btn btn-play btn-sm" data-ami="ajouter"' + d + '>➕ Ajouter en ami</button>';
+    if (l.accepte) return '<span class="small ami-ok">✔ Amis</span><button type="button" class="btn btn-ghost btn-sm" data-ami="retirer"' + d + '>Retirer</button>';
+    if (l.recue) return '<button type="button" class="btn btn-play btn-sm" data-ami="accepter"' + d + '>✔ Accepter</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-ami="retirer"' + d + '>Refuser</button>';
+    return '<span class="small muted">Demande envoyée</span><button type="button" class="btn btn-ghost btn-sm" data-ami="retirer"' + d + '>Annuler</button>';
+  }
+  function ligneAmi(p, l) {
+    return '<div class="ami-l">' + C.avatar(p) + '<div class="ami-n">' + C.badge(p) + '</div><div class="ami-acts">' + boutonsAmi(p.id, l) + '</div></div>';
+  }
+  function dessineAmis() {
+    if (!modal) return;
+    var zone = modal.querySelector('[data-ami-zone]');
+    if (zone) { var id = zone.getAttribute('data-ami-zone'); zone.innerHTML = '<div class="ami-acts">' + boutonsAmi(id, liens[id]) + '</div><p class="err" data-ami-err></p>'; }
+    var res = modal.querySelector('[data-resultats]');
+    if (res) res.querySelectorAll('[data-ami-id]').forEach(function (b) {
+      var id = b.getAttribute('data-ami-id');
+      b.closest('.ami-acts').innerHTML = boutonsAmi(id, liens[id]);
+    });
+    var box = modal.querySelector('[data-amis-liste]');
+    if (!box) return;
+    var tous = Object.keys(liens).map(function (k) { return liens[k]; });
+    var groupe = function (titre, liste, vide) {
+      return '<h3 class="ami-h">' + titre + (liste.length ? ' (' + liste.length + ')' : '') + '</h3>' +
+        (liste.length ? liste.map(function (l) { return ligneAmi(l.p, l); }).join('') : (vide ? '<p class="muted small">' + vide + '</p>' : ''));
+    };
+    var recues = tous.filter(function (l) { return !l.accepte && l.recue; });
+    var envoyees = tous.filter(function (l) { return !l.accepte && !l.recue; });
+    var amis = tous.filter(function (l) { return l.accepte; }).sort(function (a, b) { return a.p.pseudo.localeCompare(b.p.pseudo); });
+    box.innerHTML = '<p class="err" data-ami-err></p>' + (recues.length ? groupe('Demandes reçues', recues) : '') +
+      groupe('Mes amis', amis, 'Pas encore d\'amis. Cherche un pseudo ci-dessus, ou clique sur un pseudo du forum pour l\'ajouter.') +
+      (envoyees.length ? groupe('Demandes envoyées', envoyees) : '');
+  }
+  function actionAmi(quoi, id) {
+    var moi = C.user.id, a;
+    if (quoi === 'ajouter') a = sb.from('amis').insert({ destinataire: id });
+    else if (quoi === 'accepter') a = sb.from('amis').update({ accepte: true }).eq('demandeur', id).eq('destinataire', moi);
+    else {
+      var l = liens[id];
+      if (l && l.accepte && !confirm('Retirer ' + l.p.pseudo + ' de tes amis ?')) return;
+      a = sb.from('amis').delete().or('and(demandeur.eq.' + moi + ',destinataire.eq.' + id + '),and(demandeur.eq.' + id + ',destinataire.eq.' + moi + ')');
+    }
+    a.then(function (r) {
+      if (r.error) throw r.error;
+    }).catch(function (x) {
+      var e = modal && modal.querySelector('[data-ami-err]');
+      if (e) e.textContent = C.erreur(x); else alert(C.erreur(x));
+    }).then(chargerAmis);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ami]');
+    if (!b || !C.user) return;
+    b.disabled = true;
+    actionAmi(b.getAttribute('data-ami'), b.getAttribute('data-ami-id'));
+  });
 
   /* ---------- Fenêtre connexion / inscription ---------- */
   var modal;
@@ -236,7 +324,16 @@
         (g.rang ? '<span class="role ' + g.id + '">' + g.nom + '</span>' : '<span class="small muted">Membre</span>') +
         (p.banni ? ' <span class="role ban">Banni</span>' : '') +
         '<p class="bio">' + (p.bio ? C.texte(p.bio) : '<span class="muted">Pas encore de bio.</span>') + '</p>' +
-        '<p class="small muted">Membre depuis le ' + new Date(p.cree_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + '</p></div>';
+        '<p class="small muted">Membre depuis le ' + new Date(p.cree_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + '</p>' +
+        (C.user && C.user.id === p.id ? '' : '<div class="ami-zone" data-ami-zone="' + C.esc(p.id) + '">' +
+          (C.user ? '' : '<button type="button" class="btn btn-ghost btn-sm" data-ouvrir="connexion">Se connecter pour l\'ajouter en ami</button>') + '</div>') +
+        '</div>';
+    },
+    amis: function () {
+      return '<h2>👥 Mes amis</h2>' +
+        '<form data-f="cherche-ami" class="ami-cherche"><label>Ajouter un ami<input name="pseudo" required minlength="2" maxlength="20" placeholder="Son pseudo…" autocomplete="off"></label>' +
+        '<button class="btn btn-play btn-sm">Chercher</button><p class="err" data-err></p></form>' +
+        '<div data-resultats></div><div data-amis-liste><p class="muted small">Chargement…</p></div>';
     },
     info: function (txt) { return txt; }
   };
@@ -270,6 +367,8 @@
     document.body.appendChild(modal);
     var champ = modal.querySelector('input');
     if (champ) champ.focus();
+    if (vue === 'amis') chargerAmis();
+    if (vue === 'profil' && C.user) chargerAmis();
   };
   function info(titre, txt) {
     C.ouvrir('info', '<h2>' + titre + '</h2><p class="muted">' + txt + '</p><button type="button" class="btn btn-play full" data-fermer>OK</button>');
@@ -331,6 +430,16 @@
           previens();
           info('Profil enregistré ✅', 'Ta photo et ta bio sont à jour.');
         });
+        break;
+      case 'cherche-ami':
+        var q = v('pseudo').replace(/[%_\\]/g, '\\$&');
+        action = sb.from('profils').select('id, pseudo, avatar, role').ilike('pseudo', '%' + q + '%').neq('id', C.user.id)
+          .order('pseudo').limit(8).then(function (r) {
+            if (r.error) throw r.error;
+            var box = modal && modal.querySelector('[data-resultats]');
+            if (box) box.innerHTML = r.data.length ? '<h3 class="ami-h">Résultats</h3>' + r.data.map(function (p) { return ligneAmi(p, liens[p.id]); }).join('')
+              : '<p class="muted small">Personne avec ce pseudo.</p>';
+          });
         break;
       case 'supprimer':
         action = sb.storage.from('avatars').remove([C.user.id + '/photo.webp']).then(function () {

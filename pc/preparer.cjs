@@ -62,6 +62,7 @@ remplacer('index.html', [
   [ligne(/<link rel="manifest"[^>]*>\n/, 'manifest'), '', 'manifest'],
   [ligne(/<script src="\.\.\/supabase-config\.js"><\/script>\n/, 'supabase-config'), '', 'supabase-config'],
   [ligne(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase[^>]*><\/script>\n/, 'supabase'), '', 'supabase'],
+  [ligne(/<script src="\.\.\/sauvegarde\.js"[^>]*><\/script>\n/, 'sauvegarde'), '', 'sauvegarde en ligne'],
   [ligne(/<script src="https:\/\/cdnjs\.cloudflare\.com[^"]*three\.min\.js"><\/script>/, 'three.js'), '<script src="vendor/three.min.js"></script>', 'three.js'],
   [ligne(/<script src="\.\.\/site\.js"[^>]*><\/script>/, 'site.js'), '<script src="pc.js"></script>', 'site.js'],
   ['<link rel="icon" href="../icon.png">', '<link rel="icon" href="icone-192.png">', 'icône'],

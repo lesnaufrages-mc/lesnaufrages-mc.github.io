@@ -3,8 +3,9 @@ import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Share, StyleSheet
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  MAX_TRIES, WORD_LENGTH, dayNumber, evaluate, keyboardStates, normalize, randomWord, shareText, wordOfTheDay,
+  MAX_TRIES, WORD_LENGTH, dayNumber, evaluate, keyboardStates, normalize, shareText, wordOfTheDay,
 } from './src/game';
+import { LIBRES_MAX, attenteLibre, motLibre, nomListe } from './src/words';
 import { initAds, showRewardedAd } from './src/ads';
 import { PAGES, SAISON, pageDuJour } from './src/journal';
 import {
@@ -22,7 +23,7 @@ const emptyStats = { played: 0, wins: 0, streak: 0, best: 0, lastDay: 0 };
 
 export default function App() {
   const day = dayNumber();
-  const [mode, setMode] = useState('daily'); // 'daily' ou 'bonus'
+  const [mode, setMode] = useState('daily'); // 'daily' ou 'bonus' (partie libre)
   const [answer, setAnswer] = useState(wordOfTheDay());
   const [guesses, setGuesses] = useState([]);
   const [current, setCurrent] = useState('');
@@ -33,8 +34,14 @@ export default function App() {
   const [filet, setFilet] = useState([]); // fausses lettres enlevées du clavier
   const [pages, setPages] = useState([]); // jours dont la page du journal est débloquée
   const [journal, setJournal] = useState(false); // écran « Mon journal » ouvert
+  // Parties libres du jour : n = nombre commencées, joues = mots déjà sortis, fin = heure de la dernière partie finie.
+  const [libres, setLibres] = useState({ day, n: 0, joues: [], fin: 0 });
+  const [libre, setLibre] = useState(null); // mot + phrase de la partie libre en cours
+  const [now, setNow] = useState(Date.now());
 
   const page = mode === 'daily' ? pageDuJour(day) : null;
+  // Phrase de la bouteille : celle de la page du journal, ou celle du mot de la partie libre.
+  const phrase = page ? page.indice : libre?.indice;
   const essaisIndices = coutIndices(niveau, indices.length);
   const maxTries = MAX_TRIES - essaisIndices;
   const won = guesses.includes(answer);
@@ -49,6 +56,7 @@ export default function App() {
       setStats(saved.stats || emptyStats);
       setPages(saved.pages || []);
       if (saved.niveau) setNiveau(niveauValide(saved.niveau));
+      if (saved.libres?.day === day) setLibres(saved.libres);
       if (saved.day === day) {
         setGuesses(saved.guesses || []);
         // Anciennes parties : la bouteille coûtait 1 essai, comme au niveau Capitaine.
@@ -65,6 +73,7 @@ export default function App() {
 
   function save(nextGuesses, nextStats, {
     nextIndices = indices, nextLettres = lettres, nextFilet = filet, nextPages = pages, nextNiveau = niveau,
+    nextLibres = libres,
   } = {}) {
     // Les pages du journal se gardent aussi après une partie bonus.
     const daily = mode === 'daily';
@@ -73,9 +82,9 @@ export default function App() {
       const data = daily
         ? {
           day, guesses: nextGuesses, indices: nextIndices, lettres: nextLettres, filet: nextFilet,
-          niveau: nextNiveau, stats: nextStats, pages: nextPages,
+          niveau: nextNiveau, stats: nextStats, pages: nextPages, libres: nextLibres,
         }
-        : { ...old, pages: nextPages, niveau: nextNiveau };
+        : { ...old, pages: nextPages, niveau: nextNiveau, libres: nextLibres };
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     });
   }
@@ -130,6 +139,12 @@ export default function App() {
     const finished = current === answer || next.length >= maxTries;
     let nextStats = stats;
     let nextPages = pages;
+    let nextLibres = libres;
+    if (finished && mode === 'bonus') {
+      nextLibres = { ...libres, fin: Date.now() };
+      setLibres(nextLibres);
+      setNow(Date.now());
+    }
     if (finished && mode === 'daily') {
       const win = current === answer;
       const streak = win ? (stats.lastDay === day - 1 ? stats.streak + 1 : 1) : 0;
@@ -140,7 +155,7 @@ export default function App() {
       setStats(nextStats);
       if (win && page) nextPages = unlock(day);
     }
-    save(next, nextStats, { nextPages });
+    save(next, nextStats, { nextPages, nextLibres });
   }
 
   function press(key) {
@@ -172,18 +187,37 @@ export default function App() {
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key === 'Enter' ? '↵' : e.key === 'Backspace' ? '⌫' : normalize(e.key);
-      if (key.length === 1) pressRef.current(key);
+      if (key.length !== 1) return;
+      // Après un clic sur un bouton (indice, niveau), Entrée doit valider le mot, pas recliquer le bouton.
+      if (key === '↵') { e.preventDefault(); e.stopPropagation(); document.activeElement?.blur?.(); }
+      pressRef.current(key);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 
-  // Partie bonus débloquée par une pub récompensée : c'est la source de revenus principale.
+  // Parties libres : 30 par jour, du facile au difficile, 1 minute de pause entre deux.
+  // Sur mobile, chacune est débloquée par une pub récompensée : c'est la source de revenus principale.
+  const attente = attenteLibre(libres.fin, now);
+  const libresFinies = libres.n >= LIBRES_MAX;
+  useEffect(() => {
+    if (!over || attente <= 0) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [over, attente > 0]);
+
   async function playBonus() {
+    if (libresFinies || attente > 0) return;
     const ok = await showRewardedAd();
     if (!ok) return;
+    const n = libres.n + 1;
+    const mot = motLibre(n, libres.joues);
+    const nextLibres = { day, n, joues: [...libres.joues, mot.mot], fin: libres.fin };
+    setLibres(nextLibres);
+    save(guesses, stats, { nextLibres });
     setMode('bonus');
-    setAnswer(randomWord());
+    setLibre(mot);
+    setAnswer(mot.mot);
     setGuesses([]);
     setCurrent('');
     setIndices([]);
@@ -251,7 +285,7 @@ export default function App() {
       <Text style={styles.subtitle}>
         {mode === 'daily'
           ? (page ? `Journal du naufragé · page ${day}` : `Mot du jour #${day}`)
-          : 'Partie bonus'} · série {stats.streak}
+          : `Partie libre ${libres.n}/${LIBRES_MAX} · ${nomListe(libres.n)}`} · série {stats.streak}
       </Text>
       <Pressable style={styles.link} onPress={() => setJournal(true)}>
         <Text style={styles.linkText}>Mon journal ({pages.length}/{PAGES.length})</Text>
@@ -297,7 +331,7 @@ export default function App() {
             Indices · {NIVEAUX[niveau].aide}
           </Text>
           <View style={styles.levels}>
-            {indicesDispo(!!page).map((i) => {
+            {indicesDispo(!!phrase).map((i) => {
               const ouvert = indices.includes(i.id);
               const payant = coutIndices(niveau, indices.length + 1) > essaisIndices;
               const possible = !ouvert && peutOuvrir(niveau, indices, guesses.length)
@@ -315,9 +349,9 @@ export default function App() {
               );
             })}
           </View>
-          {indices.includes('bouteille') && page && (
+          {indices.includes('bouteille') && phrase && (
             <Text style={styles.hint}>
-              🍾 « {page.indice} »{niveau === 'mousse' && page.facile ? `\n💡 Plus simple : ${page.facile}` : ''}
+              🍾 « {phrase} »{niveau === 'mousse' && page?.facile ? `\n💡 Plus simple : ${page.facile}` : ''}
             </Text>
           )}
           {lettres.length > 0 && (
@@ -352,8 +386,14 @@ export default function App() {
               <Text style={styles.buttonText}>Partager mon score</Text>
             </Pressable>
           )}
-          <Pressable style={styles.button} onPress={playBonus}>
-            <Text style={styles.buttonText}>Rejouer (partie bonus)</Text>
+          <Pressable style={[styles.button, (libresFinies || attente > 0) && styles.chipOff]} onPress={playBonus}>
+            <Text style={styles.buttonText}>
+              {libresFinies
+                ? `Plus de parties libres aujourd'hui (${LIBRES_MAX}/${LIBRES_MAX})`
+                : attente > 0
+                  ? `Prochaine partie dans ${attente} s`
+                  : `Partie libre ${libres.n + 1}/${LIBRES_MAX} · ${nomListe(libres.n + 1)}`}
+            </Text>
           </Pressable>
           <Text style={styles.stats}>
             {stats.played} parties · {stats.played ? Math.round((stats.wins / stats.played) * 100) : 0}% gagnées · record {stats.best}

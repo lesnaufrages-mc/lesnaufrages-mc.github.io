@@ -88,3 +88,21 @@ test('partage avec plusieurs indices : compatible avec le bot', () => {
   assert.ok(t.startsWith('Mot Mystère #6 3/6 🍾🔭 ⚓'));
   assert.ok(/Mot Myst[eè]re #(\d+) ([1-6X])\/6/i.test(t));
 });
+test('parties libres : 30 par jour, du facile au difficile, 1 minute de pause', async () => {
+  const w = await import('../src/words.js');
+  assert.equal(w.LIBRES_MAX, 30);
+  assert.equal(w.listeLibre(1), w.FACILE);
+  assert.equal(w.listeLibre(15), w.MOYEN);
+  assert.equal(w.listeLibre(30), w.DIFFICILE);
+  [...w.FACILE, ...w.MOYEN, ...w.DIFFICILE].forEach((m) => {
+    assert.match(m.mot, /^[A-Z]{5}$/);
+    assert.ok(m.indice.length > 5, m.mot);
+  });
+  const joues = [];
+  for (let n = 1; n <= 10; n++) joues.push(w.motLibre(n, joues).mot);
+  assert.equal(new Set(joues).size, 10); // pas deux fois le même mot
+  assert.equal(w.attenteLibre(0), 0);
+  assert.equal(w.attenteLibre(1000, 1000), 60);
+  assert.equal(w.attenteLibre(1000, 31000), 30);
+  assert.equal(w.attenteLibre(1000, 61000), 0);
+});

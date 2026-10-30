@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { evaluate, normalize, wordOfTheDay, dayNumber, shareText, keyboardStates } from '../src/game.js';
 import { WORDS } from '../src/words.js';
 import { PAGES, pageDuJour } from '../src/journal.js';
+import {
+  coutIndices, indicesDispo, lettresFilet, motifLettres, peutOuvrir, prochaineLettre,
+} from '../src/indices.js';
 
 test('bonne réponse', () => assert.deepEqual(evaluate('ARBRE', 'ARBRE'), Array(5).fill('correct')));
 test('lettres en double', () => {
@@ -50,5 +53,38 @@ test('partage avec bouteille et page : compatible avec le bot', () => {
   assert.ok(t.startsWith('Mot Mystère #1 3/6 🍾'));
   assert.ok(t.includes('« Le réveil »'));
   assert.ok(t.includes('🟦'));
+  assert.ok(/Mot Myst[eè]re #(\d+) ([1-6X])\/6/i.test(t));
+});
+test('journal : une phrase facile par page', () => PAGES.forEach((p) => assert.ok(p.facile, p.mot)));
+test('indices : le niveau décide du coût', () => {
+  assert.equal(coutIndices('mousse', 4), 0);
+  assert.equal(coutIndices('matelot', 1), 0);
+  assert.equal(coutIndices('matelot', 3), 2);
+  assert.equal(coutIndices('capitaine', 2), 2);
+  assert.equal(coutIndices('inconnu', 9), 0); // niveau par défaut = mousse (facile)
+});
+test('indices : tous ouvrables tout de suite, jamais le dernier essai', () => {
+  assert.ok(peutOuvrir('capitaine', [], 0));
+  assert.ok(peutOuvrir('mousse', ['bouteille', 'longuevue', 'boussole'], 5));
+  assert.ok(!peutOuvrir('capitaine', ['bouteille'], 4)); // 4 essais + 2 indices = 6 : plus rien pour jouer
+  assert.ok(peutOuvrir('capitaine', ['bouteille'], 3));
+  assert.equal(indicesDispo(false).length, 3);
+  assert.equal(indicesDispo(true).length, 4);
+});
+test('indices : lettres et filet', () => {
+  assert.equal(prochaineLettre('ARBRE', []), 0);
+  assert.equal(prochaineLettre('ARBRE', ['AXXXX'], []), 1);
+  assert.equal(prochaineLettre('ARBRE', [], [0]), 1);
+  assert.equal(prochaineLettre('ARBRE', ['ARBRE']), null);
+  assert.equal(motifLettres('ARBRE', [0, 4]), 'A · · · E');
+  const f = lettresFilet('ARBRE', ['PLAGE']);
+  assert.equal(f.length, 6);
+  f.forEach((l) => { assert.ok(!'ARBRE'.includes(l)); assert.ok(!'PLAGE'.includes(l)); });
+  assert.deepEqual(lettresFilet('ARBRE', ['PLAGE']), f); // toujours les mêmes
+});
+test('partage avec plusieurs indices : compatible avec le bot', () => {
+  const t = shareText([evaluate('PLAGE', 'ARBRE'), evaluate('ARBRE', 'ARBRE')], true, 6,
+    { page: PAGES[5], essaisIndices: 1, marques: ' 🍾🔭 ⚓' });
+  assert.ok(t.startsWith('Mot Mystère #6 3/6 🍾🔭 ⚓'));
   assert.ok(/Mot Myst[eè]re #(\d+) ([1-6X])\/6/i.test(t));
 });

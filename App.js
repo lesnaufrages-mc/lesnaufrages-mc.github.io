@@ -7,6 +7,9 @@ import {
 } from './src/game';
 import { initAds, showRewardedAd } from './src/ads';
 import { PAGES, SAISON, pageDuJour } from './src/journal';
+import {
+  NIVEAUX, NIVEAU_DEFAUT, coutIndices, indicesDispo, lettresFilet, motifLettres, niveauValide, peutOuvrir, prochaineLettre,
+} from './src/indices';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', '⌫WXCVBN↵'];
 // Couleurs « Les Naufragés » : le gris des autres jeux devient le bleu de la mer.
@@ -24,12 +27,16 @@ export default function App() {
   const [guesses, setGuesses] = useState([]);
   const [current, setCurrent] = useState('');
   const [stats, setStats] = useState(emptyStats);
-  const [bouteille, setBouteille] = useState(false); // indice ouvert (coûte un essai)
+  const [niveau, setNiveau] = useState(NIVEAU_DEFAUT); // mousse, matelot ou capitaine
+  const [indices, setIndices] = useState([]); // indices ouverts, dans l'ordre (ex. ['bouteille', 'filet'])
+  const [lettres, setLettres] = useState([]); // positions montrées par la longue-vue et la boussole
+  const [filet, setFilet] = useState([]); // fausses lettres enlevées du clavier
   const [pages, setPages] = useState([]); // jours dont la page du journal est débloquée
   const [journal, setJournal] = useState(false); // écran « Mon journal » ouvert
 
   const page = mode === 'daily' ? pageDuJour(day) : null;
-  const maxTries = MAX_TRIES - (bouteille ? 1 : 0);
+  const essaisIndices = coutIndices(niveau, indices.length);
+  const maxTries = MAX_TRIES - essaisIndices;
   const won = guesses.includes(answer);
   const over = won || guesses.length >= maxTries;
 
@@ -41,21 +48,34 @@ export default function App() {
       const saved = JSON.parse(raw);
       setStats(saved.stats || emptyStats);
       setPages(saved.pages || []);
+      if (saved.niveau) setNiveau(niveauValide(saved.niveau));
       if (saved.day === day) {
         setGuesses(saved.guesses || []);
-        setBouteille(!!saved.bouteille);
+        // Anciennes parties : la bouteille coûtait 1 essai, comme au niveau Capitaine.
+        if (saved.bouteille && !saved.indices) {
+          setIndices(['bouteille']);
+          setNiveau(saved.niveau ? niveauValide(saved.niveau) : 'capitaine');
+        }
+        setIndices((v) => saved.indices || v);
+        setLettres(saved.lettres || []);
+        setFilet(saved.filet || []);
       }
     });
   }, []);
 
-  function save(nextGuesses, nextStats, { nextBouteille = bouteille, nextPages = pages } = {}) {
+  function save(nextGuesses, nextStats, {
+    nextIndices = indices, nextLettres = lettres, nextFilet = filet, nextPages = pages, nextNiveau = niveau,
+  } = {}) {
     // Les pages du journal se gardent aussi après une partie bonus.
     const daily = mode === 'daily';
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
       const old = raw ? JSON.parse(raw) : {};
       const data = daily
-        ? { day, guesses: nextGuesses, bouteille: nextBouteille, stats: nextStats, pages: nextPages }
-        : { ...old, pages: nextPages };
+        ? {
+          day, guesses: nextGuesses, indices: nextIndices, lettres: nextLettres, filet: nextFilet,
+          niveau: nextNiveau, stats: nextStats, pages: nextPages,
+        }
+        : { ...old, pages: nextPages, niveau: nextNiveau };
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     });
   }
@@ -67,11 +87,31 @@ export default function App() {
     return next;
   }
 
-  // Bouteille à la mer : un indice sur le mot, contre un essai.
-  function openBottle() {
-    if (bouteille || over || guesses.length >= MAX_TRIES - 1) return;
-    setBouteille(true);
-    save(guesses, stats, { nextBouteille: true });
+  // Les indices s'ouvrent tout de suite. Selon le niveau, ils sont gratuits ou coûtent 1 essai.
+  function openHint(id) {
+    if (over || indices.includes(id) || !peutOuvrir(niveau, indices, guesses.length)) return;
+    let nextLettres = lettres;
+    let nextFilet = filet;
+    if (id === 'longuevue' || id === 'boussole') {
+      const pos = prochaineLettre(answer, guesses, lettres);
+      if (pos === null) return;
+      nextLettres = [...lettres, pos];
+      setLettres(nextLettres);
+    }
+    if (id === 'filet') {
+      nextFilet = lettresFilet(answer, guesses);
+      setFilet(nextFilet);
+    }
+    const nextIndices = [...indices, id];
+    setIndices(nextIndices);
+    save(guesses, stats, { nextIndices, nextLettres, nextFilet });
+  }
+
+  // Le niveau se choisit avant de commencer la partie.
+  function chooseLevel(n) {
+    if (guesses.length || indices.length) return;
+    setNiveau(n);
+    save(guesses, stats, { nextNiveau: n });
   }
 
   // Page perdue (partie ratée ou jour manqué) : on la repêche avec une pub récompensée.
@@ -112,7 +152,9 @@ export default function App() {
 
   async function share() {
     const rows = guesses.map((g) => evaluate(g, answer));
-    const message = shareText(rows, won, day, { bouteille, page });
+    const emojis = indices.map((id) => indicesDispo(true).find((i) => i.id === id).emoji).join('');
+    const marques = ` ${emojis}${emojis ? ' ' : ''}${NIVEAUX[niveau].emoji}`;
+    const message = shareText(rows, won, day, { page, essaisIndices, marques });
     // Sur ordinateur, le navigateur ne sait souvent pas partager : on copie le texte à la place.
     if (Platform.OS === 'web' && !navigator.share) {
       await navigator.clipboard.writeText(message);
@@ -144,10 +186,13 @@ export default function App() {
     setAnswer(randomWord());
     setGuesses([]);
     setCurrent('');
-    setBouteille(false);
+    setIndices([]);
+    setLettres([]);
+    setFilet([]);
   }
 
   const keys = keyboardStates(guesses, answer);
+  filet.forEach((l) => { if (!keys[l]) keys[l] = 'absent'; });
   const rows = Array.from({ length: maxTries }, (_, i) => guesses[i] ?? (i === guesses.length ? current : ''));
 
   if (journal) {
@@ -211,6 +256,21 @@ export default function App() {
       <Pressable style={styles.link} onPress={() => setJournal(true)}>
         <Text style={styles.linkText}>Mon journal ({pages.length}/{PAGES.length})</Text>
       </Pressable>
+      <View style={styles.levels}>
+        {Object.entries(NIVEAUX).map(([id, n]) => {
+          const choisi = id === niveau;
+          const bloque = !choisi && (guesses.length > 0 || indices.length > 0);
+          return (
+            <Pressable
+              key={id}
+              onPress={() => chooseLevel(id)}
+              style={[styles.chip, choisi && styles.chipOn, bloque && styles.chipOff]}
+            >
+              <Text style={[styles.chipText, choisi && styles.chipTextOn]}>{n.emoji} {n.nom}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={styles.grid}>
         {rows.map((word, r) => {
@@ -231,14 +291,42 @@ export default function App() {
         })}
       </View>
 
-      {page && !over && (
-        bouteille ? (
-          <Text style={styles.hint}>Bouteille à la mer : « {page.indice} »</Text>
-        ) : guesses.length < MAX_TRIES - 1 && (
-          <Pressable style={styles.link} onPress={openBottle}>
-            <Text style={styles.linkText}>Ouvrir la bouteille à la mer (indice, coûte 1 essai)</Text>
-          </Pressable>
-        )
+      {!over && (
+        <View style={styles.hints}>
+          <Text style={styles.hintsHead}>
+            Indices · {NIVEAUX[niveau].aide}
+          </Text>
+          <View style={styles.levels}>
+            {indicesDispo(!!page).map((i) => {
+              const ouvert = indices.includes(i.id);
+              const payant = coutIndices(niveau, indices.length + 1) > essaisIndices;
+              const possible = !ouvert && peutOuvrir(niveau, indices, guesses.length)
+                && (i.id === 'bouteille' || i.id === 'filet' || prochaineLettre(answer, guesses, lettres) !== null);
+              return (
+                <Pressable
+                  key={i.id}
+                  onPress={() => openHint(i.id)}
+                  style={[styles.chip, ouvert && styles.chipOn, !ouvert && !possible && styles.chipOff]}
+                >
+                  <Text style={[styles.chipText, ouvert && styles.chipTextOn]}>
+                    {i.emoji} {i.court}{ouvert ? ' ✓' : payant ? ' (−1 essai)' : ' (gratuit)'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {indices.includes('bouteille') && page && (
+            <Text style={styles.hint}>
+              🍾 « {page.indice} »{niveau === 'mousse' && page.facile ? `\n💡 Plus simple : ${page.facile}` : ''}
+            </Text>
+          )}
+          {lettres.length > 0 && (
+            <Text style={styles.hintLetters}>🔭 {motifLettres(answer, lettres)}</Text>
+          )}
+          {filet.length > 0 && (
+            <Text style={styles.hint}>🎣 Pas dans le mot : {filet.join(' ')}</Text>
+          )}
+        </View>
       )}
 
       {over ? (
@@ -306,7 +394,16 @@ const styles = StyleSheet.create({
   cell: { width: 54, height: 54, borderWidth: 2, borderColor: '#22404a', alignItems: 'center', justifyContent: 'center' },
   cellTyped: { borderColor: SAND },
   cellText: { color: '#fff', fontSize: 26, fontWeight: '700' },
-  hint: { color: SAND, marginTop: 10, paddingHorizontal: 20, textAlign: 'center', maxWidth: 420, fontStyle: 'italic' },
+  hints: { alignItems: 'center', marginTop: 8, paddingHorizontal: 8, maxWidth: 460 },
+  hintsHead: { color: '#9db1ae', fontSize: 12, marginBottom: 4, textAlign: 'center' },
+  hintLetters: { color: SAND, marginTop: 6, fontSize: 18, fontWeight: '800', letterSpacing: 4 },
+  levels: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 6 },
+  chip: { borderWidth: 1, borderColor: '#22404a', borderRadius: 14, paddingVertical: 4, paddingHorizontal: 10 },
+  chipOn: { backgroundColor: SAND, borderColor: SAND },
+  chipOff: { opacity: 0.4 },
+  chipText: { color: '#cfdad8', fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: '#0d1b21' },
+  hint: { color: SAND, marginTop: 6, paddingHorizontal: 20, textAlign: 'center', maxWidth: 420, fontStyle: 'italic' },
   keyboard: { marginTop: 'auto', marginBottom: 24, gap: 8 },
   key: { backgroundColor: '#4a6a70', borderRadius: 4, minWidth: 32, height: 52, alignItems: 'center', justifyContent: 'center' },
   keyWide: { minWidth: 48 },

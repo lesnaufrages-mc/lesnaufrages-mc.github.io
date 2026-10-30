@@ -49,14 +49,16 @@ export function evaluate(guess, answer) {
 // Bleu = la mer : notre grille ne ressemble pas à celle des autres jeux.
 const EMOJI = { correct: '🟩', present: '🟨', absent: '🟦' };
 
-// bouteille = le joueur a ouvert la bouteille à la mer (l'indice compte comme un essai).
+// essaisIndices = essais perdus en ouvrant des indices (ils comptent dans le score).
+// marques = emojis des indices ouverts et du niveau, ex. " 🍾🔭 ⚓".
+// bouteille = ancien format (un seul indice qui coûtait un essai).
 // Garde le début « Mot Mystère #N X/6 » : le bot Discord le lit pour le classement.
-export function shareText(rows, won, day, { bouteille = false, page = null } = {}) {
-  const used = rows.length + (bouteille ? 1 : 0);
+export function shareText(rows, won, day, { bouteille = false, page = null, essaisIndices, marques } = {}) {
+  const used = rows.length + (essaisIndices ?? (bouteille ? 1 : 0));
   const score = won ? `${used}/${MAX_TRIES}` : `X/${MAX_TRIES}`;
   const grid = rows.map((r) => r.map((s) => EMOJI[s]).join('')).join('\n');
   const titre = page ? `\n📖 Journal du naufragé, page ${day} : « ${page.titre} »` : '';
-  const indice = bouteille ? ' 🍾' : '';
+  const indice = marques ?? (bouteille ? ' 🍾' : '');
   return `Mot Mystère #${day} ${score}${indice}${titre}\n\n${grid}\n\nTu fais mieux ? 👉 lesnaufrages-mc.github.io/jouer/`;
 }
 

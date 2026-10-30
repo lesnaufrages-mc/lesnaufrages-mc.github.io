@@ -3,10 +3,14 @@ import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Share, StyleSheet
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  MAX_TRIES, WORD_LENGTH, dayNumber, evaluate, keyboardStates, normalize, randomWord, shareText, wordOfTheDay,
+  MAX_TRIES, WORD_LENGTH, dayNumber, evaluate, keyboardStates, normalize, shareText, wordOfTheDay,
 } from './src/game';
+import { LIBRES_MAX, attenteLibre, motLibre, nomListe } from './src/words';
 import { initAds, showRewardedAd } from './src/ads';
 import { PAGES, SAISON, pageDuJour } from './src/journal';
+import {
+  NIVEAUX, NIVEAU_DEFAUT, coutIndices, indicesDispo, lettresFilet, motifLettres, niveauValide, peutOuvrir, prochaineLettre,
+} from './src/indices';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', '⌫WXCVBN↵'];
 // Couleurs « Les Naufragés » : le gris des autres jeux devient le bleu de la mer.
@@ -19,17 +23,27 @@ const emptyStats = { played: 0, wins: 0, streak: 0, best: 0, lastDay: 0 };
 
 export default function App() {
   const day = dayNumber();
-  const [mode, setMode] = useState('daily'); // 'daily' ou 'bonus'
+  const [mode, setMode] = useState('daily'); // 'daily' ou 'bonus' (partie libre)
   const [answer, setAnswer] = useState(wordOfTheDay());
   const [guesses, setGuesses] = useState([]);
   const [current, setCurrent] = useState('');
   const [stats, setStats] = useState(emptyStats);
-  const [bouteille, setBouteille] = useState(false); // indice ouvert (coûte un essai)
+  const [niveau, setNiveau] = useState(NIVEAU_DEFAUT); // mousse, matelot ou capitaine
+  const [indices, setIndices] = useState([]); // indices ouverts, dans l'ordre (ex. ['bouteille', 'filet'])
+  const [lettres, setLettres] = useState([]); // positions montrées par la longue-vue et la boussole
+  const [filet, setFilet] = useState([]); // fausses lettres enlevées du clavier
   const [pages, setPages] = useState([]); // jours dont la page du journal est débloquée
   const [journal, setJournal] = useState(false); // écran « Mon journal » ouvert
+  // Parties libres du jour : n = nombre commencées, joues = mots déjà sortis, fin = heure de la dernière partie finie.
+  const [libres, setLibres] = useState({ day, n: 0, joues: [], fin: 0 });
+  const [libre, setLibre] = useState(null); // mot + phrase de la partie libre en cours
+  const [now, setNow] = useState(Date.now());
 
   const page = mode === 'daily' ? pageDuJour(day) : null;
-  const maxTries = MAX_TRIES - (bouteille ? 1 : 0);
+  // Phrase de la bouteille : celle de la page du journal, ou celle du mot de la partie libre.
+  const phrase = page ? page.indice : libre?.indice;
+  const essaisIndices = coutIndices(niveau, indices.length);
+  const maxTries = MAX_TRIES - essaisIndices;
   const won = guesses.includes(answer);
   const over = won || guesses.length >= maxTries;
 
@@ -41,21 +55,36 @@ export default function App() {
       const saved = JSON.parse(raw);
       setStats(saved.stats || emptyStats);
       setPages(saved.pages || []);
+      if (saved.niveau) setNiveau(niveauValide(saved.niveau));
+      if (saved.libres?.day === day) setLibres(saved.libres);
       if (saved.day === day) {
         setGuesses(saved.guesses || []);
-        setBouteille(!!saved.bouteille);
+        // Anciennes parties : la bouteille coûtait 1 essai, comme au niveau Capitaine.
+        if (saved.bouteille && !saved.indices) {
+          setIndices(['bouteille']);
+          setNiveau(saved.niveau ? niveauValide(saved.niveau) : 'capitaine');
+        }
+        setIndices((v) => saved.indices || v);
+        setLettres(saved.lettres || []);
+        setFilet(saved.filet || []);
       }
     });
   }, []);
 
-  function save(nextGuesses, nextStats, { nextBouteille = bouteille, nextPages = pages } = {}) {
+  function save(nextGuesses, nextStats, {
+    nextIndices = indices, nextLettres = lettres, nextFilet = filet, nextPages = pages, nextNiveau = niveau,
+    nextLibres = libres,
+  } = {}) {
     // Les pages du journal se gardent aussi après une partie bonus.
     const daily = mode === 'daily';
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
       const old = raw ? JSON.parse(raw) : {};
       const data = daily
-        ? { day, guesses: nextGuesses, bouteille: nextBouteille, stats: nextStats, pages: nextPages }
-        : { ...old, pages: nextPages };
+        ? {
+          day, guesses: nextGuesses, indices: nextIndices, lettres: nextLettres, filet: nextFilet,
+          niveau: nextNiveau, stats: nextStats, pages: nextPages, libres: nextLibres,
+        }
+        : { ...old, pages: nextPages, niveau: nextNiveau, libres: nextLibres };
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     });
   }
@@ -67,11 +96,31 @@ export default function App() {
     return next;
   }
 
-  // Bouteille à la mer : un indice sur le mot, contre un essai.
-  function openBottle() {
-    if (bouteille || over || guesses.length >= MAX_TRIES - 1) return;
-    setBouteille(true);
-    save(guesses, stats, { nextBouteille: true });
+  // Les indices s'ouvrent tout de suite. Selon le niveau, ils sont gratuits ou coûtent 1 essai.
+  function openHint(id) {
+    if (over || indices.includes(id) || !peutOuvrir(niveau, indices, guesses.length)) return;
+    let nextLettres = lettres;
+    let nextFilet = filet;
+    if (id === 'longuevue' || id === 'boussole') {
+      const pos = prochaineLettre(answer, guesses, lettres);
+      if (pos === null) return;
+      nextLettres = [...lettres, pos];
+      setLettres(nextLettres);
+    }
+    if (id === 'filet') {
+      nextFilet = lettresFilet(answer, guesses);
+      setFilet(nextFilet);
+    }
+    const nextIndices = [...indices, id];
+    setIndices(nextIndices);
+    save(guesses, stats, { nextIndices, nextLettres, nextFilet });
+  }
+
+  // Le niveau se choisit avant de commencer la partie.
+  function chooseLevel(n) {
+    if (guesses.length || indices.length) return;
+    setNiveau(n);
+    save(guesses, stats, { nextNiveau: n });
   }
 
   // Page perdue (partie ratée ou jour manqué) : on la repêche avec une pub récompensée.
@@ -90,6 +139,12 @@ export default function App() {
     const finished = current === answer || next.length >= maxTries;
     let nextStats = stats;
     let nextPages = pages;
+    let nextLibres = libres;
+    if (finished && mode === 'bonus') {
+      nextLibres = { ...libres, fin: Date.now() };
+      setLibres(nextLibres);
+      setNow(Date.now());
+    }
     if (finished && mode === 'daily') {
       const win = current === answer;
       const streak = win ? (stats.lastDay === day - 1 ? stats.streak + 1 : 1) : 0;
@@ -100,7 +155,7 @@ export default function App() {
       setStats(nextStats);
       if (win && page) nextPages = unlock(day);
     }
-    save(next, nextStats, { nextPages });
+    save(next, nextStats, { nextPages, nextLibres });
   }
 
   function press(key) {
@@ -112,7 +167,9 @@ export default function App() {
 
   async function share() {
     const rows = guesses.map((g) => evaluate(g, answer));
-    const message = shareText(rows, won, day, { bouteille, page });
+    const emojis = indices.map((id) => indicesDispo(true).find((i) => i.id === id).emoji).join('');
+    const marques = ` ${emojis}${emojis ? ' ' : ''}${NIVEAUX[niveau].emoji}`;
+    const message = shareText(rows, won, day, { page, essaisIndices, marques });
     // Sur ordinateur, le navigateur ne sait souvent pas partager : on copie le texte à la place.
     if (Platform.OS === 'web' && !navigator.share) {
       await navigator.clipboard.writeText(message);
@@ -130,24 +187,46 @@ export default function App() {
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key === 'Enter' ? '↵' : e.key === 'Backspace' ? '⌫' : normalize(e.key);
-      if (key.length === 1) pressRef.current(key);
+      if (key.length !== 1) return;
+      // Après un clic sur un bouton (indice, niveau), Entrée doit valider le mot, pas recliquer le bouton.
+      if (key === '↵') { e.preventDefault(); e.stopPropagation(); document.activeElement?.blur?.(); }
+      pressRef.current(key);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 
-  // Partie bonus débloquée par une pub récompensée : c'est la source de revenus principale.
+  // Parties libres : 30 par jour, du facile au difficile, 1 minute de pause entre deux.
+  // Sur mobile, chacune est débloquée par une pub récompensée : c'est la source de revenus principale.
+  const attente = attenteLibre(libres.fin, now);
+  const libresFinies = libres.n >= LIBRES_MAX;
+  useEffect(() => {
+    if (!over || attente <= 0) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [over, attente > 0]);
+
   async function playBonus() {
+    if (libresFinies || attente > 0) return;
     const ok = await showRewardedAd();
     if (!ok) return;
+    const n = libres.n + 1;
+    const mot = motLibre(n, libres.joues);
+    const nextLibres = { day, n, joues: [...libres.joues, mot.mot], fin: libres.fin };
+    setLibres(nextLibres);
+    save(guesses, stats, { nextLibres });
     setMode('bonus');
-    setAnswer(randomWord());
+    setLibre(mot);
+    setAnswer(mot.mot);
     setGuesses([]);
     setCurrent('');
-    setBouteille(false);
+    setIndices([]);
+    setLettres([]);
+    setFilet([]);
   }
 
   const keys = keyboardStates(guesses, answer);
+  filet.forEach((l) => { if (!keys[l]) keys[l] = 'absent'; });
   const rows = Array.from({ length: maxTries }, (_, i) => guesses[i] ?? (i === guesses.length ? current : ''));
 
   if (journal) {
@@ -206,11 +285,26 @@ export default function App() {
       <Text style={styles.subtitle}>
         {mode === 'daily'
           ? (page ? `Journal du naufragé · page ${day}` : `Mot du jour #${day}`)
-          : 'Partie bonus'} · série {stats.streak}
+          : `Partie libre ${libres.n}/${LIBRES_MAX} · ${nomListe(libres.n)}`} · série {stats.streak}
       </Text>
       <Pressable style={styles.link} onPress={() => setJournal(true)}>
         <Text style={styles.linkText}>Mon journal ({pages.length}/{PAGES.length})</Text>
       </Pressable>
+      <View style={styles.levels}>
+        {Object.entries(NIVEAUX).map(([id, n]) => {
+          const choisi = id === niveau;
+          const bloque = !choisi && (guesses.length > 0 || indices.length > 0);
+          return (
+            <Pressable
+              key={id}
+              onPress={() => chooseLevel(id)}
+              style={[styles.chip, choisi && styles.chipOn, bloque && styles.chipOff]}
+            >
+              <Text style={[styles.chipText, choisi && styles.chipTextOn]}>{n.emoji} {n.nom}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={styles.grid}>
         {rows.map((word, r) => {
@@ -231,14 +325,42 @@ export default function App() {
         })}
       </View>
 
-      {page && !over && (
-        bouteille ? (
-          <Text style={styles.hint}>Bouteille à la mer : « {page.indice} »</Text>
-        ) : guesses.length < MAX_TRIES - 1 && (
-          <Pressable style={styles.link} onPress={openBottle}>
-            <Text style={styles.linkText}>Ouvrir la bouteille à la mer (indice, coûte 1 essai)</Text>
-          </Pressable>
-        )
+      {!over && (
+        <View style={styles.hints}>
+          <Text style={styles.hintsHead}>
+            Indices · {NIVEAUX[niveau].aide}
+          </Text>
+          <View style={styles.levels}>
+            {indicesDispo(!!phrase).map((i) => {
+              const ouvert = indices.includes(i.id);
+              const payant = coutIndices(niveau, indices.length + 1) > essaisIndices;
+              const possible = !ouvert && peutOuvrir(niveau, indices, guesses.length)
+                && (i.id === 'bouteille' || i.id === 'filet' || prochaineLettre(answer, guesses, lettres) !== null);
+              return (
+                <Pressable
+                  key={i.id}
+                  onPress={() => openHint(i.id)}
+                  style={[styles.chip, ouvert && styles.chipOn, !ouvert && !possible && styles.chipOff]}
+                >
+                  <Text style={[styles.chipText, ouvert && styles.chipTextOn]}>
+                    {i.emoji} {i.court}{ouvert ? ' ✓' : payant ? ' (−1 essai)' : ' (gratuit)'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {indices.includes('bouteille') && phrase && (
+            <Text style={styles.hint}>
+              🍾 « {phrase} »{niveau === 'mousse' && page?.facile ? `\n💡 Plus simple : ${page.facile}` : ''}
+            </Text>
+          )}
+          {lettres.length > 0 && (
+            <Text style={styles.hintLetters}>🔭 {motifLettres(answer, lettres)}</Text>
+          )}
+          {filet.length > 0 && (
+            <Text style={styles.hint}>🎣 Pas dans le mot : {filet.join(' ')}</Text>
+          )}
+        </View>
       )}
 
       {over ? (
@@ -264,8 +386,14 @@ export default function App() {
               <Text style={styles.buttonText}>Partager mon score</Text>
             </Pressable>
           )}
-          <Pressable style={styles.button} onPress={playBonus}>
-            <Text style={styles.buttonText}>Rejouer (partie bonus)</Text>
+          <Pressable style={[styles.button, (libresFinies || attente > 0) && styles.chipOff]} onPress={playBonus}>
+            <Text style={styles.buttonText}>
+              {libresFinies
+                ? `Plus de parties libres aujourd'hui (${LIBRES_MAX}/${LIBRES_MAX})`
+                : attente > 0
+                  ? `Prochaine partie dans ${attente} s`
+                  : `Partie libre ${libres.n + 1}/${LIBRES_MAX} · ${nomListe(libres.n + 1)}`}
+            </Text>
           </Pressable>
           <Text style={styles.stats}>
             {stats.played} parties · {stats.played ? Math.round((stats.wins / stats.played) * 100) : 0}% gagnées · record {stats.best}
@@ -306,7 +434,16 @@ const styles = StyleSheet.create({
   cell: { width: 54, height: 54, borderWidth: 2, borderColor: '#22404a', alignItems: 'center', justifyContent: 'center' },
   cellTyped: { borderColor: SAND },
   cellText: { color: '#fff', fontSize: 26, fontWeight: '700' },
-  hint: { color: SAND, marginTop: 10, paddingHorizontal: 20, textAlign: 'center', maxWidth: 420, fontStyle: 'italic' },
+  hints: { alignItems: 'center', marginTop: 8, paddingHorizontal: 8, maxWidth: 460 },
+  hintsHead: { color: '#9db1ae', fontSize: 12, marginBottom: 4, textAlign: 'center' },
+  hintLetters: { color: SAND, marginTop: 6, fontSize: 18, fontWeight: '800', letterSpacing: 4 },
+  levels: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 6 },
+  chip: { borderWidth: 1, borderColor: '#22404a', borderRadius: 14, paddingVertical: 4, paddingHorizontal: 10 },
+  chipOn: { backgroundColor: SAND, borderColor: SAND },
+  chipOff: { opacity: 0.4 },
+  chipText: { color: '#cfdad8', fontSize: 13, fontWeight: '600' },
+  chipTextOn: { color: '#0d1b21' },
+  hint: { color: SAND, marginTop: 6, paddingHorizontal: 20, textAlign: 'center', maxWidth: 420, fontStyle: 'italic' },
   keyboard: { marginTop: 'auto', marginBottom: 24, gap: 8 },
   key: { backgroundColor: '#4a6a70', borderRadius: 4, minWidth: 32, height: 52, alignItems: 'center', justifyContent: 'center' },
   keyWide: { minWidth: 48 },

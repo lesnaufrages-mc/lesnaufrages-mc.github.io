@@ -8,6 +8,28 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-10-30",
+    categorie: "site",
+    epingle: true,
+    titre: "CLUTCH : les parties libres sont là !",
+    texte: "Après la question du jour, enchaîne jusqu'à 30 parties par jour. 5 minutes chrono par partie, jusqu'à 1000 points, et des questions qui s'adaptent à ton niveau : Débutant, Confirmé, Expert. Regarde le trailer, puis bats ton record.",
+    video: "videos/clutch-libre-trailer.mp4",
+    image: "videos/clutch-libre-trailer.jpg",
+    lien: "esport/",
+    bouton: "Jouer à CLUTCH"
+  },
+  {
+    date: "2026-10-30",
+    categorie: "appli",
+    epingle: true,
+    titre: "Mot Mystère : des indices plus simples et 3 niveaux",
+    texte: "Choisis ton niveau (Mousse, Matelot ou Capitaine) et ouvre tes indices : une phrase, une lettre, une 2e lettre, ou 6 lettres en moins sur le clavier. Chaque mot trouvé débloque une page du Journal du naufragé. Et en plus, 30 parties libres par jour.",
+    video: "videos/mot-mystere-indices-trailer.mp4",
+    image: "videos/mot-mystere-indices-trailer.jpg",
+    lien: "jouer/",
+    bouton: "Jouer à Mot Mystère"
+  },
+  {
     date: "2026-10-28",
     categorie: "site",
     epingle: true,

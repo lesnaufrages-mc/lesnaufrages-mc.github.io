@@ -175,3 +175,16 @@ a.staff-card.libre:hover{opacity:1}
 .staff-card .roles .role{margin:0;font-size:11px}
 .staff-site{margin:10px 0 28px}
 .staff-card span.av-xl{font-size:38px;font-weight:800;color:#2a1d0c;line-height:1}
+/* Amis */
+.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--red);color:#fff;font-size:12px;font-weight:800;line-height:1}
+.ami-cherche{display:grid;grid-template-columns:1fr auto;gap:0 10px;align-items:end}
+.ami-cherche label{margin-top:0}
+.ami-cherche .err{grid-column:1/-1}
+.ami-h{font-size:16px;margin:18px 0 8px;color:var(--sand)}
+.ami-l{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.ami-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ami-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+.ami-zone{margin-top:14px}
+.ami-zone .ami-acts{justify-content:center}
+.ami-ok{color:var(--green);font-weight:800}
+.reset-sel{margin-top:6px;padding:6px 8px;font-size:13px;min-width:150px}

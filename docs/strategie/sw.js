@@ -1,12 +1,12 @@
 // Imperium of Wars : le jeu marche hors ligne une fois installé.
 // Change VERSION à chaque mise à jour du jeu pour que les joueurs reçoivent la nouvelle version.
-var VERSION = 'imperium-v14';
+var VERSION = 'imperium-v15';
 // La liste des vrais tableaux (portraits), pour les garder aussi hors ligne.
 try { importScripts('tableaux.js?v=14'); } catch (e) {}
 var FICHIERS = [
   './', 'index.html', 'monde.js?v=14', 'histoire.js?v=14', 'personnages.js?v=14', 'moteur.js?v=14', 'tableaux.js?v=14', 'portraits.js?v=14', 'bataille3d.js?v=14', 'couronne-donnees.js?v=14', 'couronne.js?v=14', 'jeu.js?v=14', 'couronne-ui.js?v=14',
   'polices.css?v=14', 'polices/cinzel-latin.woff2', 'polices/cinzel-latin-ext.woff2', 'polices/cormorant-garamond-latin-600-normal.woff2',
-  'manifest.webmanifest', 'icone-192.png', 'icone-512.png', '../supabase-config.js', '../site.js',
+  'manifest.webmanifest', 'icone-192.png', 'icone-512.png', '../supabase-config.js', '../sauvegarde.js', '../site.js',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
 ].concat(Object.keys(self.TABLEAUX || {}).map(function (k) { return 'tableaux/' + self.TABLEAUX[k][0]; }));
 

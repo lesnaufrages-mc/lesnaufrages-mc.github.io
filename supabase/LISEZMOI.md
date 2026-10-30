@@ -63,6 +63,21 @@ Lance **une fois** [`securite.sql`](securite.sql) (SQL Editor → New query → 
 Ça renforce l'anti-spam, protège les photos et bios, verrouille les liens des actus.
 Le reste des réglages de sécurité (2FA, e-mails, mots de passe) est expliqué dans [`SECURITE.md`](../SECURITE.md).
 
+## Mise à jour : amis et parties sauvegardées (à faire une fois)
+
+Lance **une fois** [`amis-parties.sql`](amis-parties.sql) (SQL Editor → New query → colle tout → Run). Ça ajoute :
+
+- **Les amis** : menu du compte → **👥 Mes amis** (chercher un pseudo, accepter ou refuser), ou bouton
+  **➕ Ajouter en ami** sur le profil d'un membre. Un petit chiffre rouge montre les demandes reçues.
+  La liste d'amis est privée (seules les deux personnes la voient). 20 demandes par heure maximum.
+- **La sauvegarde en ligne des parties** (Mot Mystère, CLUTCH, Imperium of Wars) pour les joueurs connectés :
+  leur progression les suit d'un appareil à l'autre (`docs/sauvegarde.js`). Sans compte, rien ne change.
+- **La remise à zéro** : espace admin → **👥 Membres** → colonne **🎮 Parties** → « Remettre à zéro… » (un jeu ou tous).
+  La partie du joueur repart de zéro sur tous ses appareils dès qu'il rouvre le jeu. Comme pour les grades,
+  on ne peut le faire que pour un grade inférieur au sien (ou pour soi-même).
+
+Tant que le script n'est pas lancé, le site marche comme avant (les boutons affichent juste une erreur).
+
 ## Édition Couronne (version payante d'Imperium)
 
 Tout est expliqué pas à pas dans [`COURONNE.md`](COURONNE.md) : table `premium`, compte Lemon Squeezy,

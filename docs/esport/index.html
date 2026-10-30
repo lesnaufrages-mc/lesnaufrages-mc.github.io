@@ -5,11 +5,11 @@
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>CLUTCH – The daily esport word</title>
-<meta name="description" content="CLUTCH : chaque jour, une question sur l'esport pro (LoL, CS2, Valorant, Dota 2, Fortnite, scène française et mondiale). Trouve la réponse en 6 essais.">
+<meta name="description" content="CLUTCH : chaque jour, 10 questions sur l'esport pro (LoL, CS2, Valorant, Dota 2, Fortnite, scène française et mondiale). Trouve chaque réponse en 6 essais et 2 minutes.">
 <meta name="theme-color" content="#07070f">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <meta property="og:title" content="CLUTCH – The daily esport word">
-<meta property="og:description" content="Une question esport par jour. Tu la clutch en combien d'essais ?">
+<meta property="og:description" content="10 questions esport par jour. Tu les clutch en combien d'essais ?">
 <meta property="og:image" content="https://lesnaufrages-mc.github.io/videos/clutch-trailer.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="../fonts/orbitron-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -80,6 +80,9 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 .fin-pts{text-align:center;font-family:Orbitron,sans-serif;font-weight:900;font-size:26px;color:var(--mid);margin:0 0 4px;text-shadow:0 0 14px rgba(255,176,32,.45)}
 .fin-niveau{text-align:center;color:var(--cyan);font-weight:700;letter-spacing:1px;margin:0 0 10px}
 .fin-niveau:empty{display:none}
+.bilan{text-align:center;background:#16163a;padding:10px;margin:0 0 14px;--cut:8px}
+.bilan b{display:block;font-family:Orbitron,sans-serif;font-size:16px;color:var(--cyan);margin-bottom:4px}
+.bilan span{font-size:20px;letter-spacing:2px}
 
 /* Grille */
 .board{--n:5;display:grid;gap:6px;width:min(100%,calc(var(--n) * 58px));margin:0 auto 12px}
@@ -162,21 +165,20 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 
 <main>
   <div class="regles hide cut" id="regles">
-    <b>Une question esport par jour</b>, la même pour tout le monde. La réponse est le mot à trouver (4 à 8 lettres : joueur, équipe, tournoi, jeu, lieu ou mot du milieu).
+    <b>10 questions esport par jour</b>, les mêmes pour tout le monde, de la plus facile à la plus difficile. La réponse est le mot à trouver (4 à 8 lettres : joueur, équipe, tournoi, jeu, lieu ou mot du milieu).
     Tape un essai de la bonne longueur : <b style="color:var(--ok)">vert</b> = bonne lettre bien placée, <b style="color:var(--mid)">jaune</b> = lettre ailleurs dans le mot, gris = absente.
-    6 essais. Bloqué ? L'indice révèle la première lettre mais te coûte un essai.<br><br>
-    <b>Parties libres</b> : enchaîne d'autres questions, jusqu'à 30 parties par jour (question du jour comprise). Tu as <b>5 minutes</b> par partie et la suivante se lance toute seule.
-    Chaque partie rapporte <b>de 0 à 1000 points</b> : 1000 au premier essai, 100 de moins par essai en plus ou avec l'indice, et en partie libre, moins de points si tu es lent.
-    Les questions s'adaptent à ton <b>niveau</b> (Débutant, Confirmé, Expert) : une belle victoire fait monter, une défaite fait descendre.
+    6 essais et <b>2 minutes</b> par question. Bloqué ? L'indice révèle la première lettre mais te coûte un essai.<br><br>
+    Chaque question rapporte <b>de 0 à 1000 points</b> : 1000 au premier essai, 100 de moins par essai en plus ou avec l'indice, et moins de points si tu es lent.<br><br>
+    <b>Parties libres</b> : une fois les 10 rounds finis, enchaîne d'autres questions, jusqu'à 30 parties par jour en tout. Elles s'adaptent à ton <b>niveau</b> (Débutant, Confirmé, Expert) : une belle victoire fait monter, une défaite fait descendre.
   </div>
 
   <div class="modes">
-    <button class="cut" id="m-jour" type="button">📅 Question du jour<small>la même pour tous</small></button>
+    <button class="cut" id="m-jour" type="button">📅 Questions du jour<small id="m-tours"></small></button>
     <button class="cut" id="m-libre" type="button">🔁 Parties libres<small id="m-reste"></small></button>
   </div>
 
   <section class="brief cut">
-    <div class="hud"><span class="tag c cut" id="cat"></span><span class="tag cut" id="scene"></span><span class="tag cut" id="longueur"></span><span class="tag cut hide" id="niveau"></span><span class="tag p cut" id="pts"></span><span class="round" id="num"></span></div>
+    <div class="hud"><span class="tag c cut" id="cat"></span><span class="tag cut" id="scene"></span><span class="tag cut" id="longueur"></span><span class="tag cut" id="niveau"></span><span class="tag p cut" id="pts"></span><span class="round" id="num"></span></div>
     <p class="question" id="question"></p>
     <div class="live"><i></i><span id="live-txt">Question du jour</span> <span class="chrono hide" id="chrono"></span></div>
   </section>
@@ -195,6 +197,7 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
     <p class="fin-pts" id="fin-pts"></p>
     <p class="fin-niveau" id="fin-niveau"></p>
     <div class="info"><b>LE SAVAIS-TU ?</b><span id="fin-info"></span></div>
+    <div class="bilan" id="bilan"><b id="bilan-txt"></b><span id="bilan-carres"></span></div>
     <div class="stats hide" id="fin-libre">
       <div class="cut"><b id="li-pts"></b><span>Pts du jour</span></div>
       <div class="cut"><b id="li-record"></b><span>Record</span></div>
@@ -204,16 +207,16 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
     <p class="sous hide" id="limite">Tu as joué tes 30 parties du jour, reviens demain ! Niveau actuel : <b id="li-niveau"></b></p>
     <button class="btn btn-main full" id="encore" type="button"></button>
     <div style="height:10px"></div>
-    <button class="btn btn-hint full hide" id="retour-jour" type="button">📅 Retour à la question du jour</button>
+    <button class="btn btn-hint full hide" id="retour-jour" type="button">📅 Retour aux questions du jour</button>
     <div id="fin-jour">
     <div class="stats">
-      <div class="cut"><b id="st-joues"></b><span>Parties</span></div>
+      <div class="cut"><b id="st-joues"></b><span>Rounds</span></div>
       <div class="cut"><b id="st-pct"></b><span>% wins</span></div>
       <div class="cut"><b id="st-serie"></b><span>Série</span></div>
       <div class="cut"><b id="st-max"></b><span>Record</span></div>
     </div>
     <div class="dist" id="dist"></div>
-    <div class="next"><span class="muted">Prochain round dans</span><b id="prochain"></b></div>
+    <div class="next"><span class="muted">10 nouvelles questions dans</span><b id="prochain"></b></div>
     <button class="btn btn-main full" id="partager">📤 Partager mon score</button>
     <div style="height:10px"></div>
     </div>
@@ -235,7 +238,7 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 
 <p class="foot">CLUTCH par <a href="../">Les Naufragés</a> · <a href="../conditions.html">Conditions</a> · <a href="../confidentialite.html#jeux">Confidentialité</a> · <a href="../cookies.html">Cookies</a></p>
 
-<script type="module" src="esport.js?v=2"></script>
+<script type="module" src="esport.js?v=3"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

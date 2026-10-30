@@ -2,7 +2,7 @@
 // La 1re question de chaque jour reste celle de questions.js ; celles-ci servent pour les 9 rounds suivants
 // (même tirage pour tout le monde, voir esport.js) et pour les parties libres.
 // Même format que questions.js : m = mot (A-Z, 4 à 8 lettres), c = catégorie, s = scène,
-// q = question, i = anecdote, + n = niveau (1 = débutant, 2 = confirmé, 3 = expert). Pour en ajouter : les mettre à la fin.
+// q = question, i = anecdote, + n = niveau (1 = débutant, 2 = connaisseur, 3 = expert). Pour en ajouter : les mettre à la fin.
 // Les questions du jour déjà passées sont aussi ajoutées au tirage (voir esport.js).
 export const LIBRES = [
   { m: 'CLUTCH', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
@@ -21,7 +21,7 @@ export const LIBRES = [
     q: "Sur Counter-Strike, quel sniper français a gagné le Major de 2015 avec l'équipe EnVyUs ?",
     i: "Kenny Schrub était célèbre pour ses tirs à l'AWP sans viser (« no-scope »)." },
   { m: 'GAMBIT', n: 3, c: 'Équipe', s: '🇷🇺 CEI',
-    q: "Sur Counter-Strike, quelle équipe de l'Est a gagné le Major de Cracovie en 2017, à la surprise générale ?",
+    q: "Sur Counter-Strike, quelle équipe a gagné le Major de Cracovie en 2017, alors que personne ne l'attendait ?",
     i: "Personne ne les donnait favoris : ils ont battu Immortals en finale." },
   { m: 'COLDZERA', n: 3, c: 'Joueur', s: '🇧🇷 Brésil',
     q: "Sur Counter-Strike, quel joueur brésilien a été élu meilleur joueur du monde en 2016 et 2017 ?",
@@ -30,7 +30,7 @@ export const LIBRES = [
     q: "Sur Counter-Strike, quel joueur bosnien a enfin gagné son premier Major en 2024 ?",
     i: "Nikola Kovač était souvent appelé « le meilleur joueur sans Major » avant ce titre." },
   { m: 'MOUZ', n: 2, c: 'Équipe', s: '🇩🇪 Allemagne',
-    q: "Quel club allemand s'appelait avant « mousesports » ?",
+    q: "Quel est le nom actuel, en 4 lettres, du club allemand autrefois appelé « mousesports » ?",
     i: "C'est l'une des plus anciennes structures d'esport encore en activité, créée en 2002." },
   { m: 'HEADSHOT', n: 1, c: 'Lexique', s: '🌍 FPS',
     q: "Dans un jeu de tir, comment appelle-t-on un tir dans la tête ?",
@@ -117,13 +117,13 @@ export const LIBRES = [
     q: "Comment appelle-t-on le temps de réponse entre ton ordinateur et le serveur du jeu ?",
     i: "C'est pour avoir un ping égal que les grands tournois se jouent en LAN, sur place." },
   { m: 'NERF', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
-    q: "Quel mot veut dire qu'un personnage ou une arme a été rendu moins fort par une mise à jour ?",
+    q: "Quel mot veut dire qu'un personnage ou une arme a été affaibli par une mise à jour ?",
     i: "Le contraire est un « buff », quand quelque chose devient plus fort." },
   { m: 'SPAWN', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
     q: "Comment appelle-t-on l'endroit où un joueur apparaît au début d'une manche ?",
     i: "« Spawn kill » : tuer un adversaire juste au moment où il apparaît." },
   { m: 'CAMPER', n: 1, c: 'Lexique', s: '🌍 FPS',
-    q: "Quel verbe veut dire rester caché au même endroit pour attendre l'adversaire ?",
+    q: "Quel verbe veut dire « rester caché au même endroit pour attendre l'adversaire » ?",
     i: "Les joueurs pros préfèrent dire « tenir un angle »." },
   // ---- Ajoutées le 2026-10-30 pour les 10 rounds du jour ----
   { m: 'KILL', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
@@ -142,13 +142,13 @@ export const LIBRES = [
     q: "Comment s'appelle le salon d'attente avant le début d'une partie ?",
     i: "Dans les tournois en ligne, les arbitres créent souvent un lobby privé avec mot de passe." },
   { m: 'SOLO', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
-    q: "Comment dit-on quand on joue tout seul, sans coéquipier ?",
+    q: "Comment dit-on quand on joue tout seul, sans coéquipier (par exemple en « … queue ») ?",
     i: "Le classement en solo queue est souvent l'endroit où les clubs repèrent les futurs pros." },
   { m: 'MANETTE', n: 1, c: 'Matériel', s: '🌍 Tous jeux',
     q: "Avec quoi joue-t-on sur console, en la tenant à deux mains ?",
     i: "En Rocket League, la plupart des pros jouent à la manette, même sur PC." },
   { m: 'CLAVIER', n: 1, c: 'Matériel', s: '🌍 PC',
-    q: "Avec la souris, avec quoi joue-t-on sur PC ?",
+    q: "Sur PC, avec quoi joue-t-on en plus de la souris ?",
     i: "Beaucoup de pros jouent avec un clavier sans pavé numérique pour avoir plus de place pour la souris." },
   { m: 'STREAMER', n: 1, c: 'Lexique', s: '🌍 Tous jeux',
     q: "Comment appelle-t-on une personne qui joue en direct sur Twitch ou YouTube ?",
@@ -317,7 +317,7 @@ export const LIBRES = [
     q: "Complète le nom de l'équipe de League of Legends créée par le streameur Caedrel : « Los … ».",
     i: "« Ratones » veut dire « souris » en espagnol." },
   { m: 'TARIK', n: 2, c: 'Streameur', s: '🇺🇸 États-Unis',
-    q: "Quel streameur américain, ancien pro de Counter-Strike, était le plus regardé pendant les matchs de Valorant ?",
+    q: "Quel streameur américain, ancien pro de Counter-Strike, est célèbre pour commenter en direct les matchs de Valorant sur sa chaîne ?",
     i: "Ses co-streams de Valorant ont parfois eu plus de spectateurs que la chaîne officielle." },
   { m: 'CHIPS', n: 2, c: 'Casteur', s: '🇫🇷 France',
     q: "Avec Noi, quel commentateur français forme le célèbre duo de League of Legends de la chaîne OTP ?",
@@ -345,6 +345,6 @@ export const LIBRES = [
     q: "Quelle marque espagnole a donné son nom à l'équipe de League of Legends « … KOI » ?",
     i: "L'équipe est née de la fusion de KOI, Movistar Riders et MAD Lions." },
   { m: 'GIANTX', n: 2, c: 'Équipe', s: '🇪🇸 Espagne',
-    q: "Quelle équipe espagnole de la LEC, la ligue européenne de League of Legends, s'écrit « GIANT… » ?",
+    q: "Quelle équipe espagnole de League of Legends, qui joue dans la ligue européenne (LEC), a un nom qui commence par « GIANT » ?",
     i: "Elle a fini deux fois dans le top 5 de la LEC en 2025." },
 ];

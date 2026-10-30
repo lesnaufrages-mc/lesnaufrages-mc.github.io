@@ -8,6 +8,28 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-10-30",
+    categorie: "site",
+    epingle: true,
+    titre: "CLUTCH passe à 10 questions par jour !",
+    texte: "Chaque jour, 10 rounds pour tout le monde : 1 question du jour puis 9 questions du facile au difficile, avec 2 minutes chrono et jusqu'à 1000 points par round. Nouveaux jeux : R6, Overwatch, Call of Duty, Apex, Brawl Stars… Partage ton score (8/10 ?) et enchaîne ensuite les parties libres.",
+    video: "videos/clutch-10-rounds-trailer.mp4",
+    image: "videos/clutch-10-rounds-trailer.jpg",
+    lien: "esport/",
+    bouton: "Jouer à CLUTCH"
+  },
+  {
+    date: "2026-10-30",
+    categorie: "appli",
+    epingle: true,
+    titre: "Mot Mystère : des indices plus simples et 3 niveaux",
+    texte: "Choisis ton niveau (Mousse, Matelot ou Capitaine) et ouvre tes indices : une phrase, une lettre, une 2e lettre, ou 6 lettres en moins sur le clavier. Chaque mot trouvé débloque une page du Journal du naufragé. Et en plus, 30 parties libres par jour.",
+    video: "videos/mot-mystere-indices-trailer.mp4",
+    image: "videos/mot-mystere-indices-trailer.jpg",
+    lien: "jouer/",
+    bouton: "Jouer à Mot Mystère"
+  },
+  {
     date: "2026-10-28",
     categorie: "site",
     epingle: true,

@@ -1,11 +1,17 @@
 // CLUTCH, le mot du jour esport : une question esport par jour, la réponse est le mot à trouver.
 // Même règles que le Mot Mystère classique (vert = bonne place, jaune = ailleurs dans le mot),
 // mais le mot fait de 4 à 8 lettres et peut être un nom propre : tout essai de la bonne longueur est accepté.
+// En plus, les « parties libres » permettent d'enchaîner d'autres questions (30 parties par jour en tout),
+// avec 5 minutes maximum par partie. Chaque partie rapporte de 0 à 1000 points.
 import { QUESTIONS, DEBUT } from './questions.js';
+import { LIBRES } from './questions-libres.js';
 
 const TRIES = 6;
 const KEY = 'mm-esport:v1';
 const URL_JEU = 'https://lesnaufrages-mc.github.io/esport/';
+const MAX_LIBRES = 29; // + la question du jour = 30 parties par jour
+const CHRONO = 5 * 60000; // 5 minutes maximum par partie libre
+const AUTO = 4; // secondes avant le lancement automatique de la partie libre suivante
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
@@ -33,8 +39,19 @@ function numeroDuJour() {
   return Math.max(0, jours) + 1;
 }
 const NUM = numeroDuJour();
-const Q = QUESTIONS[(NUM - 1) % QUESTIONS.length];
-const ANSWER = Q.m, LEN = ANSWER.length;
+const IDX_JOUR = (NUM - 1) % QUESTIONS.length;
+
+// Tirage des parties libres : les questions réservées (LIBRES) + les questions du jour déjà passées.
+// Chaque question a un niveau (1 débutant, 2 confirmé, 3 expert). Pour les questions du jour,
+// il est deviné d'après la catégorie : le lexique est facile, les noms de joueurs et de médias plus durs.
+const NIVEAUX = ['', 'Débutant', 'Confirmé', 'Expert'];
+function questionLibre(id) { return id[0] === 'x' ? LIBRES[+id.slice(1)] : QUESTIONS[+id.slice(1)]; }
+function niveauDe(q) { return q.n || (q.c === 'Lexique' ? 1 : /Joueur|Personnalité|Média/.test(q.c) ? 3 : 2); }
+function poolLibre() {
+  const ids = LIBRES.map((_, i) => 'x' + i);
+  for (let k = 0; k < Math.min(NUM - 1, QUESTIONS.length); k++) if (k !== IDX_JOUR) ids.push('d' + k);
+  return ids;
+}
 
 // ---------- Sauvegarde (sur l'appareil) ----------
 function charger() {
@@ -42,15 +59,57 @@ function charger() {
   return { stats: { joues: 0, gagnes: 0, serie: 0, meilleure: 0, dist: [0, 0, 0, 0, 0, 0], dernier: null } };
 }
 const S = charger();
-if (S.jour !== dateLocale()) Object.assign(S, { jour: dateLocale(), essais: [], indice: false, fini: false, gagne: false });
+if (!S.libre) S.libre = { n: 0, vus: [], joues: 0, gagnes: 0, partie: null, pts: 0, record: 0, niveau: 1 };
+if (S.jour !== dateLocale()) {
+  Object.assign(S, { jour: dateLocale(), essais: [], indice: false, fini: false, gagne: false, mode: 'jour' });
+  Object.assign(S.libre, { n: 0, partie: null, pts: 0 });
+}
 function sauver() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
 
-const maxEssais = () => TRIES - (S.indice ? 1 : 0);
-let current = '';
+// G = la partie affichée : la question du jour (S) ou la partie libre en cours (S.libre.partie).
+let MODE = 'jour', G = S, Q, ANSWER, LEN;
+function charger_partie(mode) {
+  MODE = mode;
+  G = mode === 'libre' ? S.libre.partie : S;
+  Q = mode === 'libre' ? questionLibre(G.id) : QUESTIONS[IDX_JOUR];
+  ANSWER = Q.m; LEN = ANSWER.length;
+  current = ''; anim = -1;
+  S.mode = mode;
+}
+const resteLibres = () => Math.max(0, MAX_LIBRES - S.libre.n);
+const resteChrono = () => Math.max(0, Math.ceil((G.debut + CHRONO - Date.now()) / 1000)); // en secondes
+const mmss = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+function nouvellePartieLibre() {
+  const L = S.libre;
+  if (L.n >= MAX_LIBRES) return false;
+  const pool = poolLibre();
+  let dispo = pool.filter((id) => !L.vus.includes(id));
+  if (!dispo.length) { L.vus = []; dispo = pool; }
+  // On prend une question du niveau du joueur, sinon du niveau le plus proche.
+  const ecart = (id) => Math.abs(niveauDe(questionLibre(id)) - L.niveau);
+  const mini = Math.min(...dispo.map(ecart));
+  dispo = dispo.filter((id) => ecart(id) === mini);
+  const id = dispo[Math.floor(Math.random() * dispo.length)];
+  L.vus.push(id); L.n++;
+  L.partie = { id, essais: [], indice: false, fini: false, gagne: false, debut: Date.now() };
+  return true;
+}
+
+const maxEssais = () => TRIES - (G.indice ? 1 : 0);
+let current = '', anim = -1; // anim = ligne qui vient d'être validée (la seule à animer)
 
 // ---------- Affichage ----------
 function renderQuestion() {
-  $('num').textContent = 'ROUND #' + NUM;
+  const libre = MODE === 'libre';
+  $('num').textContent = libre ? 'LIBRE ' + S.libre.n + '/' + MAX_LIBRES : 'ROUND #' + NUM;
+  $('live-txt').textContent = libre ? 'Partie libre' : 'Question du jour';
+  $('m-jour').classList.toggle('on', !libre);
+  $('m-libre').classList.toggle('on', libre);
+  $('m-reste').textContent = resteLibres() + ' restantes';
+  $('chrono').classList.toggle('hide', !libre);
+  $('niveau').classList.toggle('hide', !libre);
+  $('niveau').textContent = libre ? '★'.repeat(niveauDe(Q)) + ' ' + NIVEAUX[niveauDe(Q)] : '';
+  $('pts').textContent = '🏆 ' + S.libre.pts + ' pts';
   $('cat').textContent = Q.c;
   $('scene').textContent = Q.s;
   $('question').textContent = Q.q;
@@ -62,27 +121,27 @@ function renderBoard() {
   board.style.setProperty('--n', LEN);
   for (let r = 0; r < TRIES; r++) {
     const row = el('div', 'r');
-    if (S.indice && r === TRIES - 1) row.classList.add('lost');
-    const g = S.essais[r], cur = r === S.essais.length && !S.fini;
+    if (G.indice && r === TRIES - 1) row.classList.add('lost');
+    const g = G.essais[r], cur = r === G.essais.length && !G.fini;
     const res = g ? evaluate(g, ANSWER) : null;
     for (let i = 0; i < LEN; i++) {
       const t = el('div', 't');
-      if (g) { t.textContent = g[i]; t.classList.add(res[i]); t.style.animationDelay = (i * 0.08) + 's'; }
+      if (g) { t.textContent = g[i]; t.classList.add(res[i]); if (r === anim) { t.classList.add('flip'); t.style.animationDelay = (i * 0.08) + 's'; } }
       else if (cur && current[i]) { t.textContent = current[i]; t.classList.add('full'); }
-      else if (cur && S.indice && i === 0) { t.textContent = ANSWER[0]; t.classList.add('ghost'); }
+      else if (cur && G.indice && i === 0) { t.textContent = ANSWER[0]; t.classList.add('ghost'); }
       row.appendChild(t);
     }
     board.appendChild(row);
   }
-  $('indice').disabled = S.indice || S.fini || S.essais.length >= maxEssais() - 1;
-  $('indice').textContent = S.indice ? '💡 Première lettre : ' + ANSWER[0] : '💡 Indice : 1re lettre (-1 essai)';
+  $('indice').disabled = G.indice || G.fini || G.essais.length >= maxEssais() - 1;
+  $('indice').textContent = G.indice ? '💡 Première lettre : ' + ANSWER[0] : '💡 Indice : 1re lettre (-1 essai)';
   renderKeyboard();
 }
 
 const KB = ['AZERTYUIOP', 'QSDFGHJKLM', '>WXCVBN<'];
 function renderKeyboard() {
   const best = {}, rank = { correct: 3, present: 2, absent: 1 };
-  S.essais.forEach((g) => evaluate(g, ANSWER).forEach((r, i) => { if ((rank[r] || 0) > (rank[best[g[i]]] || 0)) best[g[i]] = r; }));
+  G.essais.forEach((g) => evaluate(g, ANSWER).forEach((r, i) => { if ((rank[r] || 0) > (rank[best[g[i]]] || 0)) best[g[i]] = r; }));
   const kb = $('kb'); kb.textContent = '';
   KB.forEach((line) => {
     const row = el('div');
@@ -97,11 +156,11 @@ function renderKeyboard() {
 }
 
 function toast(msg) { const t = el('div', 'toast', msg); document.body.appendChild(t); setTimeout(() => t.remove(), 1800); }
-function secouer() { const r = $('board').children[S.essais.length]; if (r) { r.classList.remove('shake'); void r.offsetWidth; r.classList.add('shake'); } }
+function secouer() { const r = $('board').children[G.essais.length]; if (r) { r.classList.remove('shake'); void r.offsetWidth; r.classList.add('shake'); } }
 
 // ---------- Jouer ----------
 function key(k) {
-  if (S.fini) return;
+  if (G.fini) return;
   if (k === 'Enter') return valider();
   if (k === 'Backspace') { current = current.slice(0, -1); return renderBoard(); }
   const l = normalize(k);
@@ -110,19 +169,40 @@ function key(k) {
 
 function valider() {
   if (current.length !== LEN) { toast('Le mot fait ' + LEN + ' lettres'); secouer(); return; }
-  S.essais.push(current); current = '';
-  if (S.essais[S.essais.length - 1] === ANSWER) finir(true);
-  else if (S.essais.length >= maxEssais()) finir(false);
+  G.essais.push(current); current = ''; anim = G.essais.length - 1;
+  if (G.essais[G.essais.length - 1] === ANSWER) finir(true);
+  else if (G.essais.length >= maxEssais()) finir(false);
   sauver(); renderBoard();
-  if (S.fini) setTimeout(renderFin, LEN * 80 + 450);
+  if (G.fini) setTimeout(renderFin, LEN * 80 + 450);
 }
 
-function finir(gagne) {
-  S.fini = true; S.gagne = gagne;
+// Points de 0 à 1000 : 1000 au 1er essai, -100 par essai en plus, -100 avec l'indice.
+// En partie libre, le temps compte aussi : plus tu es lent, moins tu gagnes (jusqu'à la moitié en moins).
+function calculPoints() {
+  if (!G.gagne) return 0;
+  let p = 1000 - 100 * (G.essais.length - 1) - (G.indice ? 100 : 0);
+  if (MODE === 'libre') p *= 1 - 0.5 * Math.min(1, (Date.now() - G.debut) / CHRONO);
+  return Math.max(0, Math.min(1000, Math.round(p)));
+}
+
+function finir(gagne, tempsEcoule) {
+  G.fini = true; G.gagne = gagne; G.temps = !!tempsEcoule;
+  G.points = calculPoints();
+  const L = S.libre;
+  L.pts += G.points; L.record = Math.max(L.record || 0, L.pts);
+  if (MODE === 'libre') {
+    L.joues++; if (gagne) L.gagnes++;
+    // Le niveau s'adapte : une belle victoire (600 pts ou plus) fait monter, une défaite fait descendre.
+    const avant = L.niveau;
+    if (gagne && G.points >= 600) L.niveau = Math.min(3, L.niveau + 1);
+    else if (!gagne) L.niveau = Math.max(1, L.niveau - 1);
+    G.niveau = L.niveau !== avant ? (L.niveau > avant ? '⬆ ' : '⬇ ') + 'Niveau ' + NIVEAUX[L.niveau] : '';
+    return;
+  }
   const st = S.stats;
   st.joues++;
   if (gagne) {
-    st.gagnes++; st.dist[S.essais.length - 1]++;
+    st.gagnes++; st.dist[G.essais.length - 1]++;
     const hier = dateLocale(new Date(Date.now() - 86400000));
     st.serie = st.dernier === hier ? st.serie + 1 : 1;
     st.meilleure = Math.max(st.meilleure, st.serie);
@@ -131,8 +211,8 @@ function finir(gagne) {
 }
 
 $('indice').onclick = () => {
-  if (S.indice || S.fini) return;
-  S.indice = true; sauver(); renderBoard();
+  if (G.indice || G.fini) return;
+  G.indice = true; anim = -1; sauver(); renderBoard();
   toast('Indice pris : ' + maxEssais() + ' essais restants au total');
 };
 
@@ -144,20 +224,40 @@ document.addEventListener('keydown', (e) => {
 // ---------- Fin de partie ----------
 function texteRes() {
   const e = { correct: '🟩', present: '🟨', absent: '⬛' };
-  const score = S.gagne ? S.essais.length : 'X';
-  return 'CLUTCH #' + NUM + ' ' + score + '/' + maxEssais() + (S.indice ? ' 💡' : '') + '\n' +
-    S.essais.map((g) => evaluate(g, ANSWER).map((r) => e[r]).join('')).join('\n') + '\n' + URL_JEU;
+  const score = G.gagne ? G.essais.length : 'X';
+  return 'CLUTCH #' + NUM + ' ' + score + '/' + maxEssais() + (G.indice ? ' 💡' : '') + '\n' +
+    G.essais.map((g) => evaluate(g, ANSWER).map((r) => e[r]).join('')).join('\n') + '\n' + URL_JEU;
 }
 
 function renderFin() {
   $('v-fin').classList.remove('hide');
   $('voir-res').classList.remove('hide');
-  $('fin-titre').textContent = S.gagne ? (S.essais.length === 1 ? 'ACE ! Du premier coup' : 'VICTORY') : 'DEFEAT';
+  $('fin-titre').textContent = G.gagne ? (G.essais.length === 1 ? 'ACE ! Du premier coup' : 'VICTORY') : G.temps ? 'TIME OUT' : 'DEFEAT';
+  $('fin-pts').textContent = '+' + (G.points || 0) + ' pts';
   const w = $('fin-mot'); w.textContent = '';
   [...ANSWER].forEach((l) => w.appendChild(el('div', 't correct', l)));
-  $('fin-sous').textContent = S.gagne ? 'GG, trouvé en ' + S.essais.length + ' essai' + (S.essais.length > 1 ? 's' : '') + (S.indice ? ' (avec indice)' : '') : 'La réponse était :';
-  $('v-fin').classList.toggle('lose', !S.gagne);
+  $('fin-sous').textContent = G.gagne ? 'GG, trouvé en ' + G.essais.length + ' essai' + (G.essais.length > 1 ? 's' : '') + (G.indice ? ' (avec indice)' : '') : G.temps ? 'Les 5 minutes sont passées. La réponse était :' : 'La réponse était :';
+  $('v-fin').classList.toggle('lose', !G.gagne);
   $('fin-info').textContent = Q.i;
+  const libre = MODE === 'libre';
+  $('fin-jour').classList.toggle('hide', libre);
+  $('fin-libre').classList.toggle('hide', !libre);
+  $('encore').classList.toggle('hide', !resteLibres());
+  $('limite').classList.toggle('hide', !!resteLibres());
+  $('retour-jour').classList.toggle('hide', !libre);
+  const L = S.libre;
+  $('li-pts').textContent = L.pts;
+  $('li-record').textContent = L.record || 0;
+  $('li-reste').textContent = resteLibres();
+  $('li-niveau').textContent = NIVEAUX[L.niveau || 1];
+  $('fin-niveau').textContent = libre ? G.niveau || '' : '';
+  if (libre) {
+    $('li-pct').textContent = L.joues ? Math.round(100 * L.gagnes / L.joues) : 0;
+    compteARebours();
+    lancerAuto();
+    return;
+  }
+  majEncore();
   const st = S.stats;
   $('st-joues').textContent = st.joues;
   $('st-pct').textContent = st.joues ? Math.round(100 * st.gagnes / st.joues) : 0;
@@ -168,7 +268,7 @@ function renderFin() {
   st.dist.forEach((n, i) => {
     const line = el('div', 'd');
     line.appendChild(el('span', '', String(i + 1)));
-    const bar = el('b', S.gagne && S.essais.length === i + 1 ? 'on' : '', String(n));
+    const bar = el('b', G.gagne && G.essais.length === i + 1 ? 'on' : '', String(n));
     bar.style.width = Math.max(8, 100 * n / max) + '%';
     line.appendChild(bar); dist.appendChild(line);
   });
@@ -190,13 +290,60 @@ $('partager').onclick = async () => {
   if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast('Résultat copié !'); } catch { toast('Impossible de copier'); }
 };
-$('fermer').onclick = () => $('v-fin').classList.add('hide');
+$('fermer').onclick = () => { stopAuto(); $('v-fin').classList.add('hide'); };
 $('voir-res').onclick = renderFin;
 $('trailer-btn').onclick = () => $('v-trailer').classList.remove('hide');
 $('trailer-fermer').onclick = () => { $('trailer-video').pause(); $('v-trailer').classList.add('hide'); };
 $('regles-btn').onclick = () => $('regles').classList.toggle('hide');
 
-renderQuestion();
-renderBoard();
-sauver();
-if (S.fini) renderFin();
+// Bouton « Jouer encore ». En partie libre, la suivante se lance toute seule après AUTO secondes.
+function majEncore(sec) {
+  $('encore').textContent = MODE !== 'libre' ? '🔁 Jouer encore (' + resteLibres() + ' parties libres)'
+    : '▶ Partie suivante' + (sec ? ' dans ' + sec : '') + ' (' + resteLibres() + ' restantes)';
+}
+function stopAuto() { clearInterval(lancerAuto.t); lancerAuto.t = null; }
+function lancerAuto() {
+  stopAuto();
+  if (!resteLibres()) return;
+  let sec = AUTO; majEncore(sec);
+  lancerAuto.t = setInterval(() => { if (--sec <= 0) { stopAuto(); afficher('libre'); } else majEncore(sec); }, 1000);
+}
+
+// Chrono des parties libres : 5 minutes, sinon la partie est perdue.
+setInterval(() => {
+  if (MODE !== 'libre' || G.fini) return;
+  const r = resteChrono();
+  $('chrono').textContent = '⏱ ' + mmss(r);
+  $('chrono').classList.toggle('urgent', r <= 30);
+  if (r <= 0) { finir(false, true); sauver(); renderBoard(); renderFin(); }
+}, 250);
+
+// ---------- Changer de mode ----------
+function afficher(mode) {
+  if (mode === 'libre' && (!S.libre.partie || S.libre.partie.fini)) {
+    if (!nouvellePartieLibre()) {
+      if (!S.libre.partie) return toast('Plus de parties aujourd\'hui, reviens demain !');
+      if (MODE === 'libre') return renderFin();
+    }
+  }
+  stopAuto();
+  $('v-fin').classList.add('hide');
+  charger_partie(mode); sauver();
+  renderQuestion(); renderBoard();
+  $('voir-res').classList.toggle('hide', !G.fini);
+  if (G.fini) renderFin();
+}
+$('m-jour').onclick = () => afficher('jour');
+$('m-libre').onclick = () => {
+  if (MODE === 'libre' && !G.fini) return;
+  if (MODE === 'libre' && !resteLibres()) return renderFin();
+  afficher('libre');
+};
+$('encore').onclick = () => afficher('libre');
+// Si une partie libre a expiré pendant que la page était fermée, elle compte comme perdue.
+if (S.libre.partie && !S.libre.partie.fini && Date.now() - S.libre.partie.debut >= CHRONO) {
+  const m = MODE, g = G; G = S.libre.partie; MODE = 'libre'; finir(false, true); G = g; MODE = m; sauver();
+}
+$('retour-jour').onclick = () => afficher('jour');
+
+afficher(S.mode === 'libre' && S.libre.partie ? 'libre' : 'jour');

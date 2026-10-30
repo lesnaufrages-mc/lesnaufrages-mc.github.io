@@ -69,6 +69,18 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 .live i{width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:0 0 10px var(--pink);animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.3}}
 
+/* Choix du mode */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.modes button{background:var(--panel2);border:1px solid var(--line);padding:10px 6px;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:1px;text-transform:uppercase;line-height:1.15;--cut:10px}
+.modes button small{display:block;font-size:12px;color:var(--muted);letter-spacing:.5px;text-transform:none}
+.modes button.on{border-color:var(--cyan);color:var(--cyan);box-shadow:inset 0 0 18px rgba(0,229,255,.15)}
+.tag.p{color:var(--mid);border-color:rgba(255,176,32,.45)}
+.chrono{font-family:Orbitron,sans-serif;font-weight:900;font-size:13px;letter-spacing:1px;color:var(--cyan)}
+.chrono.urgent{color:var(--pink);animation:pulse .8s infinite}
+.fin-pts{text-align:center;font-family:Orbitron,sans-serif;font-weight:900;font-size:26px;color:var(--mid);margin:0 0 4px;text-shadow:0 0 14px rgba(255,176,32,.45)}
+.fin-niveau{text-align:center;color:var(--cyan);font-weight:700;letter-spacing:1px;margin:0 0 10px}
+.fin-niveau:empty{display:none}
+
 /* Grille */
 .board{--n:5;display:grid;gap:6px;width:min(100%,calc(var(--n) * 58px));margin:0 auto 12px}
 .r{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px}
@@ -76,7 +88,8 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 .t{aspect-ratio:1;background:rgba(20,20,40,.7);border:2px solid #2c2c52;display:flex;align-items:center;justify-content:center;font-family:Orbitron,sans-serif;font-weight:900;font-size:clamp(15px,4.6vw,24px);--cut:8px;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
 .t.full{border-color:var(--cyan);box-shadow:inset 0 0 12px rgba(0,229,255,.25)}
 .t.ghost{color:var(--cyan);border-style:dashed;border-color:var(--cyan)}
-.t.correct,.t.present,.t.absent{border-color:transparent;animation:flip .45s both}
+.t.correct,.t.present,.t.absent{border-color:transparent}
+.t.flip{animation:flip .45s both}
 .correct{background:var(--ok)!important;color:#00140a}.present{background:var(--mid)!important;color:#1d1200}.absent{background:var(--no)!important;color:#9da0c4}
 @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
 .shake{animation:shake .35s}
@@ -151,13 +164,21 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
   <div class="regles hide cut" id="regles">
     <b>Une question esport par jour</b>, la même pour tout le monde. La réponse est le mot à trouver (4 à 8 lettres : joueur, équipe, tournoi, jeu, lieu ou mot du milieu).
     Tape un essai de la bonne longueur : <b style="color:var(--ok)">vert</b> = bonne lettre bien placée, <b style="color:var(--mid)">jaune</b> = lettre ailleurs dans le mot, gris = absente.
-    6 essais. Bloqué ? L'indice révèle la première lettre mais te coûte un essai.
+    6 essais. Bloqué ? L'indice révèle la première lettre mais te coûte un essai.<br><br>
+    <b>Parties libres</b> : enchaîne d'autres questions, jusqu'à 30 parties par jour (question du jour comprise). Tu as <b>5 minutes</b> par partie et la suivante se lance toute seule.
+    Chaque partie rapporte <b>de 0 à 1000 points</b> : 1000 au premier essai, 100 de moins par essai en plus ou avec l'indice, et en partie libre, moins de points si tu es lent.
+    Les questions s'adaptent à ton <b>niveau</b> (Débutant, Confirmé, Expert) : une belle victoire fait monter, une défaite fait descendre.
+  </div>
+
+  <div class="modes">
+    <button class="cut" id="m-jour" type="button">📅 Question du jour<small>la même pour tous</small></button>
+    <button class="cut" id="m-libre" type="button">🔁 Parties libres<small id="m-reste"></small></button>
   </div>
 
   <section class="brief cut">
-    <div class="hud"><span class="tag c cut" id="cat"></span><span class="tag cut" id="scene"></span><span class="tag cut" id="longueur"></span><span class="round" id="num"></span></div>
+    <div class="hud"><span class="tag c cut" id="cat"></span><span class="tag cut" id="scene"></span><span class="tag cut" id="longueur"></span><span class="tag cut hide" id="niveau"></span><span class="tag p cut" id="pts"></span><span class="round" id="num"></span></div>
     <p class="question" id="question"></p>
-    <div class="live"><i></i>Question du jour</div>
+    <div class="live"><i></i><span id="live-txt">Question du jour</span> <span class="chrono hide" id="chrono"></span></div>
   </section>
 
   <div class="board" id="board"></div>
@@ -171,7 +192,20 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
     <h2 class="banner" id="fin-titre"></h2>
     <p class="sous" id="fin-sous"></p>
     <div class="word" id="fin-mot"></div>
+    <p class="fin-pts" id="fin-pts"></p>
+    <p class="fin-niveau" id="fin-niveau"></p>
     <div class="info"><b>LE SAVAIS-TU ?</b><span id="fin-info"></span></div>
+    <div class="stats hide" id="fin-libre">
+      <div class="cut"><b id="li-pts"></b><span>Pts du jour</span></div>
+      <div class="cut"><b id="li-record"></b><span>Record</span></div>
+      <div class="cut"><b id="li-pct"></b><span>% wins</span></div>
+      <div class="cut"><b id="li-reste"></b><span>Restantes</span></div>
+    </div>
+    <p class="sous hide" id="limite">Tu as joué tes 30 parties du jour, reviens demain ! Niveau actuel : <b id="li-niveau"></b></p>
+    <button class="btn btn-main full" id="encore" type="button"></button>
+    <div style="height:10px"></div>
+    <button class="btn btn-hint full hide" id="retour-jour" type="button">📅 Retour à la question du jour</button>
+    <div id="fin-jour">
     <div class="stats">
       <div class="cut"><b id="st-joues"></b><span>Parties</span></div>
       <div class="cut"><b id="st-pct"></b><span>% wins</span></div>
@@ -182,6 +216,7 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
     <div class="next"><span class="muted">Prochain round dans</span><b id="prochain"></b></div>
     <button class="btn btn-main full" id="partager">📤 Partager mon score</button>
     <div style="height:10px"></div>
+    </div>
     <a class="btn btn-blue full" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">💬 Comparer sur le Discord</a>
     <div style="height:10px"></div>
     <a class="btn btn-pink full" href="../jouer/">🏝️ Jouer aussi au Mot Mystère</a>
@@ -200,7 +235,7 @@ main{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 16px
 
 <p class="foot">CLUTCH par <a href="../">Les Naufragés</a> · <a href="../conditions.html">Conditions</a> · <a href="../confidentialite.html#jeux">Confidentialité</a> · <a href="../cookies.html">Cookies</a></p>
 
-<script type="module" src="esport.js"></script>
+<script type="module" src="esport.js?v=2"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

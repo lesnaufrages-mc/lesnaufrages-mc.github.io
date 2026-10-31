@@ -2,9 +2,10 @@
 // la réponse de chaque question est le mot à trouver. Même règles que le Mot Mystère classique
 // (vert = bonne place, jaune = ailleurs dans le mot), mais le mot fait de 4 à 8 lettres et peut être
 // un nom propre : tout essai de la bonne longueur est accepté.
-// Round 1 = la question du jour de questions.js, rounds 2 à 10 = questions-libres.js, du facile au difficile.
+// Chaque jour : la question du jour de questions.js + 9 de questions-libres.js, rangées du plus facile au plus difficile
+// (3 Débutant, 4 Connaisseur, 3 Expert).
 // Après les 10 rounds, les « parties libres » permettent d'en enchaîner d'autres (30 parties par jour en tout).
-// 2 minutes maximum par partie. Chaque partie rapporte de 0 à 1000 points.
+// 2 minutes maximum par partie. Chaque partie rapporte de 0 à 1000 points. Sons façon jeu télé (coupables).
 import { QUESTIONS, DEBUT } from './questions.js';
 import { LIBRES } from './questions-libres.js';
 
@@ -46,21 +47,23 @@ const IDX_JOUR = (NUM - 1) % QUESTIONS.length;
 
 // ---------- Les questions ----------
 // Identifiant d'une question : 'd' + n° dans QUESTIONS, ou 'x' + n° dans LIBRES.
-// Chaque question a un niveau (1 débutant, 2 confirmé, 3 expert). Pour celles de questions.js,
-// il est deviné d'après la catégorie : le lexique est facile, les noms de joueurs et de médias plus durs.
-const NIVEAUX = ['', 'Débutant', 'Confirmé', 'Expert'];
+// Chaque question a un niveau n : 1 Débutant, 2 Connaisseur, 3 Expert.
+const NIVEAUX = ['', 'Débutant', 'Connaisseur', 'Expert'];
 function question(id) { return id[0] === 'x' ? LIBRES[+id.slice(1)] : QUESTIONS[+id.slice(1)]; }
-function niveauDe(q) { return q.n || (q.c === 'Lexique' ? 1 : /Joueur|Personnalité|Média/.test(q.c) ? 3 : 2); }
+function niveauDe(q) { return q.n || 2; }
 
-// Les 10 questions du jour, les mêmes pour tout le monde : la question du jour,
-// puis 3 faciles, 3 moyennes et 3 difficiles qui tournent d'un jour à l'autre.
+// Les 10 questions du jour, les mêmes pour tout le monde : la question du jour + des questions de
+// questions-libres.js qui tournent d'un jour à l'autre, pour avoir 3 Débutant, 4 Connaisseur et 3 Expert,
+// puis on les range de la plus facile à la plus difficile.
+const REPARTITION = [0, 3, 4, 3];
 function idsDuJour() {
-  const ids = ['d' + IDX_JOUR];
+  const jour = 'd' + IDX_JOUR, ids = [jour];
   for (let n = 1; n <= 3; n++) {
     const liste = LIBRES.map((q, i) => (q.n === n ? 'x' + i : null)).filter(Boolean);
-    for (let j = 0; j < 3; j++) ids.push(liste[((NUM - 1) * 3 + j) % liste.length]);
+    const combien = REPARTITION[n] - (niveauDe(question(jour)) === n ? 1 : 0);
+    for (let j = 0; j < combien; j++) ids.push(liste[((NUM - 1) * REPARTITION[n] + j) % liste.length]);
   }
-  return ids;
+  return ids.sort((a, b) => niveauDe(question(a)) - niveauDe(question(b)));
 }
 const JOUR_IDS = idsDuJour();
 
@@ -91,6 +94,7 @@ if (S.jour !== dateLocale() || !S.rounds) {
 }
 function sauver() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
 
+const roundDuJour = () => S.rounds.findIndex((r) => r.id === 'd' + IDX_JOUR);
 const roundEnCours = () => { const i = S.rounds.findIndex((r) => !r.fini); return i < 0 ? ROUNDS - 1 : i; };
 const jourFini = () => S.rounds.every((r) => r.fini);
 const resteLibres = () => Math.max(0, MAX_LIBRES - S.libre.n);
@@ -130,7 +134,7 @@ const ptsJour = () => S.rounds.reduce((t, r) => t + (r.points || 0), 0);
 function renderQuestion() {
   const libre = MODE === 'libre';
   $('num').textContent = libre ? 'LIBRE ' + S.libre.n + '/' + MAX_LIBRES : 'ROUND ' + (roundEnCours() + 1) + '/' + ROUNDS;
-  $('live-txt').textContent = libre ? 'Partie libre' : roundEnCours() === 0 ? 'Question du jour #' + NUM : 'Questions du jour #' + NUM;
+  $('live-txt').textContent = libre ? 'Partie libre' : roundEnCours() === roundDuJour() ? '⭐ La question du jour #' + NUM : 'Questions du jour #' + NUM;
   $('m-jour').classList.toggle('on', !libre);
   $('m-libre').classList.toggle('on', libre);
   $('m-reste').textContent = jourFini() ? resteLibres() + ' restantes' : 'après les 10 rounds';
@@ -186,44 +190,93 @@ function renderKeyboard() {
 function toast(msg) { const t = el('div', 'toast', msg); document.body.appendChild(t); setTimeout(() => t.remove(), 1800); }
 function secouer() { const r = $('board').children[G.essais.length]; if (r) { r.classList.remove('shake'); void r.offsetWidth; r.classList.add('shake'); } }
 
+// ---------- Sons (générés par le navigateur, aucun fichier à charger) ----------
+// Un peu comme à la télé : un « bip » par lettre révélée (aigu = bien placée, moyen = mal placée, grave = absente),
+// une fanfare quand on trouve, un « boum » quand on perd, et un tic-tac pendant les 10 dernières secondes.
+let audio = null;
+function ton(freq, debut, duree, type = 'sine', vol = 0.18) {
+  if (S.muet) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    const t = audio.currentTime + debut, o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+    o.connect(g); g.connect(audio.destination);
+    o.start(t); o.stop(t + duree + 0.02);
+  } catch {}
+}
+const SON = {
+  touche: () => ton(1200, 0, 0.04, 'square', 0.04),
+  efface: () => ton(500, 0, 0.05, 'square', 0.04),
+  lettres: (res) => res.forEach((r, i) => {
+    const t = i * 0.08 + 0.2;
+    if (r === 'correct') { ton(1046, t, 0.22, 'triangle', 0.2); ton(1568, t, 0.15, 'sine', 0.06); }
+    else if (r === 'present') ton(784, t, 0.18, 'triangle', 0.16);
+    else ton(262, t, 0.14, 'sine', 0.12);
+  }),
+  erreur: () => { ton(140, 0, 0.25, 'sawtooth', 0.08); ton(110, 0.05, 0.25, 'sawtooth', 0.06); },
+  victoire: (delai) => [523, 659, 784, 1046].forEach((f, i) => ton(f, delai + i * 0.12, i === 3 ? 0.5 : 0.18, 'triangle', 0.2)),
+  defaite: (delai) => [392, 330, 262, 196].forEach((f, i) => ton(f, delai + i * 0.16, 0.3, 'sawtooth', 0.07)),
+  indice: () => { ton(880, 0, 0.12, 'sine', 0.15); ton(1320, 0.1, 0.18, 'sine', 0.15); },
+  tic: (urgent) => ton(urgent ? 1500 : 1000, 0, 0.03, 'square', 0.05),
+};
+function majSon() { $('son-btn').textContent = S.muet ? '🔇' : '🔊'; $('son-btn').title = S.muet ? 'Activer le son' : 'Couper le son'; }
+$('son-btn').onclick = () => { S.muet = !S.muet; sauver(); majSon(); if (!S.muet) SON.indice(); };
+
 // ---------- Jouer ----------
 function key(k) {
   if (G.fini) return;
   if (k === 'Enter') return valider();
-  if (k === 'Backspace') { current = current.slice(0, -1); return renderBoard(); }
+  if (k === 'Backspace') { current = current.slice(0, -1); SON.efface(); return renderBoard(); }
   const l = normalize(k);
-  if (l.length === 1 && current.length < LEN) { current += l; renderBoard(); }
+  if (l.length === 1 && current.length < LEN) { current += l; SON.touche(); renderBoard(); }
 }
 
 function valider() {
-  if (current.length !== LEN) { toast('Le mot fait ' + LEN + ' lettres'); secouer(); return; }
+  if (current.length !== LEN) { toast('Le mot fait ' + LEN + ' lettres'); SON.erreur(); secouer(); return; }
   G.essais.push(current); current = ''; anim = G.essais.length - 1;
+  SON.lettres(evaluate(G.essais[anim], ANSWER));
   if (G.essais[G.essais.length - 1] === ANSWER) finir(true);
   else if (G.essais.length >= maxEssais()) finir(false);
   sauver(); renderBoard();
-  if (G.fini) setTimeout(renderFin, LEN * 80 + 450);
+  if (G.fini) { (G.gagne ? SON.victoire : SON.defaite)(LEN * 0.08 + 0.45); setTimeout(renderFin, LEN * 80 + 450); }
 }
 
-// Points de 0 à 1000 : 1000 au 1er essai, -100 par essai en plus, -100 avec l'indice,
-// et plus tu es lent, moins tu gagnes (jusqu'à la moitié en moins au bout des 2 minutes).
-function calculPoints(p) {
-  if (!p.gagne) return 0;
-  const base = 1000 - 100 * (p.essais.length - 1) - (p.indice ? 100 : 0);
-  const lenteur = Math.min(1, (Date.now() - p.debut) / CHRONO);
-  return Math.max(0, Math.min(1000, Math.round(base * (1 - 0.5 * lenteur))));
+// Points de 0 à 1000, toujours ronds (multiples de 10) :
+// - selon le nombre d'essais : 1000, 800, 650, 500, 350 puis 200 au 6e ; -150 avec l'indice ;
+// - selon le niveau : Débutant x0,6, Connaisseur x0,8, Expert x1 (seul un Expert peut rapporter 1000) ;
+// - selon le temps : rien de perdu pendant les 30 premières secondes, puis jusqu'à -40 % à la fin des 2 minutes.
+const PTS_ESSAI = [1000, 800, 650, 500, 350, 200];
+const COEF_NIVEAU = [0, 0.6, 0.8, 1];
+const GRACE = 30000;
+function detailPoints(p) {
+  if (!p.gagne) return null;
+  const base = Math.max(0, PTS_ESSAI[p.essais.length - 1] - (p.indice ? 150 : 0));
+  const coef = COEF_NIVEAU[niveauDe(question(p.id))];
+  const lenteur = Math.max(0, Math.min(1, (Date.now() - p.debut - GRACE) / (CHRONO - GRACE)));
+  const temps = 1 - 0.4 * lenteur;
+  return { base, coef, temps, total: Math.round(base * coef * temps / 10) * 10 };
 }
+function calculPoints(p) { const d = detailPoints(p); return d ? d.total : 0; }
 
 // Termine la partie p (un round du jour ou une partie libre).
 function terminer(p, libre, gagne, tempsEcoule) {
   p.fini = true; p.gagne = gagne; p.temps = !!tempsEcoule;
-  p.points = calculPoints(p);
+  const d = detailPoints(p);
+  p.points = d ? d.total : 0;
+  p.detail = d ? (PTS_ESSAI[p.essais.length - 1]) + ' (' + p.essais.length + (p.essais.length > 1 ? ' essais' : 'er essai') + ')'
+    + (p.indice ? ' − 150 (indice)' : '') + ' × ' + String(d.coef).replace('.', ',') + ' (' + NIVEAUX[niveauDe(question(p.id))] + ')'
+    + (d.temps < 1 ? ' − ' + Math.round((1 - d.temps) * 100) + ' % (temps)' : '') : '';
   const L = S.libre, st = S.stats;
   L.pts += p.points; L.record = Math.max(L.record || 0, L.pts);
   if (libre) {
     L.joues++; if (gagne) L.gagnes++;
-    // Le niveau s'adapte : une belle victoire (600 pts ou plus) fait monter, une défaite fait descendre.
+    // Le niveau s'adapte : une victoire en 3 essais ou moins fait monter, une défaite fait descendre.
     const avant = L.niveau;
-    if (gagne && p.points >= 600) L.niveau = Math.min(3, L.niveau + 1);
+    if (gagne && p.essais.length <= 3) L.niveau = Math.min(3, L.niveau + 1);
     else if (!gagne) L.niveau = Math.max(1, L.niveau - 1);
     p.niveau = L.niveau !== avant ? (L.niveau > avant ? '⬆ ' : '⬇ ') + 'Niveau ' + NIVEAUX[L.niveau] : '';
     return;
@@ -242,7 +295,7 @@ const finir = (gagne, tempsEcoule) => terminer(G, MODE === 'libre', gagne, temps
 
 $('indice').onclick = () => {
   if (G.indice || G.fini) return;
-  G.indice = true; anim = -1; sauver(); renderBoard();
+  G.indice = true; anim = -1; sauver(); renderBoard(); SON.indice();
   toast('Indice pris : ' + maxEssais() + ' essais restants au total');
 };
 
@@ -257,9 +310,11 @@ function tickChrono() {
   c.classList.toggle('hide', !G || G.fini);
   if (!G || G.fini) return;
   const r = resteChrono();
+  if (r !== tickChrono.dernier && r <= 10 && r > 0) SON.tic(r <= 5);
+  tickChrono.dernier = r;
   c.textContent = '⏱ ' + mmss(r);
   c.classList.toggle('urgent', r <= 20);
-  if (r <= 0) { finir(false, true); sauver(); renderBoard(); renderFin(); }
+  if (r <= 0) { finir(false, true); sauver(); renderBoard(); SON.defaite(0); renderFin(); }
 }
 setInterval(tickChrono, 250);
 
@@ -282,6 +337,7 @@ function renderFin() {
     : G.temps ? 'Les 2 minutes sont passées. La réponse était :' : 'La réponse était :';
   $('v-fin').classList.toggle('lose', !G.gagne);
   $('fin-pts').textContent = '+' + (G.points || 0) + ' pts';
+  $('fin-detail').textContent = G.detail || '';
   $('fin-niveau').textContent = libre ? G.niveau || '' : '';
   $('fin-info').textContent = Q.i;
 
@@ -391,4 +447,5 @@ $('retour-jour').onclick = () => afficher('jour');
   if (p && !p.fini && p.debut && Date.now() - p.debut >= CHRONO) terminer(p, libre, false, true);
 });
 sauver();
+majSon();
 afficher(S.mode === 'libre' && S.libre.partie && jourFini() ? 'libre' : 'jour');

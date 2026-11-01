@@ -8,6 +8,17 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-11-01",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouvelle vidéo : le top 5 des plus grands conquérants de l'histoire",
+    texte: "Attila, Jules César, Napoléon, Alexandre le Grand et Gengis Khan : cinq destins qui ont redessiné la carte du monde. Découvre leur histoire, l'étendue de leurs empires sur un globe animé et leurs plus grandes batailles reconstituées en 3D, d'Alésia à Austerlitz. Qui mérite selon toi la première place ? Donne ton avis en commentaire sur YouTube ou sur notre Discord.",
+    video: "videos/top5-conquerants.mp4",
+    image: "videos/top5-conquerants.jpg",
+    lien: "strategie/",
+    bouton: "Mène tes propres batailles dans Imperium of Wars"
+  },
+  {
     date: "2026-10-30",
     categorie: "site",
     epingle: true,

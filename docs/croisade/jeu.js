@@ -1,0 +1,969 @@
+/* Ferrum et Fides : la campagne (carte, voyages, villes, dialogues, troupes, sauvegarde).
+   Sauvegarde dans le navigateur : clé « ferrum-partie-v1 » (copiée en ligne par ../sauvegarde.js si tu es connecté). */
+(function () {
+  'use strict';
+  var M = Moteur;
+  var CLE = 'ferrum-partie-v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+  // ---------- État et sauvegarde ----------
+  var S = null; // la partie en cours
+  var OPT = { diff: 'facile', dir: false, son: true };
+  function lire() {
+    try { var d = JSON.parse(localStorage.getItem(CLE)); if (d && d.v === 1) return d; } catch (e) {}
+    return null;
+  }
+  function sauver() {
+    if (!S || S.rapide) return;
+    S.options = OPT;
+    try { localStorage.setItem(CLE, JSON.stringify(S)); } catch (e) {}
+  }
+  function lireOptions() {
+    var d = lire();
+    if (d && d.options) OPT = Object.assign(OPT, d.options);
+    M.muet(!OPT.son);
+  }
+  function nouvellePartie(faction, heros) {
+    S = {
+      v: 1, faction: faction, heros: heros, lieu: faction === 'latins' ? 'bouillon' : 'constantinople',
+      jour: 0, debut: faction === 'latins' ? [1096, 7, 15] : [1096, 11, 1],
+      or: 60, renom: 0, troupes: faction === 'latins' ? { sergent: 2, milicien: 2 } : { skutatos: 2, toxotes: 1 },
+      armes: faction === 'latins' ? ['epee'] : ['spathion'], equip: faction === 'latins' ? ['epee'] : ['spathion'],
+      etape: 0, drapeaux: {}, aff: { melisende: 0, zoe: 0 }, compagnons: [], discussions: {}, legendes: {}, intrigues: {},
+      opinion: {}, fav: { latins: faction === 'latins' ? 2 : 0, romains: faction === 'romains' ? 2 : 0 }, fini: false,
+      stats: { victoires: 0, tues: 0 }, vus: {}
+    };
+    S.drapeaux[faction] = true;
+    sauver();
+  }
+
+  // Progression
+  function niveau() { return 1 + Math.floor((S.renom || 0) / 25); }
+  function pvMax() { return 100 + (niveau() - 1) * 10; }
+  function placeTroupes() { return Math.min(30, 6 + niveau() * 2); }
+  function nbTroupes() { var n = 0; for (var k in S.troupes) n += S.troupes[k]; return n; }
+  function etapeActuelle() { return FF.HISTOIRE[S.faction][S.etape] || null; }
+  function lookHeros() {
+    return S.faction === 'latins'
+      ? { peau: 0xf1c27d, tunique: 0xf8f9f9, croix: 0xc0392b, pantalon: 0x5d6d7e, casque: 'nasal', bouclier: 'kite', bc: 0xc0392b, cape: 0x922b21 }
+      : { peau: 0xe0ac69, tunique: 0x7d3c98, croix: 0xf1c40f, pantalon: 0x1b2631, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98, cape: 0x4a235a };
+  }
+  function dateTexte() {
+    var d = new Date(Date.UTC(S.debut[0], S.debut[1], S.debut[2]) + S.jour * 86400000);
+    return d.getUTCDate() + ' ' + MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+  function drapeau(f) { return !!(S && (S.drapeaux[f] || f === S.faction)); }
+  function appliquer(e) {
+    if (!e) return;
+    if (e.aff) for (var k in e.aff) { S.aff[k] = Math.max(0, (S.aff[k] || 0) + e.aff[k]); if (e.aff[k] > 0) petitMsg('❤️ ' + FF.PERSOS[k].nom + ' apprécie cela.'); }
+    if (e.fav) for (var f in e.fav) S.fav[f] = (S.fav[f] || 0) + e.fav[f];
+    if (e.drapeau) S.drapeaux[e.drapeau] = true;
+    if (e.or) { S.or = Math.max(0, S.or + e.or); petitMsg((e.or > 0 ? '+' : '') + e.or + ' or'); }
+    if (e.renom) S.renom += e.renom;
+    sauver();
+  }
+  function txt(t) { return esc(t).replace(/\{heros\}/g, esc(S ? S.heros : '')); }
+
+  // ---------- Écrans ----------
+  var ECRANS = ['accueil', 'creation', 'carte', 'jeu3d'];
+  function ecran(nom) {
+    ECRANS.forEach(function (e) { $(e).classList.toggle('hide', e !== nom); });
+    document.body.dataset.ecran = nom;
+    if (nom === 'carte') { redim(); dessinerCarte(); majBarre(); }
+  }
+  var msgT = 0;
+  function petitMsg(t) {
+    var m = $('toast'); m.textContent = t; m.classList.add('montre');
+    clearTimeout(msgT); msgT = setTimeout(function () { m.classList.remove('montre'); }, 2600);
+  }
+
+  // Fenêtre générique (forge, recrues, cour, journal…)
+  function fenetre(titre, html, fermer) {
+    $('fenTitre').textContent = titre;
+    $('fenCorps').innerHTML = html;
+    $('fenetre').classList.remove('hide');
+    $('fenetre').onFerme = fermer || null;
+    $('fenCorps').scrollTop = 0;
+  }
+  function fermerFenetre() {
+    $('fenetre').classList.add('hide');
+    var f = $('fenetre').onFerme; $('fenetre').onFerme = null;
+    if (f) f();
+  }
+  $('fenFermer').onclick = fermerFenetre;
+
+  // ---------- Portraits en blocs ----------
+  function hex(c) { return '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); }
+  function portrait(id) {
+    var P = FF.PERSOS[id] || {}, L = P.look;
+    if (id === 'heros' && S) L = Object.assign({}, L, S.faction === 'romains' ? { peau: 0xe0ac69, cheveux: 0x1c1c1c, casque: 0xb7950b } : { casque: 0x95a5a6 });
+    var c = document.createElement('canvas'); c.width = c.height = 96;
+    var g = c.getContext('2d');
+    g.fillStyle = '#1e1a14'; g.fillRect(0, 0, 96, 96);
+    if (!L) { g.fillStyle = '#c9a24a'; g.font = '48px serif'; g.textAlign = 'center'; g.fillText('✠', 48, 64); return c; }
+    var r = function (x, y, w, h, col) { g.fillStyle = hex(col); g.fillRect(x, y, w, h); };
+    if (L.longs) r(16, 22, 64, 66, L.cheveux);
+    r(14, 80, 68, 16, 0x5d4037);
+    r(22, 22, 52, 56, L.peau);
+    if (L.cheveux && !L.casque && !L.turban && !L.capuche) r(20, 16, 56, 14, L.cheveux);
+    if (L.capuche) { r(16, 10, 64, 22, L.capuche); r(14, 22, 10, 50, L.capuche); r(72, 22, 10, 50, L.capuche); }
+    if (L.casque) { r(18, 10, 60, 24, L.casque); if (L.nezOr) r(44, 34, 8, 16, 0xd4ac0d); else r(45, 30, 6, 20, L.casque); }
+    if (L.turban) { r(16, 8, 64, 24, L.turban); r(30, 2, 36, 10, L.turban); }
+    if (L.couronne) { r(20, 10, 56, 12, L.couronne); r(22, 4, 8, 8, L.couronne); r(44, 2, 8, 10, L.couronne); r(66, 4, 8, 8, L.couronne); }
+    if (L.mitre) { r(28, 0, 40, 24, L.mitre); r(46, 2, 4, 20, 0xd4ac0d); }
+    if (L.chapeau) { r(20, 8, 56, 16, L.chapeau); }
+    r(33, 44, 9, 7, L.yeux || 0x1c1c1c); r(54, 44, 9, 7, L.yeux || 0x1c1c1c);
+    if (L.barbe) r(24, 60, 48, 18, L.barbe); else r(40, 64, 16, 4, 0x8d5524);
+    if (L.cicatrice) r(56, 34, 4, 26, 0x922b21);
+    if (L.bijou) r(30, 84, 36, 6, L.bijou);
+    return c;
+  }
+
+  // ---------- Dialogues ----------
+  var D = { file: [], fin: null, ligne: null, ecrit: 0, txt: '' };
+  function dialogue(lignes, fin) {
+    D.file = lignes.slice();
+    D.fin = fin;
+    $('dialogue').classList.remove('hide');
+    M.pause(true);
+    suivante();
+  }
+  function suivante() {
+    $('dlgChoix').innerHTML = '';
+    if (!D.file.length) {
+      $('dialogue').classList.add('hide');
+      var f = D.fin; D.fin = null;
+      if (f) f(); else M.pause(false);
+      return;
+    }
+    var l = D.file.shift();
+    if (l.si) { D.file = (drapeau(l.si) ? (l.alors || []) : (l.sinon || [])).concat(D.file); suivante(); return; }
+    if (l.choix) {
+      var bloc = $('dlgChoix');
+      $('dlgSuite').classList.add('hide');
+      l.choix.forEach(function (c) {
+        var b = document.createElement('button');
+        b.className = 'choix';
+        b.innerHTML = txt(c.t);
+        b.onclick = function () {
+          M.son('clic');
+          appliquer(c.e);
+          if (c.combat) {
+            $('dialogue').classList.add('hide');
+            var reste = D.file, fin = D.fin; D.fin = null;
+            combat(c.combat, function () { dialogue(reste, fin); }, { retourCarte: false });
+          } else suivante();
+        };
+        bloc.appendChild(b);
+      });
+      return;
+    }
+    var P = FF.PERSOS[l.q] || { nom: l.q };
+    $('dlgNom').textContent = l.q === 'narrateur' ? '' : (l.q === 'heros' ? S.heros : P.nom);
+    var por = $('dlgPortrait'); por.innerHTML = ''; por.appendChild(portrait(l.q));
+    $('dialogue').classList.toggle('narration', l.q === 'narrateur');
+    D.txt = l.t.replace(/\{heros\}/g, S ? S.heros : '');
+    D.ecrit = 0;
+    $('dlgSuite').classList.remove('hide');
+    ecrire();
+  }
+  function ecrire() {
+    clearTimeout(D.tmr);
+    D.ecrit = Math.min(D.txt.length, D.ecrit + 2);
+    $('dlgTexte').textContent = D.txt.slice(0, D.ecrit);
+    if (D.ecrit < D.txt.length) D.tmr = setTimeout(ecrire, 16);
+  }
+  function avancer() {
+    if ($('dialogue').classList.contains('hide') || $('dlgChoix').children.length) return;
+    if (D.ecrit < D.txt.length) { D.ecrit = D.txt.length; $('dlgTexte').textContent = D.txt; clearTimeout(D.tmr); return; }
+    suivante();
+  }
+  $('dialogue').addEventListener('click', function (e) { if (!e.target.closest('.choix')) avancer(); });
+  document.addEventListener('keydown', function (e) {
+    if ($('dialogue').classList.contains('hide')) return;
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); avancer(); }
+  });
+
+  // ---------- Carte de campagne ----------
+  var cv = $('carteCanvas'), ctx = cv.getContext('2d');
+  var VUE = { x: 0, y: 0, z: 1 };
+  var terre = null;
+  var voyage = null; // animation du déplacement
+  function redim() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!VUE.ok && S) centrerSur(S.lieu, 1.6);
+  }
+  function centrerSur(id, z) {
+    var L = FF.LIEUX[id];
+    VUE.z = z || VUE.z;
+    VUE.x = L.x - cv.clientWidth / 2 / VUE.z;
+    VUE.y = L.y - cv.clientHeight / 2 / VUE.z;
+    VUE.ok = true;
+  }
+  function ecranVers(x, y) { return { x: x / VUE.z + VUE.x, y: y / VUE.z + VUE.y }; }
+  function posJoueur() {
+    if (voyage) {
+      var a = FF.LIEUX[voyage.de], b = FF.LIEUX[voyage.vers], k = Math.min(1, voyage.t);
+      return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+    }
+    return FF.LIEUX[S.lieu];
+  }
+  function objectifLieu() { var e = etapeActuelle(); return e ? e.lieu : null; }
+  function dessinerCarte() {
+    if (!S || $('carte').classList.contains('hide')) return;
+    var w = cv.clientWidth, h = cv.clientHeight;
+    ctx.save();
+    var gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2c5470'); gr.addColorStop(1, '#1d3c55');
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+    ctx.translate(-VUE.x * VUE.z, -VUE.y * VUE.z); ctx.scale(VUE.z, VUE.z);
+    if (!terre && window.MONDE) terre = new Path2D(window.MONDE.terre);
+    if (terre) {
+      ctx.fillStyle = '#d8c8a0'; ctx.fill(terre);
+      ctx.strokeStyle = '#7a6a48'; ctx.lineWidth = 1.2 / VUE.z; ctx.stroke(terre);
+    }
+    // Routes
+    FF.ROUTES.forEach(function (r) {
+      var a = FF.LIEUX[r[0]], b = FF.LIEUX[r[1]];
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      if (r[2] === 'mer') { ctx.strokeStyle = 'rgba(214,234,248,.65)'; ctx.setLineDash([2 / VUE.z * 2, 4 / VUE.z * 2]); ctx.lineWidth = 1.6 / VUE.z; }
+      else { ctx.strokeStyle = 'rgba(110,75,42,.75)'; ctx.setLineDash([6 / VUE.z, 3 / VUE.z]); ctx.lineWidth = 2 / VUE.z; }
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    var obj = objectifLieu(), t = performance.now() / 1000;
+    // Lieux
+    Object.keys(FF.LIEUX).forEach(function (id) {
+      var L = FF.LIEUX[id], F = FF.FACTIONS[L.faction];
+      var r = (L.faction === 'legende' ? 5 : 4.5) / Math.sqrt(VUE.z) * 1.4;
+      if (L.faction === 'legende' || FF.LEGENDES[id]) {
+        if (!S.legendes[id] && S.etape >= 1) { ctx.fillStyle = 'rgba(241,196,15,' + (0.25 + 0.2 * Math.sin(t * 3)) + ')'; ctx.beginPath(); ctx.arc(L.x, L.y, r * 2.2, 0, 7); ctx.fill(); }
+      }
+      ctx.beginPath(); ctx.arc(L.x, L.y, r, 0, 7);
+      ctx.fillStyle = F.couleur; ctx.fill();
+      ctx.lineWidth = 1.5 / VUE.z; ctx.strokeStyle = '#1b1610'; ctx.stroke();
+      if (L.port) { ctx.fillStyle = '#d6eaf8'; ctx.font = (7 / Math.sqrt(VUE.z) * 1.4) + 'px sans-serif'; ctx.fillText('⚓', L.x + r * 0.6, L.y + r * 1.9); }
+      if (id === obj) {
+        ctx.save(); ctx.translate(L.x, L.y - r * 2.6 - Math.sin(t * 4) * 2 / VUE.z);
+        ctx.fillStyle = '#f7dc6f'; ctx.strokeStyle = '#7d6608'; ctx.lineWidth = 1 / VUE.z;
+        etoile(ctx, 0, 0, 5, r * 1.3, r * 0.55); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      var fs = 11 / VUE.z * Math.min(1.6, Math.max(1, VUE.z * 0.7));
+      ctx.font = '700 ' + fs + 'px Cinzel, Georgia, serif';
+      ctx.textAlign = 'center';
+      // Noms sous le point pour les villes trop proches de leur voisine (Aix / Cologne, Antioche / Alep)
+      var ty = /^(aix|alep|lattaquie|bouillon)$/.test(id) ? L.y + r + fs : L.y - r - 3 / VUE.z;
+      ctx.lineWidth = 3 / VUE.z; ctx.strokeStyle = 'rgba(20,16,10,.85)'; ctx.strokeText(L.nom, L.x, ty);
+      ctx.fillStyle = id === S.lieu ? '#f7dc6f' : '#f4ecd8'; ctx.fillText(L.nom, L.x, ty);
+    });
+    // Le joueur : une bannière
+    var p = posJoueur(), s = 1 / Math.sqrt(VUE.z) * 1.5;
+    ctx.save(); ctx.translate(p.x, p.y);
+    ctx.fillStyle = '#3e2723'; ctx.fillRect(-0.8 * s, -16 * s, 1.6 * s, 16 * s);
+    ctx.fillStyle = S.faction === 'latins' ? '#f8f9f9' : '#7d3c98'; ctx.fillRect(0.8 * s, -16 * s, 9 * s, 7 * s);
+    ctx.fillStyle = S.faction === 'latins' ? '#c0392b' : '#f1c40f';
+    ctx.fillRect(4.2 * s, -15.5 * s, 1.6 * s, 6 * s); ctx.fillRect(1.6 * s, -13.3 * s, 7 * s, 1.6 * s);
+    ctx.restore();
+    ctx.restore();
+  }
+  function etoile(c, x, y, n, R, r) {
+    c.beginPath();
+    for (var i = 0; i < n * 2; i++) { var a = i * Math.PI / n - Math.PI / 2, rr = i % 2 ? r : R; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    c.closePath();
+  }
+  function boucleCarte() {
+    requestAnimationFrame(boucleCarte);
+    if (!S || $('carte').classList.contains('hide')) return;
+    if (voyage) {
+      voyage.t += 1 / 60 / voyage.duree;
+      if (voyage.t >= 1) { var v = voyage; voyage = null; arriveeEtape(v); }
+    }
+    dessinerCarte();
+  }
+  requestAnimationFrame(boucleCarte);
+
+  // Glisser / zoomer la carte
+  (function () {
+    var drag = null, pinch = null, bouge = false;
+    cv.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, vx: VUE.x, vy: VUE.y }; bouge = false; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', function (e) {
+      if (!drag || pinch) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 6) bouge = true;
+      VUE.x = drag.vx - dx / VUE.z; VUE.y = drag.vy - dy / VUE.z;
+    });
+    cv.addEventListener('pointerup', function (e) {
+      if (drag && !bouge) clicCarte(e.clientX - cv.getBoundingClientRect().left, e.clientY - cv.getBoundingClientRect().top);
+      drag = null;
+    });
+    cv.addEventListener('wheel', function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.offsetX, e.offsetY); }, { passive: false });
+    cv.addEventListener('touchstart', function (e) { if (e.touches.length === 2) { pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); drag = null; } }, { passive: true });
+    cv.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2 && pinch) {
+        var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        var r = cv.getBoundingClientRect();
+        zoom(d / pinch, (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top);
+        pinch = d;
+      }
+    }, { passive: true });
+    cv.addEventListener('touchend', function () { pinch = null; });
+    $('zoomPlus').onclick = function () { zoom(1.3, cv.clientWidth / 2, cv.clientHeight / 2); };
+    $('zoomMoins').onclick = function () { zoom(1 / 1.3, cv.clientWidth / 2, cv.clientHeight / 2); };
+    $('recentrer').onclick = function () { centrerSur(S.lieu, VUE.z); };
+  })();
+  function zoom(f, sx, sy) {
+    var p = ecranVers(sx, sy);
+    VUE.z = Math.max(0.6, Math.min(6, VUE.z * f));
+    VUE.x = p.x - sx / VUE.z; VUE.y = p.y - sy / VUE.z;
+  }
+  function clicCarte(sx, sy) {
+    if (voyage) return;
+    var p = ecranVers(sx, sy), best = null, bd = 18 / VUE.z;
+    Object.keys(FF.LIEUX).forEach(function (id) { var L = FF.LIEUX[id], d = Math.hypot(L.x - p.x, L.y - p.y); if (d < bd) { bd = d; best = id; } });
+    if (best) choisirLieu(best);
+  }
+
+  // Panneau d'un lieu
+  function choisirLieu(id) {
+    var L = FF.LIEUX[id], F = FF.FACTIONS[L.faction], R = FF.RELIGIONS[L.religion];
+    var ici = id === S.lieu;
+    var chemin = ici ? [] : trajet(S.lieu, id);
+    var jours = chemin.reduce(function (s, e) { return s + e.jours; }, 0);
+    var h = '<div class="lieuTete"><span class="pastille" style="background:' + F.couleur + '"></span><div><b>' + esc(L.nom) + '</b><small>' + esc(F.nom) + ' · ' + esc(R.nom) + '</small></div></div>';
+    h += '<p>' + esc(L.desc) + '</p>';
+    if (id === objectifLieu()) h += '<p class="objectif">⭐ ' + esc(etapeActuelle().objectif) + '</p>';
+    if (FF.LEGENDES[id] && !S.legendes[id]) h += '<p class="legende">✦ Lieu de légende : ' + esc(FF.LEGENDES[id].titre) + '</p>';
+    var bt = '';
+    if (ici) bt += '<button class="btn or" data-act="entrer">' + (estCamp(id) ? '⛺ Aller au camp' : '🏰 Entrer dans la ville') + '</button>';
+    else if (chemin.length) bt += '<button class="btn or" data-act="aller">🐎 Voyager (' + jours + ' jours' + (chemin.some(function (e) { return e.type === 'mer'; }) ? ', traversée en mer' : '') + ')</button>';
+    else bt += '<p class="muted">Aucune route connue.</p>';
+    $('panneauLieu').innerHTML = h + bt;
+    $('panneauLieu').classList.remove('hide');
+    var b = $('panneauLieu').querySelector('[data-act]');
+    if (b) b.onclick = function () {
+      $('panneauLieu').classList.add('hide');
+      if (b.dataset.act === 'entrer') entrerLieu(id);
+      else partir(chemin);
+    };
+  }
+  // Plus court chemin (en jours) entre deux lieux
+  function joursRoute(a, b, type) { var A = FF.LIEUX[a], B = FF.LIEUX[b]; return Math.max(2, Math.round(Math.hypot(A.x - B.x, A.y - B.y) / (type === 'mer' ? 14 : 8))); }
+  function trajet(de, vers) {
+    var dist = {}, prec = {}, file = [de]; dist[de] = 0;
+    while (file.length) {
+      file.sort(function (a, b) { return dist[a] - dist[b]; });
+      var u = file.shift();
+      if (u === vers) break;
+      FF.LIEUX[u].voisins.forEach(function (v) {
+        var d = dist[u] + joursRoute(u, v.id, v.type);
+        if (dist[v.id] == null || d < dist[v.id]) { dist[v.id] = d; prec[v.id] = { de: u, type: v.type }; if (file.indexOf(v.id) < 0) file.push(v.id); }
+      });
+    }
+    if (dist[vers] == null) return [];
+    var ch = [], c = vers;
+    while (c !== de) { var p = prec[c]; ch.unshift({ de: p.de, vers: c, type: p.type, jours: joursRoute(p.de, c, p.type) }); c = p.de; }
+    return ch;
+  }
+  function partir(chemin) {
+    if (!chemin.length) return;
+    var e = chemin.shift();
+    voyage = { de: e.de, vers: e.vers, type: e.type, jours: e.jours, t: 0, duree: Math.min(1.4, 0.3 + e.jours * 0.06), reste: chemin };
+  }
+  function arriveeEtape(v) {
+    S.lieu = v.vers; S.jour += v.jours;
+    sauver();
+    majBarre();
+    // Rencontre en route ?
+    var L = FF.LIEUX[v.vers];
+    var chance = v.type === 'mer' ? 0.22 : 0.2;
+    if (S.etape >= 1 && Math.random() < chance && !S.fini) {
+      var reg = v.type === 'mer' ? 'mer' : L.region;
+      rencontre(FF.RENCONTRES[reg] || FF.RENCONTRES.occident, function () {
+        if (v.reste.length) partir(v.reste); else arrivee(v.vers);
+      });
+      return;
+    }
+    if (v.reste.length) partir(v.reste); else arrivee(v.vers);
+  }
+  function arrivee(id) {
+    centrerSur(id, VUE.z);
+    if (id === objectifLieu()) petitMsg('⭐ Ta mission est ici : entre dans ' + (estCamp(id) ? 'le camp' : 'la ville') + '.');
+    choisirLieu(id);
+  }
+  function rencontre(R, suite) {
+    var payer = Math.max(20, Math.round(S.or * 0.25));
+    var h = '<p class="grand">⚔️ ' + esc(R.nom) + ' vous barrent la route !</p>' +
+      '<button class="btn or" data-r="combat">Combattre</button>' +
+      (R.mer ? '' : '<button class="btn" data-r="payer"' + (S.or < payer ? ' disabled' : '') + '>Payer ' + payer + ' or pour passer</button>') +
+      '<button class="btn" data-r="fuir">Fuir (tu perds des provisions et peut-être un homme)</button>';
+    fenetre('Rencontre', h);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-r]'), function (b) {
+      b.onclick = function () {
+        $('fenetre').classList.add('hide');
+        if (b.dataset.r === 'payer') { S.or -= payer; sauver(); suite(); }
+        else if (b.dataset.r === 'fuir') {
+          S.or = Math.max(0, S.or - 10); var ks = Object.keys(S.troupes).filter(function (k) { return S.troupes[k] > 0; });
+          if (ks.length && Math.random() < 0.5) { var k = ks[Math.floor(Math.random() * ks.length)]; S.troupes[k]--; petitMsg('Un ' + FF.UNITES[k].nom.toLowerCase() + ' a disparu dans la fuite.'); }
+          sauver(); suite();
+        } else combat(R.mer ? { mer: true, titre: R.nom, ennemis: R.ennemis } : { titre: R.nom, decor: R.decor, vagues: R.vagues }, suite, { rencontre: true });
+      };
+    });
+  }
+
+  // Lieux où l'on ne peut pas entrer en ville (guerre, champ de bataille)
+  function estCamp(id) {
+    if (id === 'liban' || id === 'dorylee' || id === 'iconium') return true;
+    if (id === 'nicee') return S.etape <= idxEtape('nicee');
+    if (id === 'antioche') return S.etape <= idxEtape('antioche');
+    if (id === 'jerusalem') return !S.fini;
+    return false;
+  }
+  function idxEtape(lieu) { var h = FF.HISTOIRE[S.faction]; for (var i = 0; i < h.length; i++) if (h[i].lieu === lieu) return i; return 99; }
+
+  // ---------- Entrer dans un lieu ----------
+  function entrerLieu(id) {
+    if (estCamp(id)) return camp(id);
+    var L = FF.LIEUX[id];
+    var pnjs = [];
+    var e = etapeActuelle();
+    if (e && e.lieu === id) {
+      var q = (e.avant.filter(function (l) { return l.q && l.q !== 'narrateur' && l.q !== 'heros'; })[0] || { q: 'anselme' }).q;
+      pnjs.push({ id: 'quete', nom: FF.PERSOS[q].nom, role: '⭐ ' + e.titre, look: lookPerso(q), icone: '⭐' });
+    }
+    if (FF.LEGENDES[id] && !S.legendes[id] && S.etape >= 1) pnjs.push({ id: 'legende', nom: id === 'bagdad' ? 'Wang' : 'Vieil ermite', role: '✦ ' + FF.LEGENDES[id].titre, icone: '✦', look: id === 'bagdad' ? lookPerso('marchand') : { tunique: 0x5d4037, casque: 'capuche', barbe: 0xd5d8dc } });
+    pnjs.push({ id: 'forgeron', nom: 'Forgeron', role: 'Armes', icone: '⚒️', etal: 0x7f8c8d, look: { tunique: 0x5d4037, pantalon: 0x3e2723, barbe: 0x3e2723, cheveux: 0x3e2723 }, arme: 'masse' });
+    if (recruesIci(id).length) pnjs.push({ id: 'recruteur', nom: 'Capitaine', role: 'Recrues et mercenaires', icone: '🛡️', etal: 0xc0392b, look: { tunique: 0x7b241c, pantalon: 0x34495e, casque: 'nasal', bouclier: 'kite', bc: 0x7b241c }, arme: 'lance' });
+    pnjs.push({ id: 'taverne', nom: 'Aubergiste', role: 'Taverne : compagnons et rumeurs', icone: '🍺', etal: 0xd68910, look: { tunique: 0xa04000, pantalon: 0x4a235a, cheveux: 0x6e2c00 } });
+    var cour = FF.COURS[id];
+    if (cour && S.etape >= (cour.min || 0) && (id !== 'jerusalem' || S.fini)) pnjs.push({ id: 'cour', nom: 'Héraut', role: '👑 ' + cour.titre, icone: '👑', look: { tunique: 0xf1c40f, pantalon: 0x7d3c98, cheveux: 0x1c1c1c } });
+    var rel = { catholique: ['Père Lambert', 'Prêtre', '✝️'], orthodoxe: ['Père Nikitas', 'Prêtre orthodoxe', '☦️'], sunnite: ['Cheikh Hassan', 'Imam', '☪️'], chiite: ['Cheikh Ali', 'Imam', '☪️'], armenienne: ['Ter Grigor', 'Prêtre arménien', '✝️'] }[L.religion];
+    if (rel) pnjs.push({ id: 'pretre', nom: rel[0], role: rel[1], icone: rel[2], look: L.religion === 'sunnite' || L.religion === 'chiite' ? { tunique: 0xfdfefe, pantalon: 0xfdfefe, casque: 'turban', barbe: 0x7b7d7d } : { tunique: 0x1c1c1c, pantalon: 0x1c1c1c, cheveux: 0x7b7d7d, barbe: L.religion !== 'catholique' ? 0x7b7d7d : null } });
+    S.vus[id] = true;
+    ecran('jeu3d');
+    M.ville({
+      lieu: L, joueur: { look: lookHeros(), arme: S.equip[0] }, pnjs: pnjs, nuit: false,
+      parler: function (pid, pnj) { M.pause(true); parlerPnj(pid, id, pnj); },
+      sortir: function () { ecran('carte'); choisirLieu(id); },
+      pause: menuPause
+    });
+    $('nomLieu3d').textContent = L.nom;
+    petitMsg('Bienvenue à ' + L.nom + '. Approche-toi des gens pour leur parler.');
+  }
+  function lookPerso(q) {
+    var P = FF.PERSOS[q], L = (P && P.look) || {};
+    return { peau: L.peau || 0xf1c27d, tunique: L.couronne ? 0x7d3c98 : L.turban ? 0xfdfefe : 0x5d6d7e, pantalon: 0x34495e, casque: L.turban ? 'turban' : L.couronne ? 'couronne' : L.casque ? 'nasal' : L.capuche ? 'capuche' : 'aucun', barbe: L.barbe, cheveux: L.cheveux, cape: L.couronne ? 0x4a235a : null };
+  }
+  function reprendreVille() { M.pause(false); }
+
+  var RUMEURS = {
+    occident: ['On dit que Pierre l\'Ermite a entraîné des milliers de pauvres gens vers l\'Orient, sans armes ni vivres.', 'Le duc Godefroy a vendu ses terres pour payer son armée. Un homme pieux… ou très ambitieux.', 'Un moine m\'a dit que l\'épée de Charlemagne dort sous la chapelle d\'Aix.', 'Les bandes de la croisade populaire ont massacré les Juifs de Mayence et de Cologne. Une honte.'],
+    hongrie: ['Le roi Coloman se méfie des croisés. Les derniers ont pillé Zemun.', 'Les plaines de Hongrie sont belles, mais les mercenaires de Raoul y rôdent.'],
+    balkans: ['Les Petchénègues escortent les croisés… et tirent sur ceux qui pillent.', 'L\'empereur Alexis est rusé : il offre de l\'or et demande des serments.', 'Dans la Garde varègue, il y a des Anglais qui ont fui Guillaume le Conquérant.'],
+    anatolie: ['Kılıç Arslan a écrasé la croisade populaire l\'an dernier. Il croit que les chevaliers seront aussi faciles à battre.', 'Il fait si chaud en Anatolie que les chevaux tombent comme des mouches.'],
+    syrie: ['Les émirs d\'Alep et de Damas se détestent plus qu\'ils ne détestent les Francs.', 'Les Fatimides du Caire ont repris Jérusalem aux Turcs. Ils pensent que les Francs ne viennent que pour Antioche.'],
+    orient: ['Les marchands de la route de la soie apportent de la soie, du papier et même des épées d\'un pays appelé Japon.', 'Le calife de Bagdad règne, mais c\'est le sultan seldjoukide qui commande.'],
+    egypte: ['Le phare d\'Alexandrie se voit à des lieues en mer.', 'Le vizir al-Afdal tient le Caire d\'une main de fer.'],
+    mer: ['Les Génois et les Pisans se disputent toutes les routes de la mer.', 'Le feu grégeois brûle même sur l\'eau. Personne ne sait comment les Romains le fabriquent.']
+  };
+
+  function parlerPnj(pid, lieu, pnj) {
+    var L = FF.LIEUX[lieu];
+    if (pid === 'quete') return mission(etapeActuelle(), reprendreVille);
+    if (pid === 'legende') return legende(lieu, reprendreVille);
+    if (pid === 'forgeron') return forge(reprendreVille);
+    if (pid === 'recruteur') return recruter(lieu, false, reprendreVille);
+    if (pid === 'taverne') return taverne(lieu, reprendreVille);
+    if (pid === 'cour') return cour(lieu, reprendreVille);
+    if (pid === 'pretre') return pretre(lieu, pnj, reprendreVille);
+    // Habitant : une rumeur
+    var r = RUMEURS[L.region] || RUMEURS.occident;
+    dialogue([{ q: 'narrateur', t: '« ' + r[Math.floor(Math.random() * r.length)] + ' »' }], reprendreVille);
+  }
+
+  // Camp de l'armée (lieux en guerre)
+  function camp(id) {
+    var L = FF.LIEUX[id], e = etapeActuelle();
+    var h = '<p>' + esc(L.desc) + '</p>';
+    if (e && e.lieu === id) h += '<button class="btn or" data-c="mission">⭐ ' + esc(e.titre) + '</button>';
+    else h += '<p class="muted">Rien à faire ici pour l\'instant.' + (e ? ' Ton objectif : ' + esc(e.objectif) : '') + '</p>';
+    fenetre(id === 'liban' ? '❄️ ' + L.nom : '⛺ Camp devant ' + L.nom, h);
+    var b = $('fenCorps').querySelector('[data-c]');
+    if (b) b.onclick = function () { $('fenetre').classList.add('hide'); mission(e, function () { ecran('carte'); }); };
+  }
+
+  // ---------- Mission d'histoire ----------
+  function mission(e, retour) {
+    if (!e) return retour && retour();
+    var h = '<p class="date">' + esc(e.date) + ' · ' + esc(FF.LIEUX[e.lieu].nom) + '</p><p>' + esc(e.objectif) + '</p>' +
+      '<details><summary>📜 Le saviez-vous ?</summary><p>' + esc(e.fait) + '</p></details>' +
+      '<button class="btn or" id="goMission">Commencer</button>';
+    fenetre(e.titre, h, function () { if (retour) retour(); });
+    $('goMission').onclick = function () {
+      $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+      dialogue(e.avant, function () {
+        var lancer = function () {
+          combat(e.combat, function (res) {
+            if (!res.victoire) { quitterVilleSiBesoin(); ecran('carte'); return; }
+            dialogue(e.apres, function () { recompense(e.recompense, function () {
+              S.etape++;
+              S.stats.victoires++;
+              sauver();
+              if (e.recompense.fin) return epilogue();
+              quitterVilleSiBesoin();
+              ecran('carte');
+              var suite = etapeActuelle();
+              if (suite) petitMsg('Nouvel objectif : ' + suite.objectif);
+            }); });
+          }, { histoire: true });
+        };
+        if (e.recompense.tuto || !S.vus.tuto) { S.vus.tuto = true; aide(lancer); } else lancer();
+      });
+    };
+  }
+  function quitterVilleSiBesoin() { if (M.enVille()) M.arreter(); }
+  function recompense(r, suite) {
+    var h = '<div class="recomp">';
+    if (r.or) { var g = Math.round(r.or * (S.faction === 'romains' ? 1.4 : 1)); S.or += g; h += '<p>💰 +' + g + ' or</p>'; }
+    if (r.renom) { var avant = niveau(); S.renom += r.renom; h += '<p>⭐ +' + r.renom + ' renommée</p>'; if (niveau() > avant) h += '<p class="or">⬆️ Niveau ' + niveau() + ' ! PV max ' + pvMax() + ', +2 places de troupes.</p>'; }
+    if (r.arme && S.armes.indexOf(r.arme) < 0) {
+      var A = FF.ARMES[r.arme]; S.armes.push(r.arme);
+      if (A.type === 'legendaire') { S.equip = [S.equip[0], r.arme]; }
+      h += '<p class="arme">' + (A.type === 'legendaire' ? '✨ Arme légendaire : ' : '⚔️ Nouvelle arme : ') + '<b>' + esc(A.nom) + '</b><br><small>' + esc(A.desc) + (A.pouvoir ? ' Pouvoir (touche E) : ' + esc(A.pouvoir.nom) + '.' : '') + '</small></p>';
+    }
+    if (r.compagnon && S.compagnons.indexOf(r.compagnon) < 0) { S.compagnons.push(r.compagnon); h += '<p>🤝 ' + esc(FF.PERSOS[r.compagnon].nom) + ' rejoint ta compagnie' + (FF.COMPAGNONS[r.compagnon].unite ? ' et combattra à tes côtés.' : '.') + '</p>'; }
+    h += '</div><button class="btn or" id="okRecomp">Continuer</button>';
+    sauver();
+    fenetre('Récompenses', h);
+    $('okRecomp').onclick = function () { $('fenetre').classList.add('hide'); suite(); };
+  }
+
+  function legende(lieu, retour) {
+    var Lg = FF.LEGENDES[lieu];
+    dialogue(Lg.avant, function () {
+      combat(Lg.combat, function (res) {
+        if (!res.victoire) { quitterVilleSiBesoin(); ecran('carte'); return; }
+        S.legendes[lieu] = true;
+        dialogue(Lg.apres, function () { recompense({ arme: Lg.arme, renom: 10, or: 50 }, function () { quitterVilleSiBesoin(); ecran('carte'); }); });
+      }, {});
+    });
+  }
+
+  // ---------- Combats ----------
+  function compagnonsCombat() {
+    return S.compagnons.filter(function (c) { return FF.COMPAGNONS[c] && FF.COMPAGNONS[c].unite; }).map(function (c) {
+      var u = FF.COMPAGNONS[c].unite;
+      return Object.assign({ id: c }, u, { pv: u.pv + niveau() * 6 });
+    });
+  }
+  function alliesCombat(max) {
+    var lst = [], place = max;
+    // les meilleures troupes d'abord
+    Object.keys(S.troupes).sort(function (a, b) { return (FF.UNITES[b].prix || 0) - (FF.UNITES[a].prix || 0); }).forEach(function (k) {
+      var n = Math.min(S.troupes[k], place);
+      if (n > 0) { lst.push([k, n]); place -= n; }
+    });
+    return lst;
+  }
+  function combat(def, fin, opts) {
+    opts = opts || {};
+    var C = typeof def === 'string' ? FF.COMBATS[def] : def;
+    var wasVille = M.enVille();
+    if (wasVille) M.arreter();
+    ecran('jeu3d');
+    $('nomLieu3d').textContent = C.titre || '';
+    var joueur = { nom: S.heros, armes: S.equip.slice(), pvMax: pvMax(), look: lookHeros(), bonusDeg: 1 + (niveau() - 1) * 0.04 };
+    var comp = compagnonsCombat();
+    var commun = { joueur: joueur, compagnons: comp, faction: S.faction, diff: OPT.diff, directionnel: OPT.dir && !M.mobile, pause: menuPause };
+    var apres = function (res) {
+      // Pertes
+      var morts = res.morts || {};
+      Object.keys(morts).forEach(function (k) {
+        if (!S.troupes[k]) return;
+        var perdus = Math.round(morts[k] * (res.victoire ? 0.5 : 0.8)); // la moitié des blessés survit après une victoire
+        S.troupes[k] = Math.max(0, S.troupes[k] - perdus);
+      });
+      if (res.pertesEquipage) for (var i = 0; i < res.pertesEquipage; i++) { var ks = Object.keys(S.troupes).filter(function (k) { return S.troupes[k] > 0; }); if (!ks.length) break; S.troupes[ks[Math.floor(Math.random() * ks.length)]]--; }
+      Object.keys(S.troupes).forEach(function (k) { if (!S.troupes[k]) delete S.troupes[k]; });
+      var gain = res.or || 0;
+      S.or += gain;
+      var perte = 0;
+      if (!res.victoire && !C.amical) { perte = Math.round(S.or * 0.2); S.or -= perte; }
+      if (res.victoire) { S.renom += opts.histoire ? 0 : 3; S.stats.tues += (res.stats && res.stats.tues) || 0; }
+      sauver();
+      var h = '<p class="grand ' + (res.victoire ? 'or' : 'rouge') + '">' + (res.victoire ? (C.amical ? '🏆 Victoire !' : '🏆 Victoire !') : (C.amical ? 'Duel perdu…' : '💀 Défaite…')) + '</p>';
+      h += '<p>💰 Or ramassé : ' + gain + (perte ? ' · Or perdu : ' + perte : '') + '</p>';
+      if (res.stats) h += '<p>⚔️ Ennemis vaincus : ' + res.stats.tues + (res.stats.parades ? ' · Parades parfaites : ' + res.stats.parades : '') + '</p>';
+      if (res.coules != null) h += '<p>⚓ Navires coulés : ' + res.coules + ' · capturés : ' + res.captures + '</p>';
+      var lp = Object.keys(morts).filter(function (k) { return FF.UNITES[k]; }).map(function (k) { return morts[k] + ' ' + FF.UNITES[k].nom.toLowerCase(); });
+      if (lp.length) h += '<p class="muted">Tombés au combat : ' + esc(lp.join(', ')) + (res.victoire ? ' (la moitié des blessés s\'en remettront)' : '') + '</p>';
+      if (!res.victoire) h += '<button class="btn or" id="reessayer">Réessayer</button>';
+      h += '<button class="btn" id="okCombat">' + (res.victoire ? 'Continuer' : 'Retour à la carte') + '</button>';
+      fenetre(res.victoire ? 'Victoire' : 'Défaite', h);
+      var ok = $('okCombat'), re = $('reessayer');
+      ok.onclick = function () {
+        $('fenetre').classList.add('hide');
+        if (res.victoire || S.rapide || (!opts.histoire && !opts.rencontre)) fin(res);
+        else ecran('carte');
+      };
+      if (re) re.onclick = function () { $('fenetre').classList.add('hide'); combat(def, fin, opts); };
+    };
+    if (C.mer) {
+      M.naval(Object.assign({}, commun, {
+        titre: C.titre, navire: S.faction === 'romains' ? 'dromon' : 'nef', ennemis: C.ennemis, allies: C.allies, lac: C.lac,
+        equipage: Math.min(14, 4 + nbTroupes()), equipageAllie: alliesCombat(10)
+      }), apres);
+    } else {
+      var allies = alliesCombat(Math.max(0, 11 - comp.length)).concat(C.alliesHisto || []);
+      M.bataille(Object.assign({}, commun, { titre: C.titre, decor: C.decor, vagues: C.vagues || [], boss: C.boss, allies: allies, amical: C.amical, graine: (C.titre || 'x').length * 13 }), apres);
+    }
+  }
+
+  // ---------- Forge ----------
+  function forge(retour) {
+    var h = '<p class="muted">Tu as ' + S.or + ' or. Tu portes deux armes : change en combat avec X, la molette ou ⇄.</p><div class="grille">';
+    Object.keys(FF.ARMES).forEach(function (id) {
+      var A = FF.ARMES[id], a = S.armes.indexOf(id) >= 0;
+      if (A.type === 'legendaire' && !a) return;
+      var eq = S.equip.indexOf(id);
+      h += '<div class="carteArme ' + (A.type === 'legendaire' ? 'leg' : '') + '"><b>' + esc(A.nom) + '</b><small>' + esc(A.origine) + '</small>' +
+        '<div class="stats">' + barre('Dégâts', A.deg / 26) + barre('Vitesse', 0.42 / A.dur) + barre('Portée', A.portee / 3.3) + '</div><p>' + esc(A.desc) + (A.pouvoir ? ' <i>✨ ' + esc(A.pouvoir.nom) + '</i>' : '') + '</p>';
+      if (!a) h += '<button class="btn or petit" data-acheter="' + id + '"' + (S.or < A.prix ? ' disabled' : '') + '>Acheter ' + A.prix + ' or</button>';
+      else h += '<div class="rangee"><button class="btn petit' + (eq === 0 ? ' actif' : '') + '" data-eq="0" data-id="' + id + '">Main 1</button><button class="btn petit' + (eq === 1 ? ' actif' : '') + '" data-eq="1" data-id="' + id + '">Main 2</button></div>';
+      h += '</div>';
+    });
+    h += '</div>';
+    fenetre('⚒️ Forge et armurerie', h, retour);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-acheter]'), function (b) {
+      b.onclick = function () { var A = FF.ARMES[b.dataset.acheter]; if (S.or < A.prix) return; S.or -= A.prix; S.armes.push(b.dataset.acheter); S.equip[0] = b.dataset.acheter; sauver(); M.son('or'); forge(retour); };
+    });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-eq]'), function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.eq, id = b.dataset.id, autre = S.equip.indexOf(id);
+        if (autre >= 0 && autre !== i) S.equip[autre] = S.equip[i];
+        S.equip[i] = id;
+        S.equip = S.equip.filter(function (x, k) { return x && S.equip.indexOf(x) === k; });
+        sauver(); forge(retour);
+      };
+    });
+  }
+  function barre(nom, k) { return '<label>' + nom + '<span><i style="width:' + Math.round(Math.min(1, k) * 100) + '%"></i></span></label>'; }
+
+  // ---------- Recrutement ----------
+  function recruesIci(lieu) {
+    var l = (FF.RECRUES[lieu] || []).filter(function (k) { var U = FF.UNITES[k]; return U && (!U.faction || U.faction === S.faction); });
+    if (lieu === 'jerusalem' && !S.fini) l = l.filter(function (k) { return k !== 'hospitalier'; });
+    // Troupes de ta faction dans les villes amies
+    var L = FF.LIEUX[lieu];
+    if (S.faction === 'latins' && (L.faction === 'latins' || L.faction === 'hongrie') && l.indexOf('sergent') < 0) l.push('sergent');
+    if (S.faction === 'romains' && L.faction === 'romains' && l.indexOf('skutatos') < 0) l.push('skutatos');
+    return l;
+  }
+  function prix(k) { return Math.round(FF.UNITES[k].prix * (S.faction === 'romains' ? 0.75 : 1)); }
+  function recruter(lieu, mercsSeuls, retour) {
+    var l = recruesIci(lieu).filter(function (k) { return !mercsSeuls || FF.UNITES[k].merc; });
+    var h = '<p class="muted">💰 ' + S.or + ' or · 👥 ' + nbTroupes() + ' / ' + placeTroupes() + ' hommes (plus de places en gagnant des niveaux).</p><div class="liste">';
+    l.forEach(function (k) {
+      var U = FF.UNITES[k];
+      h += '<div class="ligneUnite"><div><b>' + esc(U.nom) + '</b>' + (U.merc ? ' <span class="tag">mercenaire</span>' : '') + (k === 'hospitalier' ? ' <span class="tag or">ordre saint</span>' : '') +
+        '<small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.tir ? ' · 🏹 tir' : '') + (U.histo ? ' — ' + esc(U.histo) : '') + '</small></div>' +
+        '<button class="btn or petit" data-rec="' + k + '"' + (S.or < prix(k) || nbTroupes() >= placeTroupes() ? ' disabled' : '') + '>' + prix(k) + ' or</button></div>';
+    });
+    if (!l.length) h += '<p>Personne à engager ici.</p>';
+    h += '</div>';
+    fenetre(mercsSeuls ? '💰 Mercenaires' : '🛡️ Recruter', h, retour);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-rec]'), function (b) {
+      b.onclick = function () { var k = b.dataset.rec; if (S.or < prix(k) || nbTroupes() >= placeTroupes()) return; S.or -= prix(k); S.troupes[k] = (S.troupes[k] || 0) + 1; sauver(); M.son('or'); recruter(lieu, mercsSeuls, retour); };
+    });
+  }
+
+  // ---------- Taverne : compagnons, romance, rumeurs ----------
+  function taverne(lieu, retour) {
+    var h = '<p>La salle sent le vin chaud et la fumée. Des voyageurs de tous les pays parlent fort.</p>';
+    S.compagnons.forEach(function (c) {
+      var Cp = FF.COMPAGNONS[c]; if (!Cp) return;
+      var faites = S.discussions[c] || 0, d = Cp.discussions[faites];
+      var coeur = c === 'yusuf' ? '' : ' · ❤️ ' + (S.aff[c] || 0);
+      if (d && S.etape >= d.min) h += '<button class="btn or" data-parler="' + c + '">💬 Parler à ' + esc(Cp.nom) + coeur + '</button>';
+      else h += '<p class="muted">' + esc(Cp.nom) + coeur + (S.drapeaux['romance_' + c] ? ' · 💕 en couple' : ' — n\'a rien de nouveau à te dire pour l\'instant.') + '</p>';
+    });
+    if (!S.compagnons.length) h += '<p class="muted">Tu n\'as pas encore de compagnons. Suis l\'histoire pour en rencontrer.</p>';
+    if (recruesIci(lieu).some(function (k) { return FF.UNITES[k].merc; })) h += '<button class="btn" data-t="mercs">💰 Engager des mercenaires</button>';
+    h += '<button class="btn" data-t="rumeur">👂 Écouter les rumeurs</button>';
+    fenetre('🍺 Taverne de ' + FF.LIEUX[lieu].nom, h, retour);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-parler]'), function (b) {
+      b.onclick = function () {
+        var c = b.dataset.parler, Cp = FF.COMPAGNONS[c], d = Cp.discussions[S.discussions[c] || 0];
+        $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+        var lignes = d.d;
+        if (d.romance && (S.aff[c] || 0) < 6) lignes = [{ q: c, t: 'Je… non, rien. Une autre fois, peut-être.' }, { q: 'narrateur', t: '(Il faudrait que ' + Cp.nom + ' t\'apprécie davantage : ❤️ 6 ou plus.)' }];
+        else S.discussions[c] = (S.discussions[c] || 0) + 1;
+        sauver();
+        dialogue(lignes, function () { taverne(lieu, retour); });
+      };
+    });
+    var m = $('fenCorps').querySelector('[data-t="mercs"]');
+    if (m) m.onclick = function () { recruter(lieu, true, function () { taverne(lieu, retour); }); };
+    $('fenCorps').querySelector('[data-t="rumeur"]').onclick = function () {
+      var r = RUMEURS[FF.LIEUX[lieu].region] || RUMEURS.occident;
+      $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+      dialogue([{ q: 'narrateur', t: '« ' + r[Math.floor(Math.random() * r.length)] + ' »' }], function () { taverne(lieu, retour); });
+    };
+  }
+
+  // ---------- Cours et intrigues ----------
+  function cour(lieu, retour) {
+    var Co = FF.COURS[lieu];
+    S.opinion[lieu] = S.opinion[lieu] || {};
+    var visite = 'cour_' + lieu + '_' + S.jour;
+    var h = '<p class="muted">Gagne la confiance des courtisans : ils te révèlent leurs secrets. 💰 ' + S.or + ' or</p><div class="liste">';
+    Co.courtisans.forEach(function (c) {
+      var op = S.opinion[lieu][c.id] || 0;
+      h += '<div class="ligneCour"><canvas data-por="' + c.id + '" width="96" height="96"></canvas><div><b>' + esc(FF.PERSOS[c.id].nom) + '</b><small>' + esc(c.role) + ' · Opinion : ' + coeurs(op) + '</small><p>' + esc(c.desc) + '</p>' +
+        '<div class="rangee"><button class="btn petit" data-cp="' + c.id + '"' + (S.vus[visite + c.id] ? ' disabled' : '') + '>Discuter</button><button class="btn petit" data-cc="' + c.id + '"' + (S.or < 50 ? ' disabled' : '') + '>Présent (50 or)</button></div></div></div>';
+    });
+    h += '</div>';
+    var intr = Co.intrigues.filter(function (i) { return S.etape >= i.min && !S.intrigues[i.id]; });
+    intr.forEach(function (i) { h += '<button class="btn or" data-intr="' + i.id + '">🗝️ Intrigue : ' + esc(i.titre) + '</button>'; });
+    fenetre('👑 ' + Co.titre, h, retour);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-por]'), function (c) { var p = portrait(c.dataset.por); c.getContext('2d').drawImage(p, 0, 0); });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-cp]'), function (b) {
+      b.onclick = function () {
+        var c = Co.courtisans.filter(function (x) { return x.id === b.dataset.cp; })[0];
+        S.vus[visite + c.id] = true;
+        S.opinion[lieu][c.id] = (S.opinion[lieu][c.id] || 0) + 1;
+        sauver();
+        $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+        var lignes = [{ q: c.id, t: (S.opinion[lieu][c.id] >= 2 ? 'Entre nous… ' : 'On raconte que… ') + c.rumeur }];
+        dialogue(lignes, function () { cour(lieu, retour); });
+      };
+    });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-cc]'), function (b) {
+      b.onclick = function () { if (S.or < 50) return; S.or -= 50; S.opinion[lieu][b.dataset.cc] = (S.opinion[lieu][b.dataset.cc] || 0) + 2; S.renom += 1; sauver(); M.son('or'); petitMsg('Ton présent est apprécié.'); cour(lieu, retour); };
+    });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-intr]'), function (b) {
+      b.onclick = function () {
+        var i = Co.intrigues.filter(function (x) { return x.id === b.dataset.intr; })[0];
+        S.intrigues[i.id] = true; sauver();
+        $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+        dialogue(i.d, function () {
+          if (!M.enVille()) { // l'intrigue a mené à un combat : on revient sur la carte
+            ecran('carte'); return;
+          }
+          cour(lieu, retour);
+        });
+      };
+    });
+  }
+  function coeurs(n) { return n <= 0 ? 'neutre' : '★'.repeat(Math.min(5, n)); }
+
+  // ---------- Religion ----------
+  function pretre(lieu, pnj, retour) {
+    var L = FF.LIEUX[lieu], R = FF.RELIGIONS[L.religion];
+    var h = '<h3>' + esc(R.nom) + '</h3><p>' + esc(R.texte) + '</p>';
+    if (lieu === 'jerusalem') h += '<p>' + esc(FF.RELIGIONS.juive.texte) + '</p><p class="muted">À Jérusalem, les lieux saints des trois religions sont à quelques rues les uns des autres : le Saint-Sépulcre, le mont du Temple et le Dôme du Rocher, le mur occidental.</p>';
+    var cle = 'offrande_' + lieu + '_' + S.jour;
+    h += '<button class="btn or" id="offrande"' + (S.vus[cle] || S.or < 20 ? ' disabled' : '') + '>Faire une aumône aux pauvres (20 or) : +3 renommée</button>';
+    if (L.religion !== FF.FACTIONS[S.faction].religion) h += '<p class="muted">Ce n\'est pas ta religion, mais le respect ouvre bien des portes.</p>';
+    fenetre(pnj.data.icone + ' ' + pnj.nom, h, retour);
+    $('offrande').onclick = function () { if (S.or < 20) return; S.or -= 20; S.renom += 3; S.vus[cle] = true; sauver(); M.son('or'); petitMsg('Les pauvres te bénissent.'); pretre(lieu, pnj, retour); };
+  }
+
+  // ---------- Compagnie, journal, codex ----------
+  function compagnie() {
+    var h = '<div class="statsHeros"><canvas id="porHeros" width="96" height="96"></canvas><div><b>' + esc(S.heros) + '</b><small>' + esc(FF.FACTIONS[S.faction].nom) + '</small>' +
+      '<p>Niveau ' + niveau() + ' · ⭐ ' + S.renom + ' renommée · ❤️ ' + pvMax() + ' PV · 💰 ' + S.or + ' or</p>' +
+      '<p>Faveur : ✝️ Latins ' + S.fav.latins + ' · ☦️ Romains ' + S.fav.romains + '</p></div></div>';
+    h += '<h3>Bonus de ta faction</h3><ul>' + FF.FACTIONS[S.faction].bonus.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>';
+    h += '<h3>Armes en main</h3><p>' + S.equip.map(function (a) { return esc(FF.ARMES[a].nom); }).join(' · ') + ' <span class="muted">(change-les chez un forgeron)</span></p>';
+    h += '<h3>Compagnons</h3>' + (S.compagnons.length ? '<ul>' + S.compagnons.map(function (c) { return '<li>' + esc(FF.COMPAGNONS[c].nom) + (c !== 'yusuf' ? ' · ❤️ ' + (S.aff[c] || 0) + (S.drapeaux['romance_' + c] ? ' 💕' : '') : ' (guide, ne combat pas)') + '</li>'; }).join('') + '</ul>' : '<p class="muted">Aucun pour l\'instant.</p>');
+    h += '<h3>Troupes (' + nbTroupes() + ' / ' + placeTroupes() + ')</h3>';
+    var ks = Object.keys(S.troupes);
+    h += ks.length ? '<ul>' + ks.map(function (k) { return '<li>' + S.troupes[k] + ' × ' + esc(FF.UNITES[k].nom) + '</li>'; }).join('') + '</ul><p class="muted">En bataille, jusqu\'à 11 soldats te suivent (les meilleurs d\'abord).</p>' : '<p class="muted">Aucun soldat. Recrute dans les villes.</p>';
+    fenetre('🛡️ Ma compagnie', h);
+    $('porHeros').getContext('2d').drawImage(portrait('heros'), 0, 0);
+  }
+  function journal() {
+    var e = etapeActuelle();
+    var h = e ? '<p class="objectif">⭐ ' + esc(e.objectif) + '</p><p class="muted">Le lieu de ta mission est marqué d\'une étoile sur la carte.</p>' : '<p class="objectif">La démo est terminée ! Explore les lieux de légende ✦ et combats librement.</p>';
+    h += '<h3>Chapitres</h3><ol class="chapitres">';
+    FF.HISTOIRE[S.faction].forEach(function (c, i) { h += '<li class="' + (i < S.etape ? 'fait' : i === S.etape ? 'encours' : '') + '">' + esc(c.titre) + ' <small>' + esc(c.date) + '</small></li>'; });
+    h += '</ol><h3>Lieux de légende ✦</h3><ul>';
+    Object.keys(FF.LEGENDES).forEach(function (k) { h += '<li>' + (S.legendes[k] ? '✅ ' : '✦ ') + esc(FF.LIEUX[k].nom) + ' : ' + esc(FF.LEGENDES[k].titre) + '</li>'; });
+    h += '</ul><h3>Tes choix</h3><ul>';
+    var choix = { serment: 'Tu as conseillé de jurer fidélité à l\'empereur.', refus: 'Tu as conseillé de refuser le serment.', bertrand_epargne: 'Tu as épargné Bertrand de Mauves.', bertrand_juge: 'Tu as livré Bertrand aux barons.', antioche_romaine: 'Antioche a été rendue à l\'empereur (histoire alternative).', antioche_latine: 'Bohémond a gardé Antioche.', michel_arrete: 'Tu as démasqué le logothète Michel.', diplomate: 'Yusuf a parlé aux émirs de Kerbogha.', romance_melisende: 'Tu es en couple avec Mélisende.', romance_zoe: 'Tu es en couple avec Zoé.' };
+    var any = false;
+    Object.keys(choix).forEach(function (k) { if (S.drapeaux[k]) { any = true; h += '<li>' + esc(choix[k]) + '</li>'; } });
+    if (!any) h += '<li class="muted">Pas encore de grand choix.</li>';
+    h += '</ul>';
+    fenetre('📜 Journal', h);
+  }
+  function codex() {
+    var h = '<div class="onglets"><button class="btn petit actif" data-o="armes">Armes</button><button class="btn petit" data-o="religions">Religions</button><button class="btn petit" data-o="factions">Factions</button><button class="btn petit" data-o="troupes">Troupes</button></div><div id="codexCorps"></div>';
+    fenetre('📖 Codex', h);
+    function montre(o) {
+      var c = '';
+      if (o === 'armes') Object.keys(FF.ARMES).forEach(function (id) {
+        var A = FF.ARMES[id], a = S && S.armes.indexOf(id) >= 0;
+        var cache = A.type === 'legendaire' && !a;
+        c += '<div class="codexLigne ' + (A.type === 'legendaire' ? 'leg' : '') + '"><b>' + (cache ? '✦ ' : '') + esc(A.nom) + (a ? ' ✅' : '') + '</b><small>' + esc(A.origine) + '</small><p>' + esc(A.desc) + (A.pouvoir ? ' ✨ ' + esc(A.pouvoir.nom) + ' : ' + esc(A.pouvoir.desc) : '') + '</p></div>';
+      });
+      if (o === 'religions') Object.keys(FF.RELIGIONS).forEach(function (k) { var R = FF.RELIGIONS[k]; c += '<div class="codexLigne"><b>' + esc(R.nom) + '</b><p>' + esc(R.texte) + '</p></div>'; });
+      if (o === 'factions') Object.keys(FF.FACTIONS).forEach(function (k) { var F = FF.FACTIONS[k]; if (k === 'legende') return; c += '<div class="codexLigne"><b><span class="pastille" style="background:' + F.couleur + '"></span> ' + esc(F.nom) + '</b><small>' + esc(FF.RELIGIONS[F.religion].nom) + '</small>' + (F.histoire ? '<p>' + esc(F.histoire) + '</p>' : '') + (F.bonus ? '<ul>' + F.bonus.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' : '') + '</div>'; });
+      if (o === 'troupes') Object.keys(FF.UNITES).forEach(function (k) { var U = FF.UNITES[k]; if (!U.prix) return; c += '<div class="codexLigne"><b>' + esc(U.nom) + (U.merc ? ' <span class="tag">mercenaire</span>' : '') + '</b><small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.faction ? ' · ' + esc(FF.FACTIONS[U.faction].nom) + ' seulement' : '') + '</small>' + (U.histo ? '<p>' + esc(U.histo) + '</p>' : '') + '</div>'; });
+      $('codexCorps').innerHTML = c;
+    }
+    montre('armes');
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-o]'), function (b) {
+      b.onclick = function () { Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-o]'), function (x) { x.classList.toggle('actif', x === b); }); montre(b.dataset.o); };
+    });
+  }
+
+  // ---------- Épilogue ----------
+  function epilogue() {
+    S.fini = true; sauver();
+    quitterVilleSiBesoin();
+    var l = [];
+    l.push(S.drapeaux.paix ? 'Grâce à la reddition négociée, Jérusalem a été épargnée. Une histoire différente commence, où l\'on se souviendra de ton nom des deux côtés des murailles.' : S.drapeaux.protecteur ? 'Jérusalem est tombée dans le sang, comme dans l\'Histoire. Mais des familles entières te doivent la vie.' : 'Jérusalem est tombée. Tu as vaincu Raoul, mais la ville a payé un prix terrible.');
+    l.push(S.drapeaux.antioche_romaine ? 'Antioche est redevenue romaine : Latins et Romains restent alliés, et l\'Empire envoie ses flottes au secours de la Terre sainte.' : 'Bohémond règne sur Antioche. La méfiance entre Latins et Romains ne fera que grandir.');
+    if (S.drapeaux.romance_melisende) l.push('Mélisende ne rentre pas à Liège. Main dans la main, vous partez voir le monde.');
+    else if (S.drapeaux.romance_zoe) l.push('Sur le pont du « Saint-Phocas », Zoé te tend la barre. Second capitaine, pour toujours.');
+    l.push('Les armes des légendes sont rendues au Sanctuaire… sauf celles que tu gardes pour la suite.');
+    var h = '<div class="epilogue">' + l.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') +
+      '<p class="or grand">✠ Fin de la démo ✠</p><p>Merci d\'avoir joué à <b>Ferrum et Fides</b> ! La version complète arrive plus tard (sur Steam) avec des chevaux, les ordres de chevalerie (Templiers, Hospitaliers), d\'autres croisades et plus de batailles.</p>' +
+      '<p class="muted">Tu peux continuer à explorer : lieux de légende ✦, cour de Jérusalem, Frères de l\'Hôpital à recruter.</p></div>' +
+      '<button class="btn or" id="okFin">Continuer à explorer</button>';
+    fenetre('Épilogue', h);
+    $('okFin').onclick = function () { $('fenetre').classList.add('hide'); ecran('carte'); };
+  }
+
+  // ---------- Aide et pause ----------
+  function aide(suite) {
+    var pc = '<ul class="touches"><li><kbd>Z Q S D</kbd> / <kbd>W A S D</kbd> se déplacer · <kbd>Maj</kbd> courir</li>' +
+      '<li><kbd>Souris</kbd> tourner la caméra (clique d\'abord dans le jeu)</li>' +
+      '<li><kbd>Clic gauche</kbd> frapper · <kbd>Clic droit</kbd> parer (au bon moment : parade parfaite !)</li>' +
+      '<li><kbd>Espace</kbd> roulade · <kbd>X</kbd> / molette : changer d\'arme · <kbd>E</kbd> pouvoir de l\'arme légendaire</li>' +
+      '<li><kbd>1</kbd> suivez-moi · <kbd>2</kbd> tenez la position · <kbd>3</kbd> chargez (ordres aux troupes)</li>' +
+      '<li><kbd>Échap</kbd> pause</li></ul>' +
+      '<p><b>Comme dans Mount &amp; Blade :</b> bouge la souris juste avant de frapper pour choisir la direction du coup (gauche, droite, haut, ou vers le bas pour l\'estoc). Active la <b>parade directionnelle</b> dans les options pour devoir parer dans la direction de la flèche affichée au-dessus de l\'ennemi.</p>' +
+      '<p><b>En mer :</b> Z/S voiles, Q/D gouvernail, Espace tirer, E feu grégeois (Romains), F aborder.</p>';
+    var mob = '<ul class="touches"><li>🕹️ Joystick à gauche pour bouger, glisse à droite pour tourner la caméra.</li><li>⚔️ frapper (glisse sur le bouton pour choisir la direction) · 🛡️ parer (maintenir) · 💨 roulade · ✨ pouvoir · ⇄ changer d\'arme · 🚩 ordre aux troupes</li><li>En mer : joystick = voiles et gouvernail, ⚔️ tirer, ✨ feu grégeois, ⇄ aborder.</li></ul>';
+    fenetre('🎮 Commandes', (M.mobile ? mob : pc) + (suite ? '<button class="btn or" id="okAide">J\'ai compris, au combat !</button>' : ''), suite ? null : undefined);
+    if (suite) $('okAide').onclick = function () { $('fenetre').classList.add('hide'); suite(); };
+  }
+  function menuPause() {
+    if (!$('fenetre').classList.contains('hide') || !$('dialogue').classList.contains('hide')) return;
+    M.pause(true);
+    var h = '<button class="btn or" data-p="reprendre">▶️ Reprendre</button><button class="btn" data-p="aide">🎮 Commandes</button>' +
+      '<button class="btn" data-p="son">' + (OPT.son ? '🔊 Son : oui' : '🔇 Son : non') + '</button>';
+    if (M.enBataille() || M.enNaval()) h += '<button class="btn rouge" data-p="fuir">🏳️ Fuir le combat</button>';
+    if (M.enVille()) h += '<button class="btn" data-p="sortir">🚪 Quitter la ville</button>';
+    fenetre('Pause', h, function () { M.pause(false); });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-p]'), function (b) {
+      b.onclick = function () {
+        var p = b.dataset.p;
+        if (p === 'reprendre') fermerFenetre();
+        else if (p === 'aide') { $('fenetre').onFerme = null; aide(); $('fenetre').onFerme = function () { M.pause(false); }; }
+        else if (p === 'son') { OPT.son = !OPT.son; M.muet(!OPT.son); sauver(); $('fenetre').onFerme = null; $('fenetre').classList.add('hide'); menuPause(); }
+        else if (p === 'fuir') { $('fenetre').onFerme = null; $('fenetre').classList.add('hide'); M.pause(false); if (M.enBataille()) M.abandonner(); else M.abandonnerNaval(); }
+        else if (p === 'sortir') { $('fenetre').onFerme = null; $('fenetre').classList.add('hide'); M.pause(false); M.quitterVille(); }
+      };
+    });
+  }
+  $('btnPause').onclick = menuPause;
+
+  // ---------- Barre du haut de la carte ----------
+  function majBarre() {
+    if (!S) return;
+    $('barreDate').textContent = '📅 ' + dateTexte();
+    $('barreOr').textContent = '💰 ' + S.or;
+    $('barreTroupes').textContent = '👥 ' + nbTroupes() + '/' + placeTroupes();
+    $('barreNiveau').textContent = '⭐ Niv. ' + niveau();
+    var e = etapeActuelle();
+    $('barreObjectif').textContent = e ? '⭐ ' + e.objectif : '✦ Démo terminée : explore les légendes';
+  }
+  $('bCompagnie').onclick = compagnie;
+  $('bJournal').onclick = journal;
+  $('bCodex').onclick = codex;
+  $('bMenu').onclick = function () { M.arreter(); accueil(); };
+  $('barreObjectif').onclick = function () { var o = objectifLieu(); if (o) { centrerSur(o, VUE.z); choisirLieu(o); } };
+
+  // ---------- Accueil et création ----------
+  function accueil() {
+    var d = lire();
+    $('btnContinuer').classList.toggle('hide', !d);
+    if (d) $('btnContinuer').textContent = '▶️ Continuer (' + d.heros + ', ' + FF.FACTIONS[d.faction].nom.split(' (')[0] + ')';
+    $('optDiff').value = OPT.diff; $('optDir').checked = OPT.dir; $('optSon').checked = OPT.son;
+    ecran('accueil');
+  }
+  $('btnContinuer').onclick = function () { S = lire(); if (!S) return; OPT = Object.assign(OPT, S.options || {}); M.muet(!OPT.son); VUE.ok = false; ecran('carte'); centrerSur(S.lieu, 1.6); var e = etapeActuelle(); if (e) petitMsg('Objectif : ' + e.objectif); };
+  $('btnNouvelle').onclick = function () {
+    if (lire() && !confirm('Commencer une nouvelle partie ? L\'ancienne sera remplacée.')) return;
+    choisirFaction('latins');
+    ecran('creation');
+  };
+  var factionChoisie = 'latins';
+  function choisirFaction(f) {
+    factionChoisie = f;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-faction]'), function (b) { b.classList.toggle('actif', b.dataset.faction === f); });
+    var F = FF.FACTIONS[f];
+    $('detailFaction').innerHTML = '<p>' + esc(F.histoire) + '</p><ul>' + F.bonus.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul><p class="muted">' +
+      (f === 'latins' ? 'Tu commences à Bouillon (Belgique) en 1096, comme écuyer de Godefroy.' : 'Tu commences à Constantinople en 1096, officier de l\'empereur Alexis.') + '</p>';
+    var champ = $('nomHeros');
+    if (!champ.dataset.touche) champ.value = f === 'latins' ? 'Aymeric' : 'Nikolaos';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-faction]'), function (b) { b.onclick = function () { choisirFaction(b.dataset.faction); }; });
+  $('nomHeros').addEventListener('input', function () { this.dataset.touche = '1'; });
+  $('btnCommencer').onclick = function () {
+    var nom = ($('nomHeros').value || '').trim().slice(0, 20) || (factionChoisie === 'latins' ? 'Aymeric' : 'Nikolaos');
+    nouvellePartie(factionChoisie, nom);
+    VUE.ok = false;
+    ecran('carte');
+    centrerSur(S.lieu, 1.6);
+    var e = etapeActuelle();
+    dialogue([
+      { q: 'narrateur', t: factionChoisie === 'latins' ? '1096. Le pape Urbain II a appelé les chevaliers d\'Occident à partir vers Jérusalem. Dans les Ardennes, un jeune écuyer nommé ' + nom + ' ne se doute pas que sa vie va basculer.' : '1096. Des armées entières de « Francs » marchent vers Constantinople. L\'empereur Alexis s\'inquiète. Son jeune officier, ' + nom + ', va devoir les accompagner jusqu\'au bout du monde.' },
+      { q: 'narrateur', t: 'Sur la carte, clique sur un lieu pour t\'y rendre. L\'étoile ⭐ montre ta mission. Entre dans les villes pour parler aux gens, recruter, acheter des armes et vivre l\'aventure.' }
+    ], function () { M.pause(false); choisirLieu(e.lieu); });
+  };
+  $('btnRetourCreation').onclick = accueil;
+  $('btnAide').onclick = function () { aide(); };
+  $('optDiff').onchange = function () { OPT.diff = this.value; sauverOptions(); };
+  $('optDir').onchange = function () { OPT.dir = this.checked; sauverOptions(); };
+  $('optSon').onchange = function () { OPT.son = this.checked; M.muet(!OPT.son); sauverOptions(); };
+  function sauverOptions() { var d = lire(); if (d) { d.options = OPT; try { localStorage.setItem(CLE, JSON.stringify(d)); } catch (e) {} } if (S) S.options = OPT; }
+  // Bataille rapide (sans histoire)
+  $('btnRapide').onclick = function () {
+    var presets = [
+      { titre: 'Embuscade dans les Ardennes', decor: 'foret', vagues: [[['brigand', 5]], [['noir', 3], ['noir_tir', 2]]], boss: 'gautier' },
+      { titre: 'Choc à Dorylée', decor: 'desert', vagues: [[['seldjoukide', 4], ['archer_turc', 2]], [['seldjoukide', 5]]] },
+      { titre: 'Duel contre le Cid', decor: 'desert', vagues: [], boss: 'cid', amical: true },
+      { titre: 'La crypte hantée', decor: 'crypte', vagues: [[['spectre', 4]]], boss: 'paladin' },
+      { mer: true, titre: 'Pirates en Méditerranée', ennemis: [['pirate', 3]] }
+    ];
+    var h = presets.map(function (p, i) { return '<button class="btn" data-pr="' + i + '">' + (p.mer ? '⚓ ' : '⚔️ ') + esc(p.titre) + '</button>'; }).join('') +
+      '<div class="rangee"><button class="btn petit actif" data-f="latins">Latins</button><button class="btn petit" data-f="romains">Romains</button></div>';
+    fenetre('⚔️ Bataille rapide', h);
+    var fac = 'latins';
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-f]'), function (b) { b.onclick = function () { fac = b.dataset.f; Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-f]'), function (x) { x.classList.toggle('actif', x === b); }); }; });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-pr]'), function (b) {
+      b.onclick = function () {
+        $('fenetre').classList.add('hide');
+        var anc = S;
+        S = { faction: fac, heros: fac === 'latins' ? 'Aymeric' : 'Nikolaos', troupes: fac === 'latins' ? { chevalier: 2, sergent: 3, arbaletrier: 2 } : { varegue: 2, skutatos: 3, toxotes: 2 },
+          equip: fac === 'latins' ? ['ulfberht', 'excalibur'] : ['spathion', 'mjollnir'], armes: [], compagnons: [], renom: 50, or: 0, stats: { tues: 0, victoires: 0 }, drapeaux: {}, aff: {}, rapide: true };
+        combat(presets[+b.dataset.pr], function () { S = anc; accueil(); }, {});
+      };
+    });
+  };
+
+  // ---------- Démarrage ----------
+  window.addEventListener('resize', function () { if (!$('carte').classList.contains('hide')) redim(); });
+  lireOptions();
+  M.init($('vue3d'));
+  accueil();
+  // Pour les tests automatiques
+  window.FFJeu = { etat: function () { return S; }, combat: combat, entrerLieu: entrerLieu, mission: mission, nouvellePartie: nouvellePartie, ecran: ecran, sauver: sauver };
+})();

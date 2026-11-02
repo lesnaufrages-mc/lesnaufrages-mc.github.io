@@ -11,7 +11,8 @@
   var JEUX = {
     'mot-mystere': ['motmystere:v1'],
     clutch: ['mm-esport:v1'],
-    imperium: ['strategie-partie-v2']
+    imperium: ['strategie-partie-v2'],
+    ferrum: ['ferrum-partie-v1']
   };
 
   // Que faire en ouvrant le jeu ? info = ce que ce navigateur sait, ligne = la partie en ligne (ou null).

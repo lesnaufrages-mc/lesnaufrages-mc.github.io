@@ -41,5 +41,5 @@ test('remise à zéro par un admin', () => {
 test('empreinte et clés des jeux', () => {
   assert.notEqual(empreinte('{"a":"1"}'), empreinte('{"a":"2"}'));
   assert.equal(empreinte('abc'), empreinte('abc'));
-  assert.deepEqual(Object.keys(JEUX), ['mot-mystere', 'clutch', 'imperium']);
+  assert.deepEqual(Object.keys(JEUX), ['mot-mystere', 'clutch', 'imperium', 'ferrum']);
 });

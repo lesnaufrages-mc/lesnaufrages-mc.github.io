@@ -73,7 +73,7 @@ create trigger regles_amis before insert or update on public.amis
 -- et un admin peut la remettre à zéro depuis l'espace admin.
 create table if not exists public.parties (
   joueur   uuid not null references public.profils (id) on delete cascade,
-  jeu      text not null check (jeu in ('mot-mystere', 'clutch', 'imperium')),
+  jeu      text not null check (jeu in ('mot-mystere', 'clutch', 'imperium', 'ferrum')),
   donnees  jsonb check (donnees is null or (jsonb_typeof(donnees) = 'object' and octet_length(donnees::text) <= 524288)),
   maj      timestamptz not null default now(),
   reset_le timestamptz,
@@ -125,7 +125,7 @@ begin
   end if;
   insert into public.parties (joueur, jeu, donnees, maj, reset_le)
   select p_joueur, j, null, now(), now()
-  from unnest(case when coalesce(p_jeu, '') = '' then array['mot-mystere', 'clutch', 'imperium'] else array[p_jeu] end) j
+  from unnest(case when coalesce(p_jeu, '') = '' then array['mot-mystere', 'clutch', 'imperium', 'ferrum'] else array[p_jeu] end) j
   where exists (select 1 from public.profils where id = p_joueur)
   on conflict (joueur, jeu) do update set donnees = null, maj = now(), reset_le = now();
   get diagnostics n = row_count;

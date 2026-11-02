@@ -554,6 +554,12 @@ var Moteur = (function () {
       else if (nom === 'defaite') { [392, 330, 262].forEach(function (f, i) { setTimeout(function () { bip(f, 0.5, 'triangle', 0.15); }, i * 250); }); }
       else if (nom === 'eau') bruit(0.6, 600, 'lowpass', 0.4);
       else if (nom === 'clic') bip(700, 0.05, 'square', 0.05);
+      // Bruits de la ville et des villages
+      else if (nom === 'enclume') { bip(1900, 0.14, 'triangle', 0.035, 1500); bip(2800, 0.08, 'sine', 0.02); }
+      else if (nom === 'foule') { bruit(1.6, 420, 'bandpass', 0.05, 0.6); setTimeout(function () { bruit(1.2, 650, 'bandpass', 0.035, 0.8); }, 500); }
+      else if (nom === 'cloche') { [0, 900].forEach(function (t) { setTimeout(function () { bip(392, 1.6, 'sine', 0.05); bip(784, 1.1, 'sine', 0.02); bip(1176, 0.7, 'sine', 0.012); }, t); }); }
+      else if (nom === 'coq') { bip(700, 0.15, 'sawtooth', 0.02, 900); setTimeout(function () { bip(900, 0.5, 'sawtooth', 0.02, 650); }, 160); }
+      else if (nom === 'mouton') { bip(330, 0.5, 'sawtooth', 0.018, 300); }
     } catch (e) {}
   };
 

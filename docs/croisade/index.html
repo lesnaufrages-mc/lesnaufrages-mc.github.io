@@ -109,6 +109,8 @@ kbd{display:inline-block;padding:1px 6px;border:1px solid #5a4c34;border-bottom-
 .barreTete.menace{outline:2px solid #ff5252}
 .barreTete.navire{width:80px;height:7px}
 .etiquette{position:absolute;left:0;top:0;text-align:center;white-space:nowrap;text-shadow:0 1px 3px #000,0 0 2px #000}
+.bulle{position:absolute;left:0;top:0;max-width:220px;padding:5px 9px;border-radius:10px;background:rgba(253,250,240,.93);color:#2b2118;font:600 12px/1.3 system-ui;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:opacity .3s;white-space:normal;width:max-content}
+.bulle::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:rgba(253,250,240,.93)}
 .etiquette span{display:block;font-size:20px}
 .etiquette b{display:block;font:700 13px Cinzel,Georgia,serif;color:#f7dc6f}
 .etiquette i{display:block;font:600 11px system-ui;color:#eee;font-style:normal}
@@ -215,6 +217,9 @@ body:not(.modeVille) .villeSeul{display:none!important}
 .stats label span{flex:1;height:5px;background:#000;border-radius:3px;overflow:hidden}
 .stats label i{display:block;height:100%;background:var(--or)}
 .liste{display:flex;flex-direction:column;gap:6px}
+.boutons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.boutons .btn{width:auto;margin:0}
+#fenCorps h3 + .boutons,#fenCorps .boutons + .boutons{margin:6px 0;justify-content:flex-start}
 .ligneUnite{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--card)}
 .ligneUnite small{display:block;color:var(--muted);font-size:12px}
 .ligneCour{display:flex;gap:10px;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--card)}
@@ -356,12 +361,12 @@ document.body.classList.add(window.matchMedia('(pointer: coarse)').matches ? 'ta
 <script src="../sauvegarde.js" data-jeu="ferrum"></script>
 <script src="../strategie/monde.js?v=14"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="donnees.js?v=1"></script>
-<script src="moteur.js?v=1"></script>
-<script src="bataille.js?v=2"></script>
-<script src="naval.js?v=2"></script>
-<script src="ville.js?v=2"></script>
-<script src="jeu.js?v=2"></script>
+<script src="donnees.js?v=3"></script>
+<script src="moteur.js?v=3"></script>
+<script src="bataille.js?v=3"></script>
+<script src="naval.js?v=3"></script>
+<script src="ville.js?v=3"></script>
+<script src="jeu.js?v=3"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

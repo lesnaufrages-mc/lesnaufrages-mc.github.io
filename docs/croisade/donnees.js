@@ -30,7 +30,50 @@ var FF = (function () {
     abbassides: { nom: 'Califat abbasside', couleur: '#117a65', religion: 'sunnite' },
     cid: { nom: 'Valence du Cid', couleur: '#943126', religion: 'catholique' },
     irlande: { nom: 'Royaumes d\'Irlande', couleur: '#229954', religion: 'catholique' },
-    legende: { nom: 'Lieu de légende', couleur: '#f1c40f', religion: 'mystere' }
+    legende: { nom: 'Lieu de légende', couleur: '#f1c40f', religion: 'mystere' },
+    // Royaumes et principautés d'Europe en 1096 (souverains réels)
+    france: { nom: 'Royaume de France', couleur: '#2e4a9e', religion: 'catholique', royaume: true, souverain: 'Philippe Ier (1060-1108)',
+      histoire: 'Le roi Philippe Ier est excommunié pour avoir épousé Bertrade de Montfort : il ne part pas en croisade. Son frère Hugues de Vermandois, lui, prend la croix.' },
+    empire: { nom: 'Saint-Empire romain germanique', couleur: '#5d6d7e', religion: 'catholique', royaume: true, souverain: 'Henri IV (1056-1105)',
+      histoire: 'L\'empereur Henri IV est en guerre contre le pape (la querelle des Investitures). Godefroy de Bouillon, duc de Basse-Lotharingie, est son vassal.' },
+    flandre: { nom: 'Comté de Flandre', couleur: '#1c2833', religion: 'catholique', royaume: true, souverain: 'Robert II (1093-1111)',
+      histoire: 'Robert II de Flandre part en croisade et rentre si célèbre qu\'on l\'appelle « Robert de Jérusalem ».' },
+    normandie: { nom: 'Duché de Normandie', couleur: '#e59866', religion: 'catholique', royaume: true, souverain: 'Robert Courteheuse (1087-1106)',
+      histoire: 'Pour payer sa croisade, Robert Courteheuse met la Normandie en gage chez son frère, le roi d\'Angleterre, contre 10 000 marcs d\'argent.' },
+    toulouse: { nom: 'Comté de Toulouse', couleur: '#f39c12', religion: 'catholique', royaume: true, souverain: 'Raymond de Saint-Gilles (1094-1105)',
+      histoire: 'Raymond IV, le plus riche des chefs croisés, jure de ne jamais revenir. Il mourra en Orient, devant Tripoli, en 1105.' },
+    angleterre: { nom: 'Royaume d\'Angleterre', couleur: '#922b21', religion: 'catholique', royaume: true, souverain: 'Guillaume II le Roux (1087-1100)',
+      histoire: 'Fils de Guillaume le Conquérant. Il ne part pas en croisade mais prête l\'argent du voyage à son frère Robert, en échange de la Normandie.' },
+    ecosse: { nom: 'Royaume d\'Écosse', couleur: '#5b2c6f', religion: 'catholique', royaume: true, souverain: 'Donald III (1094-1097)',
+      histoire: 'Royaume des Gaëls au nord de l\'Angleterre. En 1097, Edgar, aidé par les Anglais, chasse son oncle Donald III.' },
+    castille: { nom: 'Royaume de Castille et León', couleur: '#ca6f1e', religion: 'catholique', royaume: true, souverain: 'Alphonse VI (1072-1109)',
+      histoire: 'Alphonse VI prend Tolède en 1085, puis est battu par les Almoravides à Sagrajas en 1086. Le pape demande aux Espagnols de rester se battre chez eux.' },
+    barcelone: { nom: 'Comté de Barcelone', couleur: '#f5b041', religion: 'catholique', royaume: true, souverain: 'Raimond-Bérenger III (1086-1131)',
+      histoire: 'Comté catalan tourné vers la mer. Raimond-Bérenger III deviendra aussi comte de Provence par mariage.' },
+    almoravides: { nom: 'Empire almoravide', couleur: '#7e5109', religion: 'sunnite', royaume: true, souverain: 'Youssef ibn Tachfin (1061-1106)',
+      histoire: 'Venus du Sahara et du Maroc, les Almoravides traversent le détroit en 1086 et réunissent presque tous les royaumes musulmans d\'Espagne (les taïfas).' },
+    saragosse: { nom: 'Taïfa de Saragosse', couleur: '#48c9b0', religion: 'sunnite', royaume: true, souverain: 'Al-Musta\'in II (1085-1110)',
+      histoire: 'Dernier grand royaume musulman indépendant d\'Espagne, gouverné par les Banou Houd. Le Cid a servi ses rois avant de prendre Valence.' },
+    papaute: { nom: 'États pontificaux', couleur: '#fdfefe', religion: 'catholique', royaume: true, souverain: 'Le pape Urbain II (1088-1099)',
+      histoire: 'Urbain II lance la croisade à Clermont en 1095. Il meurt le 29 juillet 1099, deux semaines après la prise de Jérusalem, sans en connaître la nouvelle.' },
+    normands: { nom: 'Duché de Pouille (Normands)', couleur: '#b9770e', religion: 'catholique', royaume: true, souverain: 'Roger Borsa (1085-1111)',
+      histoire: 'Les fils de Robert Guiscard se partagent l\'Italie du Sud. Bohémond, le demi-frère de Roger Borsa, part en croisade avec ses Normands.' },
+    sicile: { nom: 'Comté de Sicile (Normands)', couleur: '#dc7633', religion: 'catholique', royaume: true, souverain: 'Roger Ier (1071-1101)',
+      histoire: 'Roger Ier a pris la Sicile aux émirs musulmans (1061-1091). Chrétiens, musulmans et juifs y vivent ensemble ; son armée compte des archers sarrasins.' },
+    croatie: { nom: 'Royaume de Croatie', couleur: '#e6b0aa', religion: 'catholique', royaume: true, souverain: 'Petar Snačić (1093-1097)',
+      histoire: 'Dernier roi croate. Il meurt en 1097 à la bataille du mont Gvozd contre Coloman de Hongrie, qui devient roi de Croatie en 1102.' },
+    boheme: { nom: 'Duché de Bohême', couleur: '#85c1e9', religion: 'catholique', royaume: true, souverain: 'Bretislav II (1092-1100)',
+      histoire: 'Duché slave du Saint-Empire. En 1096, les croisés de Pierre l\'Ermite et d\'Emich y massacrent les Juifs de Prague.' },
+    pologne: { nom: 'Duché de Pologne', couleur: '#ec7063', religion: 'catholique', royaume: true, souverain: 'Ladislas Ier Herman (1079-1102)',
+      histoire: 'Duché des Piasts. Ses fils Zbigniew et Boleslas se disputent déjà le pouvoir.' },
+    rus: { nom: 'Rus de Kiev', couleur: '#d35400', religion: 'orthodoxe', royaume: true, souverain: 'Grand-prince Sviatopolk II (1093-1113)',
+      histoire: 'Le plus grand pays d\'Europe, chrétien orthodoxe depuis 988. En 1096, les nomades coumans brûlent le monastère des Grottes de Kiev.' },
+    danemark: { nom: 'Royaume de Danemark', couleur: '#cb4335', religion: 'catholique', royaume: true, souverain: 'Éric Ier le Bon (1095-1103)',
+      histoire: 'Éric le Bon partira lui aussi en pèlerinage vers Jérusalem. Il meurt en chemin, à Chypre, en 1103.' },
+    norvege: { nom: 'Royaume de Norvège', couleur: '#1f618d', religion: 'catholique', royaume: true, souverain: 'Magnus III aux Jambes nues (1093-1103)',
+      histoire: 'Le dernier grand roi viking : il ravage les Orcades et l\'île de Man, et porte le kilt des Gaëls, d\'où son surnom.' },
+    suede: { nom: 'Royaume de Suède', couleur: '#5499c7', religion: 'catholique', royaume: true, souverain: 'Inge l\'Ancien (1079-1110)',
+      histoire: 'Royaume encore à moitié païen : le grand temple d\'Uppsala a peut-être été détruit peu avant 1100.' }
   };
 
   var RELIGIONS = {
@@ -81,25 +124,71 @@ var FF = (function () {
     ['jerusalem', 'Jérusalem', 35.23, 31.78, 'fatimides', 'chiite', false, 'syrie', 'Ville sainte des juifs, des chrétiens et des musulmans. Tenue par les Fatimides depuis 1098.'],
     ['damas', 'Damas', 36.29, 33.51, 'emirs', 'sunnite', false, 'syrie', 'Émirat turc de Duqaq, l\'une des plus vieilles villes du monde.'],
     ['alexandrie', 'Alexandrie', 29.92, 31.2, 'fatimides', 'chiite', true, 'egypte', 'Grand port fatimide et son phare légendaire.'],
-    ['bagdad', 'Bagdad', 44.36, 33.31, 'abbassides', 'sunnite', false, 'orient', 'Ville du calife abbasside. Les marchands de la route de la soie y apportent des trésors de Chine.']
+    ['bagdad', 'Bagdad', 44.36, 33.31, 'abbassides', 'sunnite', false, 'orient', 'Ville du calife abbasside. Les marchands de la route de la soie y apportent des trésors de Chine.'],
+    // Europe des royaumes (1096)
+    ['liege', 'Liège', 5.57, 50.63, 'empire', 'catholique', false, 'occident', 'Principauté de l\'évêque Otbert, qui prête l\'argent de la croisade à Godefroy contre le château de Bouillon (Belgique actuelle).'],
+    ['paris', 'Paris', 2.35, 48.86, 'france', 'catholique', false, 'occident', 'Ville du roi Philippe Ier, sur la Seine. Ses écoles attirent déjà des étudiants de toute l\'Europe.'],
+    ['rouen', 'Rouen', 1.1, 49.44, 'normandie', 'catholique', true, 'occident', 'Capitale du duc Robert Courteheuse, fils aîné de Guillaume le Conquérant.'],
+    ['toulouse', 'Toulouse', 1.44, 43.6, 'toulouse', 'catholique', false, 'occident', 'Ville de Raymond de Saint-Gilles, qui part en 1096 avec la plus grande armée de la croisade.'],
+    ['londres', 'Londres', -0.12, 51.5, 'angleterre', 'catholique', true, 'nord', 'Grand port sur la Tamise. Guillaume le Roux y fait construire la grande salle de Westminster (1097).'],
+    ['dunfermline', 'Dunfermline', -3.46, 56.07, 'ecosse', 'catholique', false, 'nord', 'Résidence des rois d\'Écosse, où repose la reine sainte Marguerite.'],
+    ['tolede', 'Tolède', -4.02, 39.86, 'castille', 'catholique', false, 'iberie', 'Ancienne capitale wisigothe prise aux musulmans en 1085. Ses traducteurs passent les livres arabes en latin.'],
+    ['cordoue', 'Cordoue', -4.78, 37.88, 'almoravides', 'sunnite', false, 'iberie', 'L\'ancienne capitale du califat d\'al-Andalus, avec sa Grande Mosquée aux mille colonnes. Tenue par les Almoravides.'],
+    ['saragosse', 'Saragosse', -0.88, 41.65, 'saragosse', 'sunnite', false, 'iberie', 'Capitale des Banou Houd et de leur palais de l\'Aljaferia.'],
+    ['barcelone', 'Barcelone', 2.17, 41.39, 'barcelone', 'catholique', true, 'iberie', 'Port catalan du comte Raimond-Bérenger III.'],
+    ['palerme', 'Palerme', 13.36, 38.12, 'sicile', 'catholique', true, 'occident', 'Ville aux mille mosquées devenue normande en 1072. On y parle arabe, grec et latin.'],
+    ['knin', 'Knin', 16.2, 44.04, 'croatie', 'catholique', false, 'balkans', 'Forteresse du roi Petar Snačić, dernier roi des Croates.'],
+    ['prague', 'Prague', 14.42, 50.08, 'boheme', 'catholique', false, 'est', 'Château des ducs de Bohême, sur la Vltava.'],
+    ['cracovie', 'Cracovie', 19.94, 50.06, 'pologne', 'catholique', false, 'est', 'Capitale des ducs de Pologne, au pied du château du Wawel.'],
+    ['kiev', 'Kiev', 30.52, 50.45, 'rus', 'orthodoxe', true, 'est', 'Capitale de la Rus, avec sa cathédrale Sainte-Sophie. Le Dniepr mène les Varègues jusqu\'à Constantinople.'],
+    ['novgorod', 'Novgorod', 31.27, 58.52, 'rus', 'orthodoxe', true, 'est', 'Ville de marchands au nord de la Rus, riche des fourrures des forêts.'],
+    ['roskilde', 'Roskilde', 12.08, 55.64, 'danemark', 'catholique', true, 'nord', 'Ville des rois de Danemark, sur un fjord.'],
+    ['bergen', 'Bergen', 5.32, 60.39, 'norvege', 'catholique', true, 'nord', 'Port fondé par le roi Olaf le Paisible, où l\'on sèche la morue.'],
+    ['uppsala', 'Uppsala', 17.64, 59.86, 'suede', 'catholique', false, 'nord', 'Vieux centre des rois de Suède et de l\'ancien culte d\'Odin.']
+  ];
+  // Villages : [clé, nom, lon, lat, faction, religion, région, description, recrue]
+  var VIL = [
+    ['vezelay', 'Vézelay', 3.75, 47.47, 'france', 'catholique', 'occident', 'Village de Bourgogne au pied de la basilique de la Madeleine, grand lieu de pèlerinage.', 'paysan'],
+    ['mosony', 'Moson', 17.27, 47.87, 'hongrie', 'catholique', 'hongrie', 'Bourg fortifié où les croisés d\'Emich de Leiningen sont écrasés par les Hongrois en août 1096.', 'paysan'],
+    ['ochrid', 'Ohrid', 20.8, 41.12, 'romains', 'orthodoxe', 'balkans', 'Bourg au bord du lac, ancienne capitale bulgare, sur la Via Egnatia.', 'paysan'],
+    ['philippopolis', 'Philippopolis', 24.75, 42.15, 'romains', 'orthodoxe', 'balkans', 'Bourg de Thrace (Plovdiv) où vivent des pauliciens, des chrétiens jugés hérétiques.', 'paysan'],
+    ['melfi', 'Melfi', 15.65, 40.99, 'normands', 'catholique', 'occident', 'Village normand sous le château où Urbain II a réuni un concile en 1089.', 'paysan'],
+    ['heraclee', 'Héraclée', 34.05, 37.51, 'seldjoukides', 'sunnite', 'anatolie', 'Village d\'Anatolie (Ereğli). Les croisés y battent les Turcs en septembre 1097.', 'turcopole'],
+    ['marash', 'Marash', 36.93, 37.58, 'armeniens', 'armenienne', 'syrie', 'Bourg arménien gouverné par Tatoul, qui accueille les croisés en octobre 1097.', 'armenien'],
+    ['shaizar', 'Shaizar', 36.57, 35.27, 'emirs', 'sunnite', 'syrie', 'Village fortifié des Banou Munqidh sur l\'Oronte. Le prince-poète Oussama y est né en 1095.', 'turcopole'],
+    ['tiberiade', 'Tibériade', 35.53, 32.79, 'fatimides', 'juive', 'syrie', 'Bourg au bord du lac de Galilée, célèbre pour ses savants juifs qui recopient la Bible hébraïque.', 'paysan']
   ];
   var LIEUX = {};
   L.forEach(function (l) {
     var p = proj(l[2], l[3]);
     LIEUX[l[0]] = { id: l[0], nom: l[1], x: p[0], y: p[1], faction: l[4], religion: l[5], port: l[6], region: l[7], desc: l[8], voisins: [] };
   });
+  VIL.forEach(function (l) {
+    var p = proj(l[2], l[3]);
+    LIEUX[l[0]] = { id: l[0], nom: l[1], x: p[0], y: p[1], faction: l[4], religion: l[5], port: false, region: l[6], desc: l[7], recrue: l[8], village: true, voisins: [] };
+  });
+  // Les villes d'Europe de l'Ouest passent sous leur vrai royaume de 1096
+  var ROY = { bruges: 'flandre', bouillon: 'empire', aix: 'empire', cologne: 'empire', ratisbonne: 'empire', clermont: 'france', rome: 'papaute', bari: 'normands' };
+  Object.keys(ROY).forEach(function (k) { LIEUX[k].faction = ROY[k]; });
 
   // Routes : [a, b, 'terre' | 'mer']
   var ROUTES = [
-    ['bruges', 'bouillon', 'terre'], ['bouillon', 'aix', 'terre'], ['aix', 'cologne', 'terre'], ['bouillon', 'clermont', 'terre'],
-    ['clermont', 'genes', 'terre'], ['clermont', 'valence', 'terre'], ['genes', 'venise', 'terre'], ['genes', 'rome', 'terre'],
-    ['rome', 'bari', 'terre'], ['cologne', 'ratisbonne', 'terre'], ['ratisbonne', 'hongrie', 'terre'], ['venise', 'hongrie', 'terre'],
-    ['hongrie', 'belgrade', 'terre'], ['belgrade', 'nis', 'terre'], ['nis', 'sofia', 'terre'], ['sofia', 'andrinople', 'terre'],
-    ['andrinople', 'constantinople', 'terre'], ['durazzo', 'thessalonique', 'terre'], ['thessalonique', 'andrinople', 'terre'],
-    ['constantinople', 'nicee', 'terre'], ['nicee', 'dorylee', 'terre'], ['dorylee', 'iconium', 'terre'], ['iconium', 'antioche', 'terre'],
+    ['bruges', 'bouillon', 'terre'], ['bouillon', 'liege', 'terre'], ['liege', 'aix', 'terre'], ['aix', 'cologne', 'terre'], ['bouillon', 'vezelay', 'terre'], ['vezelay', 'clermont', 'terre'],
+    ['clermont', 'genes', 'terre'], ['clermont', 'toulouse', 'terre'], ['toulouse', 'barcelone', 'terre'], ['barcelone', 'valence', 'terre'], ['genes', 'venise', 'terre'], ['genes', 'rome', 'terre'],
+    ['rome', 'melfi', 'terre'], ['melfi', 'bari', 'terre'], ['cologne', 'ratisbonne', 'terre'], ['ratisbonne', 'mosony', 'terre'], ['mosony', 'hongrie', 'terre'], ['venise', 'hongrie', 'terre'],
+    ['hongrie', 'belgrade', 'terre'], ['belgrade', 'nis', 'terre'], ['nis', 'sofia', 'terre'], ['sofia', 'philippopolis', 'terre'], ['philippopolis', 'andrinople', 'terre'],
+    ['paris', 'bruges', 'terre'], ['paris', 'bouillon', 'terre'], ['paris', 'rouen', 'terre'], ['paris', 'vezelay', 'terre'], ['rouen', 'londres', 'mer'], ['londres', 'bruges', 'mer'],
+    ['londres', 'dunfermline', 'terre'], ['dunfermline', 'bergen', 'mer'], ['dublin', 'dunfermline', 'mer'], ['bergen', 'roskilde', 'mer'], ['roskilde', 'uppsala', 'mer'],
+    ['roskilde', 'cologne', 'terre'], ['uppsala', 'novgorod', 'mer'], ['novgorod', 'kiev', 'terre'], ['kiev', 'cracovie', 'terre'], ['cracovie', 'prague', 'terre'],
+    ['prague', 'ratisbonne', 'terre'], ['cracovie', 'hongrie', 'terre'], ['kiev', 'constantinople', 'mer'], ['toulouse', 'saragosse', 'terre'], ['saragosse', 'barcelone', 'terre'],
+    ['saragosse', 'tolede', 'terre'], ['tolede', 'cordoue', 'terre'], ['cordoue', 'valence', 'terre'], ['barcelone', 'genes', 'mer'], ['rome', 'palerme', 'mer'], ['palerme', 'bari', 'terre'],
+    ['venise', 'knin', 'mer'], ['knin', 'hongrie', 'terre'], ['knin', 'durazzo', 'terre'],
+    ['andrinople', 'constantinople', 'terre'], ['durazzo', 'ochrid', 'terre'], ['ochrid', 'thessalonique', 'terre'], ['thessalonique', 'andrinople', 'terre'],
+    ['constantinople', 'nicee', 'terre'], ['nicee', 'dorylee', 'terre'], ['dorylee', 'iconium', 'terre'], ['iconium', 'heraclee', 'terre'], ['heraclee', 'antioche', 'terre'],
+    ['heraclee', 'marash', 'terre'], ['marash', 'antioche', 'terre'], ['marash', 'edesse', 'terre'],
     ['antioche', 'edesse', 'terre'], ['antioche', 'alep', 'terre'], ['antioche', 'lattaquie', 'terre'], ['lattaquie', 'tripoli', 'terre'],
-    ['tripoli', 'liban', 'terre'], ['tripoli', 'acre', 'terre'], ['acre', 'jaffa', 'terre'], ['jaffa', 'jerusalem', 'terre'],
-    ['damas', 'jerusalem', 'terre'], ['damas', 'liban', 'terre'], ['alep', 'damas', 'terre'], ['alep', 'bagdad', 'terre'], ['edesse', 'bagdad', 'terre'],
+    ['tripoli', 'liban', 'terre'], ['tripoli', 'acre', 'terre'], ['acre', 'jaffa', 'terre'], ['jaffa', 'jerusalem', 'terre'], ['acre', 'tiberiade', 'terre'],
+    ['damas', 'tiberiade', 'terre'], ['tiberiade', 'jerusalem', 'terre'], ['damas', 'liban', 'terre'], ['alep', 'shaizar', 'terre'], ['shaizar', 'damas', 'terre'], ['shaizar', 'lattaquie', 'terre'], ['alep', 'bagdad', 'terre'], ['edesse', 'bagdad', 'terre'],
     ['bruges', 'dublin', 'mer'], ['genes', 'valence', 'mer'], ['venise', 'durazzo', 'mer'], ['bari', 'durazzo', 'mer'],
     ['constantinople', 'rhodes', 'mer'], ['rhodes', 'chypre', 'mer'], ['chypre', 'lattaquie', 'mer'], ['chypre', 'jaffa', 'mer'],
     ['jaffa', 'alexandrie', 'mer'], ['rhodes', 'alexandrie', 'mer']
@@ -178,6 +267,17 @@ var FF = (function () {
   u('normand', { nom: 'Chevalier normand', pv: 85, deg: 16, vit: 3.6, arme: 'epee', look: { tunique: 0xb7950b, pantalon: 0x515a5a, casque: 'nasal', bouclier: 'kite', bc: 0xc0392b }, prix: 75, garde: 0.4, merc: true, histo: 'Normands d\'Italie du Sud, comme Bohémond de Tarente : des guerriers redoutés.' });
   u('armenien', { nom: 'Archer arménien', pv: 42, deg: 10, vit: 3.6, arme: 'epee', tir: { deg: 12, cad: 2, portee: 23 }, look: { tunique: 0xa04000, pantalon: 0x4a235a, casque: 'rond' }, prix: 35, merc: true, histo: 'Les Arméniens de Cilicie et d\'Édesse aident les croisés à traverser le Taurus.' });
   u('hospitalier', { nom: 'Frère de l\'Hôpital', pv: 110, deg: 17, vit: 3.5, arme: 'epee', look: { tunique: 0x1c1c1c, croix: 0xffffff, pantalon: 0x2c3e50, casque: 'heaume', bouclier: 'kite', bc: 0x1c1c1c, cape: 0x111111 }, prix: 120, garde: 0.5, histo: 'L\'Hôpital Saint-Jean de Jérusalem, dirigé par Gérard, soigne les pèlerins depuis avant 1099. Il deviendra l\'ordre militaire des Hospitaliers.' });
+  // Troupes des villages et des royaumes du Nord et de l'Est
+  u('paysan', { nom: 'Volontaire du village', pv: 28, deg: 6, vit: 3.4, arme: 'lance', look: { tunique: 0xa1887f, pantalon: 0x6d4c41, casque: 'capuche' }, prix: 6, garde: 0.05, promo: 'milicien', promoXp: 8,
+    histo: 'Des paysans qui prennent la fourche et la lance pour suivre un seigneur. Avec de l\'expérience, ils deviennent de vrais soldats.' });
+  U.milicien.promo = { latins: 'sergent', romains: 'skutatos' }; U.milicien.promoXp = 16;
+  u('huscarl', { nom: 'Huscarl danois', pv: 80, deg: 17, vit: 3.4, arme: 'hache', look: { tunique: 0x1f618d, pantalon: 0x1b2631, casque: 'nasal', barbe: 0xd35400, bouclier: 'rond', bc: 0xcb4335 }, prix: 60, garde: 0.3, merc: true, or: 12,
+    histo: 'Gardes du corps des rois scandinaves, armés de la grande hache. Beaucoup finissent dans la Garde varègue.' });
+  u('coumane', { nom: 'Archer couman', pv: 42, deg: 10, vit: 4.1, arme: 'kilij', tir: { deg: 11, cad: 2.1, portee: 22 }, look: { tunique: 0x9a7d0a, pantalon: 0x4d3b0f, casque: 'fourrure' }, prix: 35, merc: true, or: 9,
+    histo: 'Nomades turcs des steppes au nord de la mer Noire. Ils pillent la Rus en 1096, puis servent comme mercenaires.' });
+  u('druzhinnik', { nom: 'Droujinnik de la Rus', pv: 85, deg: 15, vit: 3.5, arme: 'hache', look: { tunique: 0x922b21, pantalon: 0x1b2631, casque: 'rond', barbe: 0x6e2c00, bouclier: 'kite', bc: 0xd35400 }, prix: 65, garde: 0.4, merc: true,
+    histo: 'La droujina est la garde personnelle des princes de Kiev : des guerriers lourds, héritiers des Varègues.' });
+  u('almoravide', { nom: 'Guerrier almoravide', pv: 52, deg: 11, vit: 3.7, arme: 'lance', look: { tunique: 0x1c2833, pantalon: 0x1c2833, casque: 'turban', bouclier: 'rond', bc: 0x7e5109 }, garde: 0.35, or: 11 });
   // Ennemis
   u('brigand', { nom: 'Brigand', pv: 30, deg: 7, vit: 3.3, arme: 'masse', look: { tunique: 0x6d4c41, pantalon: 0x3e2723, casque: 'capuche' }, garde: 0.05, or: 6 });
   u('noir', { nom: 'Mercenaire de Raoul', pv: 50, deg: 11, vit: 3.5, arme: 'epee', look: { tunique: 0x1c2833, pantalon: 0x17202a, casque: 'nasal', bouclier: 'kite', bc: 0x1c2833 }, garde: 0.3, or: 10 });
@@ -280,7 +380,10 @@ var FF = (function () {
     syrie: { nom: 'Des maraudeurs', vagues: [[['seldjoukide', 2], ['noir', 2], ['archer_turc', 1]]], decor: 'desert' },
     egypte: { nom: 'Une patrouille fatimide', vagues: [[['fatimide', 3], ['fatimide_tir', 2]]], decor: 'desert' },
     orient: { nom: 'Des bandits du désert', vagues: [[['brigand', 3], ['archer_turc', 2]]], decor: 'desert' },
-    mer: { nom: 'Des pirates', mer: true, ennemis: [['pirate', 2]] }
+    mer: { nom: 'Des pirates', mer: true, ennemis: [['pirate', 2]] },
+    nord: { nom: 'Des pillards du Nord', vagues: [[['brigand', 2], ['huscarl', 2]]], decor: 'foret', ennemiTroupe: true },
+    est: { nom: 'Des cavaliers coumans', vagues: [[['coumane', 4]]], decor: 'plaine', ennemiTroupe: true },
+    iberie: { nom: 'Une patrouille almoravide', vagues: [[['almoravide', 3], ['brigand', 2]]], decor: 'desert' }
   };
 
   // ---------- Histoire ----------
@@ -631,13 +734,45 @@ var FF = (function () {
     constantinople: ['skutatos', 'toxotes', 'varegue', 'turcopole', 'petchenegue'], durazzo: ['skutatos', 'toxotes'], thessalonique: ['skutatos', 'toxotes'],
     venise: ['arbaletrier', 'sergent'], genes: ['genois', 'arbaletrier'], rome: ['milicien', 'sergent', 'normand'], bari: ['normand', 'sergent'],
     valence: ['sergent', 'chevalier'], dublin: ['milicien'], rhodes: ['skutatos', 'toxotes'], chypre: ['skutatos', 'toxotes'],
-    edesse: ['armenien'], antioche: ['turcopole', 'armenien'], lattaquie: ['skutatos', 'toxotes'], jaffa: ['genois'], jerusalem: ['hospitalier', 'turcopole']
+    edesse: ['armenien'], antioche: ['turcopole', 'armenien'], lattaquie: ['skutatos', 'toxotes'], jaffa: ['genois'], jerusalem: ['hospitalier', 'turcopole'],
+    liege: ['milicien', 'sergent', 'chevalier'], paris: ['milicien', 'sergent', 'chevalier'], rouen: ['sergent', 'normand', 'arbaletrier'], toulouse: ['milicien', 'sergent', 'chevalier'],
+    londres: ['milicien', 'sergent', 'huscarl'], dunfermline: ['milicien'], tolede: ['sergent', 'chevalier'], barcelone: ['sergent', 'arbaletrier'], saragosse: ['turcopole'],
+    palerme: ['normand', 'turcopole'], knin: ['milicien', 'sergent'], prague: ['milicien', 'sergent'], cracovie: ['milicien', 'sergent', 'coumane'],
+    kiev: ['druzhinnik', 'coumane', 'varegue'], novgorod: ['druzhinnik', 'milicien'], roskilde: ['huscarl', 'milicien'], bergen: ['huscarl'], uppsala: ['huscarl', 'milicien']
   };
+
+  // ---------- Marchandises et commerce ----------
+  // prix de base en or ; chaque lieu PRODUIT (prix bas) ou RECHERCHE (prix haut) certaines marchandises
+  var MARCH = {
+    ble: { nom: 'Blé', icone: '🌾', prix: 8 }, vin: { nom: 'Vin', icone: '🍷', prix: 16 }, poisson: { nom: 'Poisson séché', icone: '🐟', prix: 9 },
+    sel: { nom: 'Sel', icone: '🧂', prix: 12 }, laine: { nom: 'Laine', icone: '🐑', prix: 14 }, huile: { nom: 'Huile d\'olive', icone: '🫒', prix: 17 },
+    fer: { nom: 'Fer', icone: '⛓️', prix: 22 }, drap: { nom: 'Drap de Flandre', icone: '🧵', prix: 40 }, verre: { nom: 'Verrerie', icone: '🏺', prix: 36 },
+    papier: { nom: 'Papier', icone: '📜', prix: 32 }, ambre: { nom: 'Ambre', icone: '🟠', prix: 45 }, sucre: { nom: 'Sucre', icone: '🍬', prix: 50 },
+    fourrures: { nom: 'Fourrures', icone: '🦊', prix: 55 }, encens: { nom: 'Encens', icone: '🕯️', prix: 60 }, epices: { nom: 'Épices', icone: '🌶️', prix: 70 },
+    soie: { nom: 'Soie', icone: '🧣', prix: 90 }
+  };
+  var COMMERCE = {
+    bruges: ['drap laine', 'vin epices'], liege: ['fer', 'vin soie'], bouillon: ['fer laine', 'epices'], aix: ['ble', 'soie'], cologne: ['vin fer', 'epices soie'],
+    paris: ['ble vin', 'soie epices'], rouen: ['poisson', 'vin'], clermont: ['laine', 'sel'], toulouse: ['vin ble', 'sel'], ratisbonne: ['sel', 'epices'],
+    londres: ['laine', 'vin drap'], dunfermline: ['laine poisson', 'vin'], dublin: ['laine', 'vin'], bergen: ['poisson', 'ble'], roskilde: ['poisson ambre', 'drap'],
+    uppsala: ['fer fourrures', 'drap'], novgorod: ['fourrures', 'ble drap'], kiev: ['ble fourrures', 'soie vin'], cracovie: ['sel', 'drap'], prague: ['fer', 'sel'],
+    hongrie: ['ble', 'drap'], venise: ['verre sel', 'epices soie'], genes: ['verre', 'laine epices'], rome: ['vin', 'encens'], bari: ['huile', 'drap'], palerme: ['sucre huile', 'fer'],
+    tolede: ['fer', 'papier'], cordoue: ['papier huile', 'fer'], saragosse: ['huile', 'drap'], barcelone: ['vin', 'ble'], valence: ['sucre', 'fer'], knin: ['sel', 'drap'],
+    belgrade: ['ble', 'vin'], nis: ['ble', 'sel'], sofia: ['laine', 'vin'], andrinople: ['ble vin', 'fer'], constantinople: ['soie', 'fourrures ble'], durazzo: ['sel', 'verre'],
+    thessalonique: ['vin', 'drap'], rhodes: ['vin', 'ble'], chypre: ['sucre vin', 'ble'], nicee: ['laine', 'fer'], dorylee: ['laine', 'ble'], iconium: ['laine', 'drap'],
+    antioche: ['soie', 'fer'], edesse: ['laine', 'fer'], alep: ['epices', 'drap'], lattaquie: ['huile', 'ble'], tripoli: ['sucre papier', 'fer'], acre: ['epices', 'verre'],
+    jaffa: ['huile', 'drap'], jerusalem: ['encens', 'ble'], damas: ['epices papier', 'drap fourrures'], alexandrie: ['epices encens', 'fer drap'], bagdad: ['papier soie', 'fer ambre'],
+    vezelay: ['vin ble', ''], mosony: ['ble', ''], ochrid: ['poisson', ''], philippopolis: ['vin ble', ''], melfi: ['huile ble', ''], heraclee: ['laine', ''],
+    marash: ['laine fer', ''], shaizar: ['ble huile', ''], tiberiade: ['poisson ble', '']
+  };
+  // Banquiers et changeurs (le même compte dans toutes les banques)
+  var BANQUES = { constantinople: 'Trapézite (banquier)', venise: 'Banquier vénitien', genes: 'Banquier génois', bagdad: 'Sarraf (changeur)', alexandrie: 'Sarraf (changeur)',
+    damas: 'Sarraf (changeur)', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
 
   return {
     proj: proj, FACTIONS: FACTIONS, RELIGIONS: RELIGIONS, LIEUX: LIEUX, ROUTES: ROUTES, ARMES: ARMES, UNITES: U, PEAU: PEAU,
     NAVIRES: NAVIRES, PERSOS: PERSOS, COMBATS: COMBATS, RENCONTRES: RENCONTRES, HISTOIRE: HISTOIRE, LEGENDES: LEGENDES,
-    COMPAGNONS: COMPAGNONS, COURS: COURS, RECRUES: RECRUES
+    COMPAGNONS: COMPAGNONS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FF;

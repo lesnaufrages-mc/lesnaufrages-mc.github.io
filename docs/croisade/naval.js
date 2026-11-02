@@ -182,6 +182,8 @@
     var allies2 = [];
     allies.forEach(function (g) { var k = Math.min(g[1], place); if (k > 0) { allies2.push([g[0], k]); place -= k; } });
     var etat = sauverEtat();
+    // Les noms des navires restent cachés pendant le combat sur le pont (ils réapparaissent au retour en mer)
+    N.navires.forEach(function (n) { if (n.el) n.el.style.display = 'none'; });
     document.body.classList.remove('modeNaval');
     M.bataille({
       decor: 'pont', titre: parNous ? 'À l\'abordage !' : 'Ils nous abordent !',
@@ -279,7 +281,7 @@
       n.m.voile.scale.z = 0.08 + Math.abs(n.gaz) * 0.6;
       var ph = N.temps * (2 + n.v * 0.3);
       n.m.rames.forEach(function (ra) { ra.g.rotation.y = Math.sin(ph) * 0.4 * ra.s; ra.g.rotation.z = Math.cos(ph) * 0.15 * ra.s; });
-      if (n.el) { var vis = M.projeter(new T.Vector3(n.pos.x, 9, n.pos.z), n.el); if (vis) n.elPv.style.width = Math.max(0, n.pv / n.pvMax * 100) + '%'; }
+      if (n.el && !N.abordage) { var vis = M.projeter(new T.Vector3(n.pos.x, 9, n.pos.z), n.el); if (vis) n.elPv.style.width = Math.max(0, n.pv / n.pvMax * 100) + '%'; }
     });
     // Collisions entre navires (éperonnage) et avec les îles
     var ns = navires();

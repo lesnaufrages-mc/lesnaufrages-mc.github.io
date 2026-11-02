@@ -734,7 +734,7 @@
         c.elDir.textContent = montreDir ? FLECHE[c.att.dir] : '';
         c.el.classList.toggle('menace', !!montreDir);
         var dd = dist(c, B.joueur);
-        c.el.style.opacity = dd > 26 ? '0' : '1';
+        c.el.style.opacity = (dd > 26 || c.cache) ? '0' : '1';
       }
     }
   }
@@ -855,6 +855,13 @@
     M.appliquerSecousse(dt);
     M.cam.lookAt(j.pos.x, j.pos.y + 1.7, j.pos.z);
     M.suivreOmbre(j.pos.x, j.pos.z);
+    // Cacher les combattants collés à la caméra : sinon un allié derrière le joueur bouche toute la vue
+    var cp = M.cam.position;
+    B.combattants.forEach(function (c) {
+      if (c === j) return;
+      c.cache = Math.hypot(c.pos.x - cp.x, c.pos.z - cp.z) < 3.2;
+      c.g.visible = !c.cache;
+    });
   }
 
   // ---------- Boucle de la bataille ----------

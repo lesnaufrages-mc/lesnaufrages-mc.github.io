@@ -195,7 +195,7 @@
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (!VUE.ok && S) centrerSur(S.lieu, 1.6);
+    if (!VUE.ok && S) centrerSur(S.lieu, 1.6); else borner();
   }
   function centrerSur(id, z) {
     var L = FF.LIEUX[id];
@@ -203,6 +203,19 @@
     VUE.x = L.x - cv.clientWidth / 2 / VUE.z;
     VUE.y = L.y - cv.clientHeight / 2 / VUE.z;
     VUE.ok = true;
+    borner();
+  }
+  // Garder la vue sur la carte (sinon on voit le bord du monde dessiné)
+  function borner() {
+    if (!window.MONDE) return;
+    var W = MONDE.largeur, H = MONDE.hauteur, cw = cv.clientWidth, ch = cv.clientHeight;
+    var zmin = Math.max(0.6, cw / W, ch / H);
+    if (VUE.z < zmin) {
+      var mx = VUE.x + cw / 2 / VUE.z, my = VUE.y + ch / 2 / VUE.z;
+      VUE.z = zmin; VUE.x = mx - cw / 2 / VUE.z; VUE.y = my - ch / 2 / VUE.z;
+    }
+    VUE.x = Math.max(0, Math.min(W - cw / VUE.z, VUE.x));
+    VUE.y = Math.max(0, Math.min(H - ch / VUE.z, VUE.y));
   }
   function ecranVers(x, y) { return { x: x / VUE.z + VUE.x, y: y / VUE.z + VUE.y }; }
   function posJoueur() {
@@ -213,6 +226,39 @@
     return FF.LIEUX[S.lieu];
   }
   function objectifLieu() { var e = etapeActuelle(); return e ? e.lieu : null; }
+  // Noms des lieux sans chevauchement : on essaie au-dessus, dessous, à droite puis à gauche du point ;
+  // si rien ne tient, le nom attend qu'on zoome (le lieu actuel et l'objectif sont toujours écrits)
+  function dessinerNoms(obj) {
+    var fs = 11 / VUE.z * Math.min(1.6, Math.max(1, VUE.z * 0.7));
+    ctx.font = '700 ' + fs + 'px Cinzel, Georgia, serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    var pris = [], m = 2 / VUE.z;
+    // Les boîtes des points comptent aussi, pour qu'un nom ne cache pas une ville voisine
+    Object.keys(FF.LIEUX).forEach(function (id) { var L = FF.LIEUX[id], r = 4.5 / Math.sqrt(VUE.z) * 1.4; pris.push([L.x - r, L.y - r, L.x + r, L.y + r, id]); });
+    var ids = Object.keys(FF.LIEUX).sort(function (a, b) { return prio(b) - prio(a); });
+    function prio(id) { return id === S.lieu ? 3 : id === obj ? 2 : 0; }
+    function libre(b, id) { return pris.every(function (p) { return p[4] === id || b[2] + m < p[0] || b[0] - m > p[2] || b[3] + m < p[1] || b[1] - m > p[3]; }); }
+    ids.forEach(function (id) {
+      var L = FF.LIEUX[id], r = 4.5 / Math.sqrt(VUE.z) * 1.4, tw = ctx.measureText(L.nom).width, hh = fs * 0.8;
+      var cands = [
+        [L.x - tw / 2, L.y - r - 3 / VUE.z],          // au-dessus
+        [L.x - tw / 2, L.y + r + hh + 2 / VUE.z],     // dessous
+        [L.x + r + 3 / VUE.z, L.y + hh / 2],          // à droite
+        [L.x - r - 3 / VUE.z - tw, L.y + hh / 2]      // à gauche
+      ];
+      var choix = null;
+      // Sous la bannière du joueur, le nom du lieu actuel passe dessous
+      if (id === S.lieu && !voyage) cands.push(cands.shift());
+      for (var i = 0; i < cands.length; i++) {
+        var c = cands[i], bx = [c[0], c[1] - hh, c[0] + tw, c[1] + fs * 0.15];
+        if (libre(bx, id)) { choix = c; pris.push(bx.concat(id)); break; }
+      }
+      if (!choix) { if (!prio(id)) return; choix = cands[0]; }
+      ctx.lineWidth = 3 / VUE.z; ctx.strokeStyle = 'rgba(20,16,10,.85)'; ctx.strokeText(L.nom, choix[0], choix[1]);
+      ctx.fillStyle = id === S.lieu ? '#f7dc6f' : '#f4ecd8'; ctx.fillText(L.nom, choix[0], choix[1]);
+    });
+    ctx.textAlign = 'center';
+  }
   function dessinerCarte() {
     if (!S || $('carte').classList.contains('hide')) return;
     var w = cv.clientWidth, h = cv.clientHeight;
@@ -251,14 +297,8 @@
         ctx.fillStyle = '#f7dc6f'; ctx.strokeStyle = '#7d6608'; ctx.lineWidth = 1 / VUE.z;
         etoile(ctx, 0, 0, 5, r * 1.3, r * 0.55); ctx.fill(); ctx.stroke(); ctx.restore();
       }
-      var fs = 11 / VUE.z * Math.min(1.6, Math.max(1, VUE.z * 0.7));
-      ctx.font = '700 ' + fs + 'px Cinzel, Georgia, serif';
-      ctx.textAlign = 'center';
-      // Noms sous le point pour les villes trop proches de leur voisine (Aix / Cologne, Antioche / Alep)
-      var ty = /^(aix|alep|lattaquie|bouillon)$/.test(id) ? L.y + r + fs : L.y - r - 3 / VUE.z;
-      ctx.lineWidth = 3 / VUE.z; ctx.strokeStyle = 'rgba(20,16,10,.85)'; ctx.strokeText(L.nom, L.x, ty);
-      ctx.fillStyle = id === S.lieu ? '#f7dc6f' : '#f4ecd8'; ctx.fillText(L.nom, L.x, ty);
     });
+    dessinerNoms(obj);
     // Le joueur : une bannière
     var p = posJoueur(), s = 1 / Math.sqrt(VUE.z) * 1.5;
     ctx.save(); ctx.translate(p.x, p.y);
@@ -293,7 +333,7 @@
       if (!drag || pinch) return;
       var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 6) bouge = true;
-      VUE.x = drag.vx - dx / VUE.z; VUE.y = drag.vy - dy / VUE.z;
+      VUE.x = drag.vx - dx / VUE.z; VUE.y = drag.vy - dy / VUE.z; borner();
     });
     cv.addEventListener('pointerup', function (e) {
       if (drag && !bouge) clicCarte(e.clientX - cv.getBoundingClientRect().left, e.clientY - cv.getBoundingClientRect().top);
@@ -318,6 +358,7 @@
     var p = ecranVers(sx, sy);
     VUE.z = Math.max(0.6, Math.min(6, VUE.z * f));
     VUE.x = p.x - sx / VUE.z; VUE.y = p.y - sy / VUE.z;
+    borner();
   }
   function clicCarte(sx, sy) {
     if (voyage) return;

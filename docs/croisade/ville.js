@@ -144,6 +144,13 @@
     var cy = 1.6 + Math.sin(V.pitch) * dist, k = Math.min(1, dt * 10);
     M.cam.position.x += (cx - M.cam.position.x) * k; M.cam.position.y += (cy - M.cam.position.y) * k; M.cam.position.z += (cz - M.cam.position.z) * k;
     M.cam.lookAt(j.pos.x, 1.7, j.pos.z);
+    // Un habitant collé à la caméra cacherait toute la vue : on le masque
+    var cp = M.cam.position;
+    V.pnjs.forEach(function (p) {
+      var cache = Math.hypot(p.pos.x - cp.x, p.pos.z - cp.z) < 2.4;
+      p.P.g.visible = !cache;
+      if (p.el && cache) p.el.style.opacity = '0';
+    });
     M.suivreOmbre(j.pos.x, j.pos.z);
     M.majEffets(dt);
   }

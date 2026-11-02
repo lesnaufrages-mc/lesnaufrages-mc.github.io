@@ -5,7 +5,7 @@
   var esc = C.esc;
   var onglet = 'signalements';
   var PROFIL = 'profil:profils!auteur(*)';
-  var JEUX = { 'mot-mystere': '🔤 Mot Mystère', clutch: '🎮 CLUTCH', imperium: '⚔️ Imperium' };
+  var JEUX = { 'mot-mystere': '🔤 Mot Mystère', clutch: '🎮 CLUTCH', imperium: '⚔️ Imperium', ferrum: '✠ Ferrum et Fides' };
   var CATS = { site: '🌐 Site', appli: '📱 Appli', discord: '💬 Discord', minecraft: '⛏️ Minecraft', bot: '🤖 Bot' };
 
   function verifie(r) { if (r.error) throw r.error; return r; }

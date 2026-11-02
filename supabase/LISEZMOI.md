@@ -78,6 +78,12 @@ Lance **une fois** [`amis-parties.sql`](amis-parties.sql) (SQL Editor → New qu
 
 Tant que le script n'est pas lancé, le site marche comme avant (les boutons affichent juste une erreur).
 
+## Mise à jour : Ferrum et Fides (à faire une fois)
+
+Lance **une fois** [`ferrum.sql`](ferrum.sql) pour que la campagne de **Ferrum et Fides** (`/croisade/`) soit aussi
+sauvegardée en ligne et puisse être remise à zéro depuis l'espace admin. Sans ce script, le jeu marche quand même :
+la partie reste seulement dans le navigateur.
+
 ## Édition Couronne (version payante d'Imperium)
 
 Tout est expliqué pas à pas dans [`COURONNE.md`](COURONNE.md) : table `premium`, compte Lemon Squeezy,

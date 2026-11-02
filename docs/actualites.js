@@ -8,6 +8,15 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-11-02",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouveau jeu : Ferrum et Fides, la démo 3D sur la première croisade",
+    texte: "1096 : joue un Latin parti de Bouillon ou un Romain de Constantinople, et traverse la vraie carte de l'Europe jusqu'à Jérusalem. Combats en 3D où tu choisis la direction de tes coups, troupes et mercenaires historiques, batailles navales avec feu grégeois, villes à visiter, cours et intrigues, romance et choix qui changent l'histoire. Et les armes des légendes : Excalibur, Durandal, Mjöllnir, Kusanagi… C'est une démo : dis-nous ce que tu en penses sur le Discord !",
+    lien: "croisade/",
+    bouton: "Jouer à la démo"
+  },
+  {
     date: "2026-11-01",
     categorie: "site",
     epingle: true,

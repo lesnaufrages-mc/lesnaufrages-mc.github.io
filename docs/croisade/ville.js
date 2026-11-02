@@ -21,14 +21,15 @@
       var fl = new T.Mesh(new T.ConeGeometry(2.6, 5, 4), M.mat(0x5d6d7e)); fl.rotation.y = Math.PI / 4; fl.position.set(0, 16.5, 6.5); g.add(fl);
       M.boite(0.3, 2, 0.3, 0xd4ac0d, g, 0, 20, 6.5); M.boite(1.2, 0.3, 0.3, 0xd4ac0d, g, 0, 20.4, 6.5);
       M.boite(2.2, 3.4, 0.2, 0x4e342e, g, 0, 1.7, 8.25);
-    } else if (religion === 'orthodoxe' || religion === 'armenienne') {
+    } else if (/^(orthodoxe|armenienne|copte|syriaque|maronite|nestorienne)$/.test(religion)) {
+      var coupole = religion === 'orthodoxe' || religion === 'copte';
       M.boite(10, 7, 10, pierre, g, 0, 3.5, 0);
       for (var i = -1; i <= 1; i += 2) M.boite(9.6, 0.3, 0.1, 0xa04000, g, 0, 2.5 + i * 1.5, 5.03);
-      var dome = religion === 'orthodoxe' ? new T.Mesh(new T.SphereGeometry(4.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.mat(0x5d8aa8)) : new T.Mesh(new T.ConeGeometry(3.6, 4.5, 8), M.mat(0x7b6d5a));
-      dome.position.y = religion === 'orthodoxe' ? 7.6 : 9.6;
+      var dome = coupole ? new T.Mesh(new T.SphereGeometry(4.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.mat(0x5d8aa8)) : new T.Mesh(new T.ConeGeometry(3.6, 4.5, 8), M.mat(0x7b6d5a));
+      dome.position.y = coupole ? 7.6 : 9.6;
       var tambour = new T.Mesh(new T.CylinderGeometry(3.6, 3.6, 1.6, 12), M.mat(pierre)); tambour.position.y = 7.6; g.add(tambour);
       dome.position.y += 0.8; g.add(dome);
-      M.boite(0.25, 1.6, 0.25, 0xd4ac0d, g, 0, religion === 'orthodoxe' ? 13.5 : 13, 0); M.boite(1, 0.25, 0.25, 0xd4ac0d, g, 0, religion === 'orthodoxe' ? 13.8 : 13.3, 0);
+      M.boite(0.25, 1.6, 0.25, 0xd4ac0d, g, 0, coupole ? 13.5 : 13, 0); M.boite(1, 0.25, 0.25, 0xd4ac0d, g, 0, coupole ? 13.8 : 13.3, 0);
       M.boite(2.2, 3.4, 0.2, 0x4e342e, g, 0, 1.7, 5.05);
     } else if (religion === 'sunnite' || religion === 'chiite') {
       M.boite(11, 6, 11, pierre, g, 0, 3, 0);
@@ -38,6 +39,29 @@
       var pt = new T.Mesh(new T.ConeGeometry(1, 2.4, 8), M.mat(religion === 'chiite' ? 0x2e86c1 : 0x16a085)); pt.position.set(6.5, 17.2, 5); g.add(pt);
       M.boite(2.4, 3.6, 0.2, 0x5d4037, g, 0, 1.8, 5.55);
       for (var k = -1; k <= 1; k += 2) M.boite(1.2, 2.2, 0.15, 0x1a5276, g, k * 3.2, 3, 5.55, { ombre: false });
+    } else if (religion === 'juive' || religion === 'samaritaine') {
+      // Synagogue : grande salle, fenêtres rondes, chandelier à sept branches devant
+      M.boite(10, 6.5, 10, pierre, g, 0, 3.25, 0);
+      M.boite(10.6, 0.5, 10.6, 0x8d6e63, g, 0, 6.75, 0);
+      M.boite(2.2, 3.4, 0.2, 0x4e342e, g, 0, 1.7, 5.05);
+      var rosace = new T.Mesh(new T.CylinderGeometry(1.1, 1.1, 0.2, 14), M.mat(0x5dade2)); rosace.rotation.x = Math.PI / 2; rosace.position.set(0, 4.8, 5.05); g.add(rosace);
+      M.boite(0.25, 2.2, 0.25, 0xd4ac0d, g, 3.5, 1.1, 6.5); M.boite(2.6, 0.2, 0.2, 0xd4ac0d, g, 3.5, 2.2, 6.5);
+      for (var b7 = 0; b7 < 7; b7++) M.boite(0.15, 0.7, 0.15, 0xd4ac0d, g, 3.5 - 1.2 + b7 * 0.4, 2.6, 6.5);
+    } else if (religion === 'druze') {
+      // Khalwa : maison de prière simple, blanche, au toit plat
+      M.boite(9, 4.5, 7, 0xf8f9f9, g, 0, 2.25, 0);
+      var dz = new T.Mesh(new T.SphereGeometry(2.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), M.mat(0xf8f9f9)); dz.position.y = 4.5; g.add(dz);
+      M.boite(2, 3, 0.2, 0x1a5276, g, 0, 1.5, 3.55);
+    } else if (religion === 'paienne') {
+      // Temple de bois et poteaux sculptés des anciens dieux
+      M.boite(9, 4, 7, 0x6e2c00, g, 0, 2, 0);
+      var tt = new T.Mesh(new T.ConeGeometry(7, 4, 4), M.mat(0x4e342e)); tt.rotation.y = Math.PI / 4; tt.scale.set(1, 1, 0.8); tt.position.y = 6; g.add(tt);
+      M.boite(2, 3, 0.2, 0x1c1c1c, g, 0, 1.5, 3.55);
+      for (var pp = -1; pp <= 1; pp += 2) {
+        M.boite(0.7, 6, 0.7, 0x8d6e63, g, pp * 5.5, 3, 5);
+        M.boite(1, 1, 1, 0x5d4037, g, pp * 5.5, 6.4, 5);
+        M.boite(0.2, 0.2, 0.1, 0xf4d03f, g, pp * 5.5 - 0.2, 6.5, 5.5); M.boite(0.2, 0.2, 0.1, 0xf4d03f, g, pp * 5.5 + 0.2, 6.5, 5.5);
+      }
     } else {
       for (var c = 0; c < 6; c++) g.add(M.PROPS.colonne(Math.cos(c) * 5, Math.sin(c) * 5, 6, c % 3 === 0));
       M.boite(4, 6, 1, 0xa6acaf, g, 0, 3, 0);
@@ -271,7 +295,9 @@
     paysan: ['La récolte sera bonne cette année.', 'Les brigands ont encore volé deux moutons.', 'Bonjour, seigneur.', 'Mes fils pourraient te suivre, si la paye est bonne.', 'Il faudra bientôt rentrer le foin.'],
     habitant: ['Bonjour, voyageur.', 'Le pain a encore augmenté…', 'Tu viens de loin ?', 'On dit que les armées des Francs passent par ici.', 'Le marché est animé aujourd\'hui.', 'Ne bois pas l\'eau du port, crois-moi.']
   };
-  var SALUT = { catholique: 'Que Dieu te garde.', orthodoxe: 'Que le Christ te garde.', sunnite: 'Salam aleykoum, voyageur.', chiite: 'Salam aleykoum, voyageur.', armenienne: 'Barev, voyageur !', juive: 'Shalom, voyageur.', mystere: '…' };
+  var SALUT = { catholique: 'Que Dieu te garde.', orthodoxe: 'Que le Christ te garde.', sunnite: 'Salam aleykoum, voyageur.', chiite: 'Salam aleykoum, voyageur.', armenienne: 'Barev, voyageur !', juive: 'Shalom, voyageur.', mystere: '…',
+    copte: 'Que le Seigneur te bénisse.', syriaque: 'Shlomo, voyageur.', maronite: 'Que saint Maron te protège.', nestorienne: 'Shlama, voyageur.', druze: 'Salam, étranger.',
+    samaritaine: 'Shalom, voyageur.', paienne: 'Que les anciens dieux te regardent.' };
 
   function animerMarche(P, ph, amp) {
     P.jambeG.rotation.x = Math.sin(ph) * amp; P.jambeD.rotation.x = -Math.sin(ph) * amp;
@@ -445,7 +471,7 @@
     var r = M.rng(L.nom.length * 97 + L.x | 0);
     V = { cfg: cfg, pnjs: [], betes: [], obstacles: [], maisons: [], temps: 0, yaw: Math.PI, pitch: 0.3, rayon: village ? 21 : 19, village: village, sonT: 2, style: style };
     var i, a, d;
-    if (village) construireVillage(scene, style, r);
+    if (village) { construireVillage(scene, style, r); var mv = monument(L.religion, 0, -27, style); mv.scale.setScalar(0.6); scene.add(mv); }
     else construireVille(scene, style, r, L, nuit);
     // PNJ importants, en arc de cercle au nord de la place
     var n = cfg.pnjs.length;

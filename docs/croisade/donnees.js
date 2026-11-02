@@ -73,7 +73,17 @@ var FF = (function () {
     norvege: { nom: 'Royaume de Norvège', couleur: '#1f618d', religion: 'catholique', royaume: true, souverain: 'Magnus III aux Jambes nues (1093-1103)',
       histoire: 'Le dernier grand roi viking : il ravage les Orcades et l\'île de Man, et porte le kilt des Gaëls, d\'où son surnom.' },
     suede: { nom: 'Royaume de Suède', couleur: '#5499c7', religion: 'catholique', royaume: true, souverain: 'Inge l\'Ancien (1079-1110)',
-      histoire: 'Royaume encore à moitié païen : le grand temple d\'Uppsala a peut-être été détruit peu avant 1100.' }
+      histoire: 'Royaume encore à moitié païen : le grand temple d\'Uppsala a peut-être été détruit peu avant 1100.' },
+    pise: { nom: 'République de Pise', couleur: '#a93226', religion: 'catholique', royaume: true, souverain: 'L\'archevêque Daimbert (1088-1099)',
+      histoire: 'Ville de marins rivale de Gênes. Daimbert part en 1098 avec 120 navires pisans et devient patriarche de Jérusalem en 1099.' },
+    zirides: { nom: 'Émirat ziride d\'Ifriqiya', couleur: '#76448a', religion: 'sunnite', royaume: true, souverain: 'Tamim ibn al-Muizz (1062-1108)',
+      histoire: 'Émirs berbères de Mahdia (Tunisie). En 1087, Pisans et Génois ont pillé leur capitale : une « croisade » avant la croisade.' },
+    mossoul: { nom: 'Atabeg de Mossoul', couleur: '#0e6655', religion: 'sunnite', royaume: true, souverain: 'Kerbogha (1096-1102)',
+      histoire: 'Kerbogha rassemble une immense armée pour sauver Antioche en 1098. Il est battu par les croisés affamés le 28 juin 1098.' },
+    prusses: { nom: 'Tribus prussiennes', couleur: '#7d6608', religion: 'paienne', royaume: true, souverain: 'Pas de roi : des chefs de clan',
+      histoire: 'Peuple balte de la côte de l\'ambre. Ils refusent le christianisme : l\'évêque Adalbert de Prague a été tué chez eux en 997.' },
+    coumans: { nom: 'Coumans (Kiptchaks)', couleur: '#b9770e', religion: 'paienne', royaume: true, souverain: 'Le khan Boniak (vers 1096)',
+      histoire: 'Nomades turcs des steppes. En 1096, Boniak attaque Kiev et pille le monastère des Grottes.' }
   };
 
   var RELIGIONS = {
@@ -83,8 +93,33 @@ var FF = (function () {
     chiite: { nom: 'Musulmans chiites (ismaéliens)', texte: 'Le califat fatimide du Caire est chiite et rival des Seldjoukides sunnites. Les Fatimides reprennent Jérusalem aux Turcs en 1098, un an avant l\'arrivée des croisés.' },
     armenienne: { nom: 'Chrétiens arméniens', texte: 'L\'Église arménienne est l\'une des plus anciennes du monde. À Édesse, le prince arménien Thoros adopte le croisé Baudouin de Boulogne en 1098.' },
     juive: { nom: 'Communautés juives', texte: 'Présentes dans toutes les grandes villes. En 1096, des bandes de la « croisade populaire » massacrent les Juifs de Rhénanie (Mayence, Worms, Cologne) : un des épisodes les plus sombres de cette époque.' },
+    copte: { nom: 'Chrétiens coptes', texte: 'Les chrétiens d\'Égypte, très nombreux sous les califes fatimides. Ils prient en copte, la dernière forme de la langue des pharaons, et ont inventé les monastères du désert.' },
+    syriaque: { nom: 'Chrétiens syriaques (jacobites)', texte: 'Ils prient en syriaque, une forme de l\'araméen, la langue de Jésus. Nombreux à Édesse, Antioche et Mélitène, ils gardent de grands monastères dans les montagnes du Tour Abdin.' },
+    maronite: { nom: 'Chrétiens maronites', texte: 'Montagnards du Liban, disciples de saint Maron. En 1099, des Maronites guident l\'armée des croisés le long de la côte, de Tripoli jusqu\'à Jérusalem.' },
+    nestorienne: { nom: 'Église de l\'Orient (nestoriens)', texte: 'Chrétiens d\'Irak et de Perse. Leur chef vit à Bagdad, à côté du calife. Leurs moines ont porté l\'Évangile jusqu\'en Chine et en Inde.' },
+    druze: { nom: 'Druzes', texte: 'Une foi née en Égypte vers 1017, à l\'époque du calife fatimide al-Hakim. Ses fidèles se sont réfugiés dans les montagnes du Liban. Depuis 1043, on ne peut plus s\'y convertir : on naît druze.' },
+    samaritaine: { nom: 'Samaritains', texte: 'Un tout petit peuple autour de Naplouse. Ils suivent la Torah de Moïse, mais leur montagne sainte est le mont Garizim, pas Jérusalem.' },
+    paienne: { nom: 'Anciennes religions (païens)', texte: 'Prusses, Lituaniens, Coumans et une partie des Suédois prient encore les anciens dieux : Perkūnas le dieu du tonnerre, Tengri le Ciel éternel, ou Odin, Thor et Freyr au temple d\'Uppsala.' },
     mystere: { nom: 'Sanctuaires de légende', texte: 'Selon le Codex des Lames, les Forgerons de l\'Aube ont caché les armes des légendes dans des lieux oubliés.' }
   };
+  // Détails réels de chaque religion en 1096 : chef, lieu de prière, fêtes, prêtre rencontré en ville
+  var REL_INFO = {
+    catholique: { icone: '✝️', groupe: 'chretien', chef: 'Le pape Urbain II (1088-1099), à Rome', culte: 'Église, cathédrale et abbaye. Cluny, en Bourgogne, est la plus grande église du monde.', fete: 'Noël, Pâques, la Pentecôte, la Toussaint', pretre: ['Père Lambert', 'Prêtre'] },
+    orthodoxe: { icone: '☦️', groupe: 'chretien', chef: 'Le patriarche Nicolas III Grammatikos (1084-1111), à Constantinople', culte: 'Église à coupoles, couverte d\'icônes et de mosaïques d\'or. Sainte-Sophie est la plus grande.', fete: 'Pâques (la plus grande fête), l\'Épiphanie, la Dormition de Marie', pretre: ['Père Nikitas', 'Prêtre orthodoxe'] },
+    sunnite: { icone: '☪️', groupe: 'musulman', chef: 'Le calife abbasside al-Mustazhir (1094-1118), à Bagdad. Le vrai pouvoir appartient aux sultans seldjoukides.', culte: 'Mosquée, avec son minaret d\'où l\'on appelle à la prière cinq fois par jour.', fete: 'Le mois du Ramadan, l\'Aïd al-Fitr, l\'Aïd al-Adha, le pèlerinage de La Mecque', pretre: ['Cheikh Hassan', 'Imam'] },
+    chiite: { icone: '☪️', groupe: 'musulman', chef: 'Le calife fatimide al-Musta\'li (1094-1101), au Caire, guidé par le vizir al-Afdal. En 1094, les partisans de son frère Nizar ont fait sécession : ce sont les futurs « Assassins » de Hassan Sabbah.', culte: 'Mosquée. Au Caire, la mosquée al-Azhar est aussi une grande école.', fete: 'L\'Aïd, Achoura, la fête de Ghadir Khumm', pretre: ['Cheikh Ali', 'Imam'] },
+    armenienne: { icone: '✝️', groupe: 'chretien', chef: 'Le catholicos Grégoire II le Martyrophile (1066-1105)', culte: 'Église de pierre au toit conique, entourée de khatchkars (croix sculptées dans la pierre)', fete: 'Noël le 6 janvier, Vardavar (la fête de l\'eau, en été)', pretre: ['Ter Grigor', 'Prêtre arménien'] },
+    juive: { icone: '✡️', groupe: 'juif', chef: 'Pas de chef unique : les rabbins, les académies de Bagdad et l\'exilarque. En Champagne, le grand savant Rachi de Troyes (1040-1105) écrit ses commentaires de la Bible.', culte: 'Synagogue, où l\'on lit la Torah', fete: 'Pessah (la Pâque), Yom Kippour, Hanoucca, le shabbat chaque semaine', pretre: ['Rabbi Yehuda', 'Rabbin'] },
+    copte: { icone: '✝️', groupe: 'chretien', chef: 'Le patriarche Michel IV d\'Alexandrie (1092-1102)', culte: 'Église et monastères du désert, comme ceux du Wadi Natroun', fete: 'Noël le 7 janvier, le Nayrouz (nouvel an copte, en septembre)', pretre: ['Abouna Boutros', 'Moine copte'] },
+    syriaque: { icone: '✝️', groupe: 'chretien', chef: 'Le patriarche syriaque d\'Antioche, qui vit le plus souvent dans les monastères de Mésopotamie', culte: 'Église et monastères de montagne, comme Mor Gabriel au Tour Abdin (fondé en 397)', fete: 'Pâques, la fête de la Croix', pretre: ['Mor Yaqoub', 'Moine syriaque'] },
+    maronite: { icone: '✝️', groupe: 'chretien', chef: 'Le patriarche maronite, caché dans les vallées du Mont-Liban', culte: 'Petites églises et ermitages creusés dans la falaise de la vallée de la Qadisha', fete: 'La Saint-Maron (9 février), Pâques', pretre: ['Père Youssef', 'Prêtre maronite'] },
+    nestorienne: { icone: '✝️', groupe: 'chretien', chef: 'Le catholicos Makkikha Ier (1092-1110), à Bagdad', culte: 'Église sans images, avec une grande croix nue', fete: 'Pâques, le jeûne des Ninivites', pretre: ['Mar Isho', 'Prêtre de l\'Église de l\'Orient'] },
+    druze: { icone: '🌟', groupe: 'autre', chef: 'Pas de chef unique : les « sages » (uqqal) gardent les livres secrets', culte: 'Khalwa, une maison de prière simple, souvent en haut d\'une colline', fete: 'L\'Aïd al-Adha, prié en secret', pretre: ['Cheikh Sulayman', 'Sage druze'] },
+    samaritaine: { icone: '📜', groupe: 'juif', chef: 'Le grand prêtre samaritain, à Naplouse', culte: 'Le mont Garizim, leur montagne sainte, et une petite synagogue', fete: 'La Pâque, sacrifiée sur le mont Garizim', pretre: ['Le prêtre Abisha', 'Prêtre samaritain'] },
+    paienne: { icone: '🌳', groupe: 'paien', chef: 'Pas de chef unique : des prêtres, des chamans et les chefs de clan', culte: 'Bois sacrés, pierres et temples de bois. Le grand temple d\'Uppsala avait des statues de Thor, Odin et Freyr.', fete: 'Les fêtes du solstice et des moissons', pretre: ['Le vieux Waidelotte', 'Prêtre des anciens dieux'] },
+    mystere: { icone: '✦', groupe: 'autre', chef: 'Les Forgerons de l\'Aube (légende)', culte: 'Forges oubliées', fete: '—' }
+  };
+  Object.keys(REL_INFO).forEach(function (k) { Object.assign(RELIGIONS[k], REL_INFO[k]); });
 
   // ---------- Lieux de la carte : [clé, nom, lon, lat, faction, religion, port, région, description] ----------
   var L = [
@@ -144,7 +179,19 @@ var FF = (function () {
     ['novgorod', 'Novgorod', 31.27, 58.52, 'rus', 'orthodoxe', true, 'est', 'Ville de marchands au nord de la Rus, riche des fourrures des forêts.'],
     ['roskilde', 'Roskilde', 12.08, 55.64, 'danemark', 'catholique', true, 'nord', 'Ville des rois de Danemark, sur un fjord.'],
     ['bergen', 'Bergen', 5.32, 60.39, 'norvege', 'catholique', true, 'nord', 'Port fondé par le roi Olaf le Paisible, où l\'on sèche la morue.'],
-    ['uppsala', 'Uppsala', 17.64, 59.86, 'suede', 'catholique', false, 'nord', 'Vieux centre des rois de Suède et de l\'ancien culte d\'Odin.']
+    ['uppsala', 'Uppsala', 17.64, 59.86, 'suede', 'catholique', false, 'nord', 'Vieux centre des rois de Suède et de l\'ancien culte d\'Odin.'],
+    // Villes ajoutées (toutes réelles en 1096)
+    ['mayence', 'Mayence', 8.27, 50.0, 'empire', 'catholique', false, 'occident', 'Grande ville du Rhin et de son archevêque. En mai 1096, la bande d\'Emich de Leiningen y massacre la communauté juive.'],
+    ['pise', 'Pise', 10.4, 43.72, 'pise', 'catholique', true, 'occident', 'Port de marins qui construit sa grande cathédrale. Sa flotte part pour la Terre sainte en 1098.'],
+    ['lisbonne', 'Lisbonne', -9.14, 38.72, 'almoravides', 'sunnite', true, 'iberie', 'Al-Ushbuna, port sur le Tage, repris par les Almoravides en 1094.'],
+    ['seville', 'Séville', -5.98, 37.39, 'almoravides', 'sunnite', true, 'iberie', 'Ville du roi-poète al-Mutamid, exilé par les Almoravides en 1091.'],
+    ['mahdia', 'Mahdia', 11.06, 35.5, 'zirides', 'sunnite', true, 'egypte', 'Capitale fortifiée des Zirides sur la côte de Tunisie, pillée par Pise et Gênes en 1087.'],
+    ['caire', 'Le Caire', 31.24, 30.04, 'fatimides', 'chiite', false, 'egypte', 'Capitale des califes fatimides, avec la mosquée al-Azhar. Le vizir al-Afdal vient d\'y bâtir de nouvelles portes géantes.'],
+    ['ascalon', 'Ascalon', 34.57, 31.67, 'fatimides', 'chiite', true, 'syrie', 'Forteresse fatimide de la côte. Le 12 août 1099, les croisés y écrasent l\'armée d\'al-Afdal.'],
+    ['tarse', 'Tarse', 34.9, 36.92, 'seldjoukides', 'armenienne', true, 'anatolie', 'Ville de saint Paul, peuplée d\'Arméniens sous garnison turque. Tancrède et Baudouin se la disputent en 1097.'],
+    ['mossoul', 'Mossoul', 43.13, 36.34, 'mossoul', 'sunnite', false, 'orient', 'Ville de l\'atabeg Kerbogha, sur le Tigre, face aux ruines de Ninive.'],
+    ['trebizonde', 'Trébizonde', 39.72, 41.0, 'romains', 'orthodoxe', true, 'anatolie', 'Port romain de la mer Noire. Le duc Théodore Gabras le défend presque seul contre les Turcs.'],
+    ['smyrne', 'Smyrne', 27.14, 38.42, 'seldjoukides', 'sunnite', true, 'anatolie', 'Port de l\'émir Tzachas, un pirate turc qui rêvait de prendre Constantinople. Les Romains la reprennent en 1097.']
   ];
   // Villages : [clé, nom, lon, lat, faction, religion, région, description, recrue]
   var VIL = [
@@ -156,8 +203,27 @@ var FF = (function () {
     ['heraclee', 'Héraclée', 34.05, 37.51, 'seldjoukides', 'sunnite', 'anatolie', 'Village d\'Anatolie (Ereğli). Les croisés y battent les Turcs en septembre 1097.', 'turcopole'],
     ['marash', 'Marash', 36.93, 37.58, 'armeniens', 'armenienne', 'syrie', 'Bourg arménien gouverné par Tatoul, qui accueille les croisés en octobre 1097.', 'armenien'],
     ['shaizar', 'Shaizar', 36.57, 35.27, 'emirs', 'sunnite', 'syrie', 'Village fortifié des Banou Munqidh sur l\'Oronte. Le prince-poète Oussama y est né en 1095.', 'turcopole'],
-    ['tiberiade', 'Tibériade', 35.53, 32.79, 'fatimides', 'juive', 'syrie', 'Bourg au bord du lac de Galilée, célèbre pour ses savants juifs qui recopient la Bible hébraïque.', 'paysan']
+    ['tiberiade', 'Tibériade', 35.53, 32.79, 'fatimides', 'juive', 'syrie', 'Bourg au bord du lac de Galilée, célèbre pour ses savants juifs qui recopient la Bible hébraïque.', 'paysan'],
+    ['cluny', 'Cluny', 4.66, 46.43, 'france', 'catholique', 'occident', 'Village de la plus puissante abbaye d\'Europe. Urbain II, ancien moine de Cluny, y a consacré l\'autel de la nouvelle église en octobre 1095.', 'paysan'],
+    ['compostelle', 'Compostelle', -8.54, 42.88, 'castille', 'catholique', 'iberie', 'Bourg de Galice où des pèlerins de toute l\'Europe viennent prier sur le tombeau de saint Jacques.', 'paysan'],
+    ['athos', 'Mont Athos', 24.33, 40.16, 'romains', 'orthodoxe', 'balkans', 'La sainte montagne des moines orthodoxes : une vingtaine de monastères, et aucune femme admise.', 'paysan'],
+    ['sambie', 'Sambie', 20.3, 54.9, 'prusses', 'paienne', 'est', 'Côte de l\'ambre des Prusses païens, avec leurs bois sacrés où les étrangers n\'ont pas le droit d\'entrer.', 'paysan'],
+    ['steppe', 'Camp couman', 35.0, 47.8, 'coumans', 'paienne', 'est', 'Les yourtes du khan Boniak au bord du Dniepr. On y prie Tengri, le Ciel éternel.', 'coumane'],
+    ['naplouse', 'Naplouse', 35.26, 32.22, 'fatimides', 'samaritaine', 'syrie', 'Bourg au pied du mont Garizim, la montagne sainte des Samaritains.', 'paysan'],
+    ['byblos', 'Byblos', 35.65, 34.12, 'fatimides', 'maronite', 'syrie', 'Très vieux port (Jbeil) au pied du Mont-Liban, où vivent les chrétiens maronites.', 'maronite'],
+    ['hasbaya', 'Hasbaya', 35.68, 33.4, 'emirs', 'druze', 'syrie', 'Bourg du Wadi al-Taym, au pied du mont Hermon, où vivent les Druzes.', 'paysan'],
+    ['midyat', 'Midyat', 41.37, 37.42, 'mossoul', 'syriaque', 'orient', 'Bourg du Tour Abdin, la « montagne des serviteurs de Dieu », couvert de monastères syriaques.', 'paysan'],
+    ['natroun', 'Wadi Natroun', 30.3, 30.35, 'fatimides', 'copte', 'egypte', 'Vallée du désert où les monastères coptes existent depuis le IVe siècle.', 'paysan']
   ];
+  // Communautés religieuses minoritaires dans les villes (réelles en 1096)
+  var MINORITES = {
+    constantinople: ['juive', 'catholique', 'armenienne'], jerusalem: ['orthodoxe', 'juive', 'armenienne', 'copte', 'syriaque'], antioche: ['orthodoxe', 'syriaque', 'armenienne'],
+    edesse: ['syriaque', 'orthodoxe'], alep: ['juive', 'syriaque'], damas: ['juive', 'orthodoxe'], tripoli: ['maronite', 'sunnite'], bagdad: ['nestorienne', 'juive'],
+    mossoul: ['nestorienne', 'syriaque', 'juive'], alexandrie: ['copte', 'juive', 'sunnite'], caire: ['copte', 'juive', 'sunnite'], tolede: ['juive', 'sunnite'],
+    cordoue: ['juive', 'catholique'], seville: ['juive', 'catholique'], saragosse: ['juive', 'catholique'], palerme: ['sunnite', 'orthodoxe', 'juive'],
+    cologne: ['juive'], mayence: ['juive'], prague: ['juive'], rouen: ['juive'], paris: ['juive'], kiev: ['juive'], uppsala: ['paienne'], bari: ['orthodoxe', 'juive'],
+    venise: ['orthodoxe'], tarse: ['sunnite', 'orthodoxe'], acre: ['juive'], ascalon: ['juive', 'samaritaine'], nicee: ['orthodoxe'], iconium: ['orthodoxe', 'armenienne'], valence: ['sunnite']
+  };
   var LIEUX = {};
   L.forEach(function (l) {
     var p = proj(l[2], l[3]);
@@ -170,6 +236,7 @@ var FF = (function () {
   // Les villes d'Europe de l'Ouest passent sous leur vrai royaume de 1096
   var ROY = { bruges: 'flandre', bouillon: 'empire', aix: 'empire', cologne: 'empire', ratisbonne: 'empire', clermont: 'france', rome: 'papaute', bari: 'normands' };
   Object.keys(ROY).forEach(function (k) { LIEUX[k].faction = ROY[k]; });
+  Object.keys(MINORITES).forEach(function (k) { LIEUX[k].minorites = MINORITES[k]; });
 
   // Routes : [a, b, 'terre' | 'mer']
   var ROUTES = [
@@ -191,7 +258,17 @@ var FF = (function () {
     ['damas', 'tiberiade', 'terre'], ['tiberiade', 'jerusalem', 'terre'], ['damas', 'liban', 'terre'], ['alep', 'shaizar', 'terre'], ['shaizar', 'damas', 'terre'], ['shaizar', 'lattaquie', 'terre'], ['alep', 'bagdad', 'terre'], ['edesse', 'bagdad', 'terre'],
     ['bruges', 'dublin', 'mer'], ['genes', 'valence', 'mer'], ['venise', 'durazzo', 'mer'], ['bari', 'durazzo', 'mer'],
     ['constantinople', 'rhodes', 'mer'], ['rhodes', 'chypre', 'mer'], ['chypre', 'lattaquie', 'mer'], ['chypre', 'jaffa', 'mer'],
-    ['jaffa', 'alexandrie', 'mer'], ['rhodes', 'alexandrie', 'mer']
+    ['jaffa', 'alexandrie', 'mer'], ['rhodes', 'alexandrie', 'mer'],
+    ['cologne', 'mayence', 'terre'], ['mayence', 'ratisbonne', 'terre'], ['mayence', 'prague', 'terre'], ['genes', 'pise', 'terre'], ['pise', 'rome', 'terre'], ['pise', 'palerme', 'mer'],
+    ['lisbonne', 'seville', 'terre'], ['lisbonne', 'compostelle', 'terre'], ['lisbonne', 'londres', 'mer'], ['seville', 'cordoue', 'terre'], ['compostelle', 'tolede', 'terre'], ['compostelle', 'toulouse', 'terre'],
+    ['valence', 'mahdia', 'mer'], ['mahdia', 'palerme', 'mer'], ['mahdia', 'alexandrie', 'mer'], ['vezelay', 'cluny', 'terre'], ['cluny', 'clermont', 'terre'],
+    ['thessalonique', 'athos', 'terre'], ['athos', 'constantinople', 'mer'], ['cracovie', 'sambie', 'terre'], ['sambie', 'roskilde', 'mer'], ['sambie', 'novgorod', 'mer'],
+    ['kiev', 'steppe', 'terre'], ['steppe', 'trebizonde', 'mer'], ['constantinople', 'trebizonde', 'mer'], ['trebizonde', 'edesse', 'terre'],
+    ['constantinople', 'smyrne', 'mer'], ['smyrne', 'rhodes', 'mer'], ['smyrne', 'dorylee', 'terre'], ['heraclee', 'tarse', 'terre'], ['tarse', 'antioche', 'terre'], ['tarse', 'chypre', 'mer'],
+    ['edesse', 'mossoul', 'terre'], ['mossoul', 'bagdad', 'terre'], ['edesse', 'midyat', 'terre'], ['midyat', 'mossoul', 'terre'],
+    ['alexandrie', 'caire', 'terre'], ['caire', 'natroun', 'terre'], ['natroun', 'alexandrie', 'terre'], ['caire', 'ascalon', 'terre'],
+    ['jaffa', 'ascalon', 'terre'], ['ascalon', 'jerusalem', 'terre'], ['ascalon', 'alexandrie', 'mer'], ['jerusalem', 'naplouse', 'terre'], ['naplouse', 'tiberiade', 'terre'], ['naplouse', 'jaffa', 'terre'],
+    ['tripoli', 'byblos', 'terre'], ['byblos', 'acre', 'terre'], ['damas', 'hasbaya', 'terre'], ['hasbaya', 'tiberiade', 'terre']
   ];
   ROUTES.forEach(function (r) {
     LIEUX[r[0]].voisins.push({ id: r[1], type: r[2] });
@@ -268,6 +345,8 @@ var FF = (function () {
   u('armenien', { nom: 'Archer arménien', pv: 42, deg: 10, vit: 3.6, arme: 'epee', tir: { deg: 12, cad: 2, portee: 23 }, look: { tunique: 0xa04000, pantalon: 0x4a235a, casque: 'rond' }, prix: 35, merc: true, histo: 'Les Arméniens de Cilicie et d\'Édesse aident les croisés à traverser le Taurus.' });
   u('hospitalier', { nom: 'Frère de l\'Hôpital', pv: 110, deg: 17, vit: 3.5, arme: 'epee', look: { tunique: 0x1c1c1c, croix: 0xffffff, pantalon: 0x2c3e50, casque: 'heaume', bouclier: 'kite', bc: 0x1c1c1c, cape: 0x111111 }, prix: 120, garde: 0.5, histo: 'L\'Hôpital Saint-Jean de Jérusalem, dirigé par Gérard, soigne les pèlerins depuis avant 1099. Il deviendra l\'ordre militaire des Hospitaliers.' });
   // Troupes des villages et des royaumes du Nord et de l'Est
+  u('maronite', { nom: 'Archer maronite', pv: 40, deg: 10, vit: 3.8, arme: 'epee', tir: { deg: 12, cad: 2, portee: 23 }, look: { tunique: 0x6e2c00, pantalon: 0x1b2631, casque: 'capuche' }, prix: 30, garde: 0.15,
+    histo: 'Montagnards chrétiens du Liban. En 1099, ils guident les croisés le long de la côte.' });
   u('paysan', { nom: 'Volontaire du village', pv: 28, deg: 6, vit: 3.4, arme: 'lance', look: { tunique: 0xa1887f, pantalon: 0x6d4c41, casque: 'capuche' }, prix: 6, garde: 0.05, promo: 'milicien', promoXp: 8,
     histo: 'Des paysans qui prennent la fourche et la lance pour suivre un seigneur. Avec de l\'expérience, ils deviennent de vrais soldats.' });
   U.milicien.promo = { latins: 'sergent', romains: 'skutatos' }; U.milicien.promoXp = 16;
@@ -690,6 +769,76 @@ var FF = (function () {
     ] }
   };
 
+  // ---------- Héros de taverne (compagnons à engager, personnages inventés) ----------
+  // Ils changent de taverne tous les 10 jours (villes de leur liste). talent : voir TALENTS.
+  var TALENTS = {
+    guerrier: { nom: 'Guerrier', icone: '⚔️', desc: 'Très solide au combat.' },
+    medecin: { nom: 'Médecin', icone: '🩺', desc: 'Soigne les blessés : un tiers de morts en moins après chaque combat.' },
+    marchand: { nom: 'Marchand', icone: '⚖️', desc: 'Négocie : achats 8 % moins chers, ventes 6 % plus chères.' },
+    instructeur: { nom: 'Maître d\'armes', icone: '🎯', desc: 'Entraîne tes troupes : +50 % d\'expérience.' },
+    intendant: { nom: 'Intendant', icone: '🐴', desc: 'Organise les bagages : +15 de chargement.' },
+    recruteur: { nom: 'Recruteuse', icone: '📯', desc: 'Connue partout : +2 volontaires dans chaque village.' },
+    archer: { nom: 'Archère', icone: '🏹', desc: 'Tire de loin pendant les batailles.' }
+  };
+  var HEROS = [
+    { id: 'ingrid', nom: 'Ingrid Haraldsdóttir', talent: 'guerrier', prix: 220, villes: ['bergen', 'roskilde', 'uppsala', 'novgorod', 'constantinople'],
+      pres: 'Fille d\'un chef norvégien. Elle veut entrer dans la garde varègue de l\'empereur.',
+      look: { peau: 0xffdbac, cheveux: 0xf4d03f, longs: true, casque: 0x95a5a6 },
+      unite: { pv: 170, deg: 19, vit: 3.6, arme: 'hache', look: { peau: 0xffdbac, tunique: 0x5d6d7e, pantalon: 0x3e2723, casque: 'nasal', cheveux: 0xf4d03f, bouclier: 'rond', bc: 0xa93226 }, garde: 0.4 },
+      d: ['Chez moi, on dit qu\'une hache bien tenue vaut dix prières. Les prêtres n\'aiment pas.', 'Mon grand-père a vu Miklagard, la grande ville des Grecs. Il disait que les toits étaient en or.'] },
+    { id: 'salomon', nom: 'Salomon de Narbonne', talent: 'medecin', prix: 160, villes: ['toulouse', 'barcelone', 'genes', 'rome', 'alexandrie'],
+      pres: 'Médecin juif, il a lu les livres d\'Avicenne. Il soigne tout le monde, sans demander la religion.',
+      look: { peau: 0xe0ac69, cheveux: 0x3e2723, barbe: 0x5d4037, capuche: 0x1a5276 },
+      unite: { pv: 95, deg: 9, vit: 3.6, arme: 'lance', look: { peau: 0xe0ac69, tunique: 0x1a5276, pantalon: 0x34495e, casque: 'capuche', cheveux: 0x3e2723 }, garde: 0.5 },
+      d: ['Lave-toi les mains avant de toucher une plaie. Personne ne me croit, mais mes blessés survivent.', 'Mon père a traduit des livres arabes en latin. Le savoir voyage plus loin que les armées.'] },
+    { id: 'berenger', nom: 'Bérenger le Catalan', talent: 'marchand', prix: 150, villes: ['barcelone', 'genes', 'venise', 'palerme', 'acre'],
+      pres: 'Ancien marchand de sel. Il connaît le prix de tout, et la valeur de pas grand-chose.',
+      look: { peau: 0xf1c27d, cheveux: 0x6e2c00, barbe: 0x6e2c00 },
+      unite: { pv: 110, deg: 12, vit: 3.8, arme: 'epee', look: { peau: 0xf1c27d, tunique: 0xb7950b, pantalon: 0x641e16, casque: 'chapel', cheveux: 0x6e2c00, bouclier: 'kite', bc: 0xb7950b }, garde: 0.4 },
+      d: ['Achète le sel à Venise, revends-le dans les montagnes. Voilà toute la science du commerce.', 'Un marchand sans escorte, c\'est un cadeau pour les brigands. Avec toi, je dors tranquille.'] },
+    { id: 'vratislav', nom: 'Vratislav de Bohême', talent: 'instructeur', prix: 200, villes: ['prague', 'cracovie', 'ratisbonne', 'hongrie', 'cologne'],
+      pres: 'Vieux maître d\'armes. Il a entraîné les gardes du duc de Bohême pendant vingt ans.',
+      look: { peau: 0xffdbac, cheveux: 0xbdc3c7, barbe: 0xbdc3c7 },
+      unite: { pv: 140, deg: 16, vit: 3.4, arme: 'epee', look: { peau: 0xffdbac, tunique: 0x922b21, pantalon: 0x1b2631, casque: 'heaume', cheveux: 0xbdc3c7, bouclier: 'kite', bc: 0xf4f6f6 }, garde: 0.55 },
+      d: ['Un soldat qui transpire à l\'entraînement saigne moins à la guerre.', 'Le bouclier d\'abord, l\'épée ensuite. Les jeunes font toujours l\'inverse.'] },
+    { id: 'olena', nom: 'Olena de Kiev', talent: 'recruteur', prix: 140, villes: ['kiev', 'novgorod', 'cracovie', 'hongrie', 'sofia'],
+      pres: 'Messagère des princes de la Rus. Elle connaît chaque village entre Kiev et la mer Noire.',
+      look: { peau: 0xffdbac, cheveux: 0x6e2c00, longs: true, bijou: 0xc0392b },
+      unite: { pv: 115, deg: 12, vit: 4.4, arme: 'lance', look: { peau: 0xffdbac, tunique: 0xc0392b, pantalon: 0x1b4f72, casque: 'fourrure', cheveux: 0x6e2c00 }, garde: 0.35 },
+      d: ['Dans un village, on ne commence pas par demander des hommes. On commence par manger le pain qu\'on t\'offre.', 'Les Coumans pillent nos villages chaque été. Ceux qui ont tout perdu suivront un chef juste.'] },
+    { id: 'gerwin', nom: 'Gerwin le Frison', talent: 'intendant', prix: 130, villes: ['bruges', 'liege', 'cologne', 'londres', 'rouen'],
+      pres: 'Il a mené des convois de laine de Flandre jusqu\'au Rhin. Aucun chariot ne s\'est jamais perdu.',
+      look: { peau: 0xffdbac, cheveux: 0xd4ac0d, barbe: 0xd4ac0d },
+      unite: { pv: 125, deg: 13, vit: 3.6, arme: 'hache', look: { peau: 0xffdbac, tunique: 0x1e8449, pantalon: 0x5d4037, casque: 'rond', cheveux: 0xd4ac0d, bouclier: 'rond', bc: 0x1e8449 }, garde: 0.4 },
+      d: ['Une armée marche sur son ventre. Et sur ses chariots. Surtout sur ses chariots.', 'Trois mulets, deux charrettes et un âne têtu : avec ça, je porte une ville entière.'] },
+    { id: 'nicephore', nom: 'Nicéphore le Vieux', talent: 'guerrier', prix: 210, villes: ['constantinople', 'thessalonique', 'andrinople', 'nicee', 'rhodes'],
+      pres: 'Ancien officier de l\'armée romaine, blessé à Mantzikert en 1071. Il veut sa revanche sur les Turcs.',
+      look: { peau: 0xe0ac69, cheveux: 0x7f8c8d, barbe: 0x7f8c8d, casque: 0xaab7b8 },
+      unite: { pv: 160, deg: 17, vit: 3.3, arme: 'spathion', look: { peau: 0xe0ac69, tunique: 0x6c3483, pantalon: 0x1b2631, casque: 'rond', cheveux: 0x7f8c8d, bouclier: 'rond', bc: 0x6c3483 }, garde: 0.55 },
+      d: ['À Mantzikert, j\'ai vu l\'empereur Romain Diogène tomber prisonnier. Je n\'oublierai jamais ce jour.', 'Les Latins chargent comme des taureaux. Courageux, mais les Turcs adorent les taureaux.'] },
+    { id: 'ruggero', nom: 'Ruggero d\'Apulie', talent: 'guerrier', prix: 190, villes: ['bari', 'palerme', 'rome', 'durazzo', 'antioche'],
+      pres: 'Cadet d\'une famille normande d\'Italie. Pas d\'héritage, alors il cherche fortune à l\'épée.',
+      look: { peau: 0xf1c27d, cheveux: 0x1c1c1c, casque: 0xaab7b8 },
+      unite: { pv: 150, deg: 18, vit: 3.9, arme: 'epee', look: { peau: 0xf1c27d, tunique: 0x2471a3, croix: 0xf4f6f6, pantalon: 0x34495e, casque: 'nasal', cheveux: 0x1c1c1c, bouclier: 'kite', bc: 0x2471a3 }, garde: 0.4 },
+      d: ['Mon grand-père est parti de Normandie avec un cheval et une épée. Il est mort seigneur.', 'Bohémond paie bien. Mais il oublie vite ceux qui l\'ont servi.'] },
+    { id: 'marta', nom: 'Marta d\'Édesse', talent: 'marchand', prix: 160, villes: ['edesse', 'antioche', 'alep', 'tripoli', 'chypre'],
+      pres: 'Marchande arménienne de soie et d\'épices. Elle parle arménien, grec, arabe et un peu de latin.',
+      look: { peau: 0xe0ac69, cheveux: 0x1c1c1c, longs: true, bijou: 0xf1c40f },
+      unite: { pv: 105, deg: 11, vit: 4, arme: 'kilij', look: { peau: 0xe0ac69, tunique: 0x922b21, pantalon: 0x4a235a, casque: 'aucun', cheveux: 0x1c1c1c }, garde: 0.4 },
+      d: ['La soie vient de très loin à l\'est. À chaque ville, son prix double. Devine qui gagne le plus ?', 'Les Arméniens étaient là bien avant les Turcs et les Francs. Nous serons encore là après.'] },
+    { id: 'aysel', nom: 'Aysel la Turcopole', talent: 'archer', prix: 180, villes: ['nicee', 'dorylee', 'iconium', 'antioche', 'jaffa'],
+      pres: 'Fille d\'un Turc et d\'une Grecque, elle tire à l\'arc depuis la selle. Elle se bat pour qui la paie bien.',
+      look: { peau: 0xc68642, cheveux: 0x1c1c1c, longs: true },
+      unite: { pv: 110, deg: 12, vit: 4.6, arme: 'kilij', tir: { deg: 14, cad: 1.8, portee: 24 }, look: { peau: 0xc68642, tunique: 0x117a65, pantalon: 0x3e2723, casque: 'aucun', cheveux: 0x1c1c1c }, garde: 0.35 },
+      d: ['Mon père disait : un arc, un cheval et le vent. Le reste, c\'est pour les gens lents.', 'Chez les Turcs, on m\'appelle la Grecque. Chez les Grecs, la Turque. Alors je préfère « Aysel ».'] }
+  ];
+  HEROS.forEach(function (h) {
+    PERSOS[h.id] = { nom: h.nom, look: h.look };
+    h.unite.nom = h.nom.split(' ')[0];
+    COMPAGNONS[h.id] = { nom: h.nom, taverne: true, talent: h.talent, prix: h.prix, villes: h.villes, pres: h.pres, unite: h.unite,
+      discussions: h.d.map(function (t) { return { min: 0, d: [D(h.id, t)] }; }) };
+  });
+
   // ---------- Cours et intrigues ----------
   var COURS = {
     constantinople: { titre: 'La cour impériale des Blachernes', courtisans: [
@@ -738,7 +887,9 @@ var FF = (function () {
     liege: ['milicien', 'sergent', 'chevalier'], paris: ['milicien', 'sergent', 'chevalier'], rouen: ['sergent', 'normand', 'arbaletrier'], toulouse: ['milicien', 'sergent', 'chevalier'],
     londres: ['milicien', 'sergent', 'huscarl'], dunfermline: ['milicien'], tolede: ['sergent', 'chevalier'], barcelone: ['sergent', 'arbaletrier'], saragosse: ['turcopole'],
     palerme: ['normand', 'turcopole'], knin: ['milicien', 'sergent'], prague: ['milicien', 'sergent'], cracovie: ['milicien', 'sergent', 'coumane'],
-    kiev: ['druzhinnik', 'coumane', 'varegue'], novgorod: ['druzhinnik', 'milicien'], roskilde: ['huscarl', 'milicien'], bergen: ['huscarl'], uppsala: ['huscarl', 'milicien']
+    kiev: ['druzhinnik', 'coumane', 'varegue'], novgorod: ['druzhinnik', 'milicien'], roskilde: ['huscarl', 'milicien'], bergen: ['huscarl'], uppsala: ['huscarl', 'milicien'],
+    mayence: ['milicien', 'sergent', 'chevalier'], pise: ['arbaletrier', 'sergent'], lisbonne: ['almoravide'], seville: ['almoravide', 'turcopole'], mahdia: ['turcopole'],
+    caire: ['turcopole', 'armenien'], ascalon: ['turcopole'], tarse: ['armenien', 'turcopole'], mossoul: ['turcopole'], trebizonde: ['skutatos', 'toxotes', 'varegue'], smyrne: ['turcopole', 'petchenegue']
   };
 
   // ---------- Marchandises et commerce ----------
@@ -763,16 +914,20 @@ var FF = (function () {
     antioche: ['soie', 'fer'], edesse: ['laine', 'fer'], alep: ['epices', 'drap'], lattaquie: ['huile', 'ble'], tripoli: ['sucre papier', 'fer'], acre: ['epices', 'verre'],
     jaffa: ['huile', 'drap'], jerusalem: ['encens', 'ble'], damas: ['epices papier', 'drap fourrures'], alexandrie: ['epices encens', 'fer drap'], bagdad: ['papier soie', 'fer ambre'],
     vezelay: ['vin ble', ''], mosony: ['ble', ''], ochrid: ['poisson', ''], philippopolis: ['vin ble', ''], melfi: ['huile ble', ''], heraclee: ['laine', ''],
-    marash: ['laine fer', ''], shaizar: ['ble huile', ''], tiberiade: ['poisson ble', '']
+    marash: ['laine fer', ''], shaizar: ['ble huile', ''], tiberiade: ['poisson ble', ''],
+    mayence: ['vin', 'epices'], pise: ['fer verre', 'laine'], lisbonne: ['sel poisson', 'drap'], seville: ['huile', 'fer drap'], mahdia: ['huile', 'fer ble'],
+    caire: ['sucre papier', 'fer fourrures'], ascalon: ['vin', 'fer'], tarse: ['ble', 'drap'], mossoul: ['drap', 'fer'], trebizonde: ['soie', 'ble'], smyrne: ['huile vin', 'fer'],
+    cluny: ['vin', ''], compostelle: ['poisson', ''], athos: ['vin huile', ''], sambie: ['ambre', ''], steppe: ['laine fourrures', ''], naplouse: ['huile', ''],
+    byblos: ['huile', ''], hasbaya: ['huile ble', ''], midyat: ['vin', ''], natroun: ['sel', '']
   };
   // Banquiers et changeurs (le même compte dans toutes les banques)
   var BANQUES = { constantinople: 'Trapézite (banquier)', venise: 'Banquier vénitien', genes: 'Banquier génois', bagdad: 'Sarraf (changeur)', alexandrie: 'Sarraf (changeur)',
-    damas: 'Sarraf (changeur)', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
+    damas: 'Sarraf (changeur)', caire: 'Sarraf (changeur)', pise: 'Banquier pisan', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
 
   return {
     proj: proj, FACTIONS: FACTIONS, RELIGIONS: RELIGIONS, LIEUX: LIEUX, ROUTES: ROUTES, ARMES: ARMES, UNITES: U, PEAU: PEAU,
     NAVIRES: NAVIRES, PERSOS: PERSOS, COMBATS: COMBATS, RENCONTRES: RENCONTRES, HISTOIRE: HISTOIRE, LEGENDES: LEGENDES,
-    COMPAGNONS: COMPAGNONS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES
+    COMPAGNONS: COMPAGNONS, HEROS: HEROS, TALENTS: TALENTS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FF;

@@ -90,7 +90,7 @@
     n.pv = 0; n.coule = true; n.couleT = 0;
     if (n.el) { n.el.remove(); n.el = null; }
     M.son('eau');
-    if (n.equipe === 1) { N.or += 40; N.coules++; message(n.D.nom + ' coulée !', 'or'); }
+    if (n.equipe === 1) { N.or += 40; N.coules++; message(n.D.nom + _t(' coulée !'), 'or'); }
   }
 
   // Volée de carreaux d'arbalète vers une cible
@@ -132,16 +132,16 @@
     var proche = cibles[0];
     if ((M.a('esquive') || M.a('attaque') || M.a('tir')) && n.tirT <= 0) {
       if (proche && dist(n, proche) < 34) { volee(n, proche); n.tirT = 2.2; }
-      else message('Aucun navire ennemi à portée', 'petit');
+      else message(_t('Aucun navire ennemi à portée'), 'petit');
     }
     if (M.a('pouvoir')) {
-      if (!N.feu) message(N.cfg.faction === 'romains' ? 'Pas de siphon sur ce navire' : 'Le feu grégeois est un secret des Romains', 'petit');
-      else if (n.feuT > 0) message('Le siphon se recharge…', 'petit');
+      if (!N.feu) message(N.cfg.faction === 'romains' ? _t('Pas de siphon sur ce navire') : _t('Le feu grégeois est un secret des Romains'), 'petit');
+      else if (n.feuT > 0) message(_t('Le siphon se recharge…'), 'petit');
       else { feuGregeois(n); n.feuT = 8; }
     }
     if (M.a('interagir') || M.a('changer')) {
       if (proche && dist(n, proche) < 11) aborder(proche, true);
-      else message('Approche-toi à moins de 10 m pour aborder', 'petit');
+      else message(_t('Approche-toi à moins de 10 m pour aborder'), 'petit');
     }
     if (M.a('pause')) { N.cfg.pause && N.cfg.pause(); }
   }
@@ -186,7 +186,7 @@
     N.navires.forEach(function (n) { if (n.el) n.el.style.display = 'none'; });
     document.body.classList.remove('modeNaval');
     M.bataille({
-      decor: 'pont', titre: parNous ? 'À l\'abordage !' : 'Ils nous abordent !',
+      decor: 'pont', titre: parNous ? _t('À l\'abordage !') : _t('Ils nous abordent !'),
       vagues: [[[troupe, Math.ceil(nEnnemis / 2)]], [[troupe, Math.floor(nEnnemis / 2)]]].filter(function (v) { return v[0][1] > 0; }),
       allies: allies2, compagnons: cfg.compagnons, joueur: cfg.joueur, faction: cfg.faction, diff: cfg.diff, directionnel: cfg.directionnel, pause: cfg.pause, graine: 3
     }, function (res) {
@@ -197,7 +197,7 @@
       Object.keys(res.morts).forEach(function (k) { N.mortsAbordage[k] = (N.mortsAbordage[k] || 0) + res.morts[k]; });
       if (res.victoire) {
         ennemi.equipage = 0; couler(ennemi); N.captures++;
-        message(ennemi.D.nom + ' capturée !', 'or');
+        message(ennemi.D.nom + _t(' capturée !'), 'or');
         N.or += 60;
       } else {
         N.fini = 'defaite'; N.finT = 0.1;
@@ -293,7 +293,7 @@
           A.pos.x -= dx / d * pousse; A.pos.z -= dz / d * pousse; Bn.pos.x += dx / d * pousse; Bn.pos.z += dz / d * pousse;
           if (A.equipe !== Bn.equipe && (A.eperonT || 0) <= 0) {
             var va = Math.max(0, A.v * (Math.sin(A.ang) * dx + Math.cos(A.ang) * dz) / d), vb = Math.max(0, Bn.v * -(Math.sin(Bn.ang) * dx + Math.cos(Bn.ang) * dz) / d);
-            if (va > 4) { degats(Bn, va * 4, A); M.son('coup'); M.secouer(0.3); if (A.joueur) message('Éperonnage !', 'or'); }
+            if (va > 4) { degats(Bn, va * 4, A); M.son('coup'); M.secouer(0.3); if (A.joueur) message(_t('Éperonnage !'), 'or'); }
             if (vb > 4) { degats(A, vb * 4, Bn); M.son('coup'); M.secouer(0.3); }
             A.eperonT = Bn.eperonT = 1.5; A.v *= 0.3; Bn.v *= 0.3;
           }
@@ -340,14 +340,14 @@
     }
     majHud();
     if (N.fini) { N.finT -= dt; if (N.finT <= 0) terminer(); return; }
-    if (!j.vivant()) { N.fini = 'defaite'; N.finT = 2.5; message('Ton navire sombre…', 'rouge'); M.son('defaite'); }
-    else if (!navires(1).length) { N.fini = 'victoire'; N.finT = 2.5; message('Victoire sur la mer !', 'or'); M.son('victoire'); }
+    if (!j.vivant()) { N.fini = 'defaite'; N.finT = 2.5; message(_t('Ton navire sombre…'), 'rouge'); M.son('defaite'); }
+    else if (!navires(1).length) { N.fini = 'victoire'; N.finT = 2.5; message(_t('Victoire sur la mer !'), 'or'); M.son('victoire'); }
   }
   function majHud() {
     var j = N.joueur;
     el('hudNavPv').style.width = Math.max(0, j.pv / j.pvMax * 100) + '%';
     el('hudNavTxt').textContent = j.D.nom + ' — ' + Math.max(0, Math.ceil(j.pv)) + ' / ' + j.pvMax;
-    el('hudNavEquipage').textContent = '👥 ' + j.equipage + ' marins   ⛵ ' + Math.round(Math.abs(j.v) * 1.94) + ' nœuds';
+    el('hudNavEquipage').textContent = '👥 ' + j.equipage + _t(' marins   ⛵ ') + Math.round(Math.abs(j.v) * 1.94) + _t(' nœuds');
     el('hudNavTir').style.setProperty('--k', String(Math.max(0, j.tirT / 2.2)));
     el('hudNavFeu').classList.toggle('hide', !N.feu);
     el('hudNavFeu').style.setProperty('--k', String(Math.max(0, j.feuT / 8)));
@@ -382,7 +382,7 @@
     var k = 0;
     (cfg.ennemis || []).forEach(function (g) { for (var i = 0; i < g[1]; i++) { N.navires.push(new Navire(g[0], 1, (k - 1.5) * 16, 40 + (k % 2) * 10, Math.PI)); k++; } });
     M.cam.position.set(0, 10, -50);
-    message(cfg.titre || 'Bataille navale !');
+    message(cfg.titre || _t('Bataille navale !'));
     M.lancer(modeNaval());
   };
   M.enNaval = function () { return !!N; };

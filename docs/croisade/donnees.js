@@ -358,6 +358,27 @@ var FF = (function () {
     histo: 'La droujina est la garde personnelle des princes de Kiev : des guerriers lourds, héritiers des Varègues.' });
   u('almoravide', { nom: 'Guerrier almoravide', pv: 52, deg: 11, vit: 3.7, arme: 'lance', look: { tunique: 0x1c2833, pantalon: 0x1c2833, casque: 'turban', bouclier: 'rond', bc: 0x7e5109 }, garde: 0.35, or: 11 });
   // Ennemis
+  // Cavalerie (à cheval seulement dans les grandes batailles en terrain ouvert)
+  u('chevalier_monte', { nom: 'Chevalier monté', pv: 100, deg: 17, vit: 3.6, arme: 'lance', look: { tunique: 0xf8f9f9, croix: 0xc0392b, pantalon: 0x85929e, casque: 'heaume', bouclier: 'kite', bc: 0xc0392b, cape: 0xc0392b }, prix: 160, garde: 0.4, faction: 'latins',
+    cheval: { robe: 0x4e342e, caparacon: 0xf8f9f9, croix: 0xc0392b, vit: 6.2, pv: 45, charge: 1.2 },
+    histo: 'Le chevalier lourd et son destrier : sa charge, lance couchée, peut briser une armée. Les Turcs disaient qu\'un chevalier franc à cheval pouvait percer les murs de Babylone.' });
+  u('cataphracte', { nom: 'Cataphracte', pv: 105, deg: 15, vit: 3.4, arme: 'lance', look: { tunique: 0x7d3c98, pantalon: 0x4a235a, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98, cape: 0x4a235a }, prix: 150, garde: 0.45, faction: 'romains',
+    cheval: { robe: 0x3e2723, caparacon: 0x95a5a6, vit: 5.6, pv: 60, charge: 1.1 },
+    histo: 'Cavaliers romains couverts de fer, eux et leurs chevaux. Lents mais presque impossibles à arrêter.' });
+  u('cavalier_turc', { nom: 'Archer à cheval turc', pv: 38, deg: 9, vit: 4, arme: 'kilij', tir: { deg: 10, cad: 1.8, portee: 24 }, look: { tunique: 0x148f77, pantalon: 0x0b5345, casque: 'fourrure' }, garde: 0.05, or: 12,
+    cheval: { robe: 0xa04000, vit: 7, pv: 25 }, histo: 'Les archers à cheval seldjoukides tournent autour de l\'ennemi en tirant sans jamais s\'arrêter. C\'est ainsi qu\'ils encerclent les croisés à Dorylée.' });
+  u('cavalier_fatimide', { nom: 'Cavalier fatimide', pv: 55, deg: 12, vit: 3.6, arme: 'lance', look: { tunique: 0xfdfefe, pantalon: 0x2e86c1, casque: 'turban', bouclier: 'rond', bc: 0x2e86c1 }, garde: 0.3, or: 13,
+    cheval: { robe: 0xd5d8dc, caparacon: 0x2e86c1, vit: 6.4, pv: 30 } });
+  // Les nomades combattent à cheval
+  U.turcopole.cheval = { robe: 0xa04000, vit: 6.8, pv: 25 };
+  U.petchenegue.cheval = { robe: 0x6e2c00, vit: 6.8, pv: 25 };
+  U.coumane.cheval = { robe: 0x8d6e63, vit: 7, pv: 25 };
+  // Montures à acheter (forge et écurie)
+  var CHEVAUX = {
+    roncin: { nom: 'Roncin', prix: 80, vit: 5.6, pv: 20, robe: 0x8d6e63, desc: 'Un cheval de voyage solide et bon marché. Mieux que d\'aller à pied !' },
+    arabe: { nom: 'Cheval arabe', prix: 220, vit: 7, pv: 25, robe: 0xd5d8dc, desc: 'Rapide et nerveux, il tourne vite. Parfait pour frapper et repartir.' },
+    destrier: { nom: 'Destrier caparaçonné', prix: 320, vit: 6.2, pv: 60, charge: 1.3, robe: 0x1c1c1c, caparacon: true, desc: 'Le grand cheval de guerre des chevaliers, couvert d\'un caparaçon. Sa charge fait des ravages.' }
+  };
   u('brigand', { nom: 'Brigand', pv: 30, deg: 7, vit: 3.3, arme: 'masse', look: { tunique: 0x6d4c41, pantalon: 0x3e2723, casque: 'capuche' }, garde: 0.05, or: 6 });
   u('noir', { nom: 'Mercenaire de Raoul', pv: 50, deg: 11, vit: 3.5, arme: 'epee', look: { tunique: 0x1c2833, pantalon: 0x17202a, casque: 'nasal', bouclier: 'kite', bc: 0x1c2833 }, garde: 0.3, or: 10 });
   u('noir_tir', { nom: 'Arbalétrier de Raoul', pv: 34, deg: 9, vit: 3.4, arme: 'epee', tir: { deg: 11, cad: 3, portee: 20 }, look: { tunique: 0x283747, pantalon: 0x17202a, casque: 'chapel' }, garde: 0.05, or: 9 });
@@ -434,10 +455,10 @@ var FF = (function () {
     hongrie: { titre: 'Les pillards de la plaine', decor: 'plaine', vagues: [[['noir', 3], ['noir_tir', 1]], [['noir', 3], ['noir_tir', 2]]], boss: 'hugues' },
     varegues: { titre: 'L\'épreuve des Varègues', decor: 'ville', vagues: [[['varegue', 2]], [['varegue', 3]]], boss: 'thorvald', amical: true },
     palais: { titre: 'Des tueurs aux Blachernes', decor: 'ville', vagues: [[['noir', 3]], [['assassin', 3], ['noir_tir', 1]]], boss: 'thorvald', amical: true },
-    nicee: { titre: 'L\'armée de secours de Kılıç Arslan', decor: 'plaine', vagues: [[['seldjoukide', 4], ['archer_turc', 1]], [['seldjoukide', 4], ['archer_turc', 3]]], alliesHisto: [['sergent', 3]] },
-    dorylee: { titre: 'La bataille de Dorylée', decor: 'desert', vagues: [[['archer_turc', 3], ['seldjoukide', 3]], [['seldjoukide', 3], ['noir', 3]]], boss: 'bertrand', alliesHisto: [['sergent', 2], ['skutatos', 2]] },
+    nicee: { titre: 'L\'armée de secours de Kılıç Arslan', decor: 'plaine', vagues: [[['seldjoukide', 4], ['cavalier_turc', 1]], [['seldjoukide', 4], ['cavalier_turc', 2], ['archer_turc', 1]]], alliesHisto: [['sergent', 3]] },
+    dorylee: { titre: 'La bataille de Dorylée', decor: 'desert', vagues: [[['cavalier_turc', 4], ['seldjoukide', 2]], [['seldjoukide', 3], ['cavalier_turc', 2], ['noir', 2]]], boss: 'bertrand', alliesHisto: [['sergent', 2], ['skutatos', 2]] },
     antioche: { titre: 'Nuit de la tour des Deux-Sœurs', decor: 'nuit', vagues: [[['assassin', 3]], [['assassin', 3], ['noir', 2]]], boss: 'vipere' },
-    kerbogha: { titre: 'La sortie contre Kerbogha', decor: 'plaine', vagues: [[['seldjoukide', 5], ['archer_turc', 2]], [['seldjoukide', 5], ['archer_turc', 3]], [['seldjoukide', 6]]], alliesHisto: [['chevalier', 2], ['sergent', 3]] },
+    kerbogha: { titre: 'La sortie contre Kerbogha', decor: 'plaine', ambiance: 'aube', vagues: [[['seldjoukide', 5], ['archer_turc', 2]], [['seldjoukide', 4], ['cavalier_turc', 3]], [['seldjoukide', 5], ['cavalier_fatimide', 2]]], alliesHisto: [['chevalier_monte', 3], ['sergent', 3]] },
     liban: { titre: 'Le Sanctuaire des Forgerons', decor: 'montagne', vagues: [[['golem', 2]], [['noir', 3], ['golem', 1]]], boss: 'golem_aube' },
     jerusalem: { titre: 'L\'assaut du 15 juillet 1099', decor: 'remparts', vagues: [[['fatimide', 4], ['fatimide_tir', 2]], [['noir', 4], ['noir_tir', 2]]], boss: 'raoul', alliesHisto: [['sergent', 3]] },
     aix: { titre: 'Les gardiens de Joyeuse', decor: 'crypte', vagues: [[['spectre', 3]]], boss: 'paladin' },
@@ -455,9 +476,9 @@ var FF = (function () {
     occident: { nom: 'Des brigands', vagues: [[['brigand', 4]], [['brigand', 3], ['noir_tir', 1]]], decor: 'foret' },
     hongrie: { nom: 'Des mercenaires de Raoul', vagues: [[['noir', 3], ['brigand', 2]]], decor: 'plaine' },
     balkans: { nom: 'Des cavaliers petchénègues', vagues: [[['petchenegue', 4]]], decor: 'plaine', ennemiTroupe: true },
-    anatolie: { nom: 'Des pillards turcs', vagues: [[['seldjoukide', 3], ['archer_turc', 2]]], decor: 'desert' },
+    anatolie: { nom: 'Des pillards turcs', vagues: [[['seldjoukide', 3], ['cavalier_turc', 2]]], decor: 'desert' },
     syrie: { nom: 'Des maraudeurs', vagues: [[['seldjoukide', 2], ['noir', 2], ['archer_turc', 1]]], decor: 'desert' },
-    egypte: { nom: 'Une patrouille fatimide', vagues: [[['fatimide', 3], ['fatimide_tir', 2]]], decor: 'desert' },
+    egypte: { nom: 'Une patrouille fatimide', vagues: [[['fatimide', 2], ['cavalier_fatimide', 2], ['fatimide_tir', 1]]], decor: 'desert' },
     orient: { nom: 'Des bandits du désert', vagues: [[['brigand', 3], ['archer_turc', 2]]], decor: 'desert' },
     mer: { nom: 'Des pirates', mer: true, ennemis: [['pirate', 2]] },
     nord: { nom: 'Des pillards du Nord', vagues: [[['brigand', 2], ['huscarl', 2]]], decor: 'foret', ennemiTroupe: true },
@@ -877,18 +898,18 @@ var FF = (function () {
 
   // Recrutement par ville : unités de la ville (sans compter tes troupes de faction)
   var RECRUES = {
-    bruges: ['milicien', 'sergent', 'arbaletrier'], bouillon: ['milicien', 'sergent', 'chevalier'], aix: ['sergent', 'chevalier'], cologne: ['milicien', 'sergent', 'arbaletrier'],
-    clermont: ['milicien', 'sergent', 'chevalier'], ratisbonne: ['milicien', 'sergent'], hongrie: ['milicien', 'sergent', 'arbaletrier'],
+    bruges: ['milicien', 'sergent', 'arbaletrier'], bouillon: ['milicien', 'sergent', 'chevalier', 'chevalier_monte'], aix: ['sergent', 'chevalier'], cologne: ['milicien', 'sergent', 'arbaletrier'],
+    clermont: ['milicien', 'sergent', 'chevalier', 'chevalier_monte'], ratisbonne: ['milicien', 'sergent'], hongrie: ['milicien', 'sergent', 'arbaletrier'],
     belgrade: ['skutatos', 'petchenegue'], nis: ['skutatos', 'petchenegue'], sofia: ['skutatos', 'petchenegue'], andrinople: ['skutatos', 'toxotes', 'petchenegue'],
-    constantinople: ['skutatos', 'toxotes', 'varegue', 'turcopole', 'petchenegue'], durazzo: ['skutatos', 'toxotes'], thessalonique: ['skutatos', 'toxotes'],
+    constantinople: ['skutatos', 'toxotes', 'varegue', 'turcopole', 'petchenegue', 'cataphracte'], durazzo: ['skutatos', 'toxotes'], thessalonique: ['skutatos', 'toxotes', 'cataphracte'],
     venise: ['arbaletrier', 'sergent'], genes: ['genois', 'arbaletrier'], rome: ['milicien', 'sergent', 'normand'], bari: ['normand', 'sergent'],
     valence: ['sergent', 'chevalier'], dublin: ['milicien'], rhodes: ['skutatos', 'toxotes'], chypre: ['skutatos', 'toxotes'],
     edesse: ['armenien'], antioche: ['turcopole', 'armenien'], lattaquie: ['skutatos', 'toxotes'], jaffa: ['genois'], jerusalem: ['hospitalier', 'turcopole'],
     liege: ['milicien', 'sergent', 'chevalier'], paris: ['milicien', 'sergent', 'chevalier'], rouen: ['sergent', 'normand', 'arbaletrier'], toulouse: ['milicien', 'sergent', 'chevalier'],
-    londres: ['milicien', 'sergent', 'huscarl'], dunfermline: ['milicien'], tolede: ['sergent', 'chevalier'], barcelone: ['sergent', 'arbaletrier'], saragosse: ['turcopole'],
+    londres: ['milicien', 'sergent', 'huscarl'], dunfermline: ['milicien'], tolede: ['sergent', 'chevalier', 'chevalier_monte'], barcelone: ['sergent', 'arbaletrier'], saragosse: ['turcopole'],
     palerme: ['normand', 'turcopole'], knin: ['milicien', 'sergent'], prague: ['milicien', 'sergent'], cracovie: ['milicien', 'sergent', 'coumane'],
     kiev: ['druzhinnik', 'coumane', 'varegue'], novgorod: ['druzhinnik', 'milicien'], roskilde: ['huscarl', 'milicien'], bergen: ['huscarl'], uppsala: ['huscarl', 'milicien'],
-    mayence: ['milicien', 'sergent', 'chevalier'], pise: ['arbaletrier', 'sergent'], lisbonne: ['almoravide'], seville: ['almoravide', 'turcopole'], mahdia: ['turcopole'],
+    mayence: ['milicien', 'sergent', 'chevalier', 'chevalier_monte'], pise: ['arbaletrier', 'sergent'], lisbonne: ['almoravide'], seville: ['almoravide', 'turcopole'], mahdia: ['turcopole'],
     caire: ['turcopole', 'armenien'], ascalon: ['turcopole'], tarse: ['armenien', 'turcopole'], mossoul: ['turcopole'], trebizonde: ['skutatos', 'toxotes', 'varegue'], smyrne: ['turcopole', 'petchenegue']
   };
 
@@ -946,6 +967,7 @@ var FF = (function () {
     damas: 'Sarraf (changeur)', caire: 'Sarraf (changeur)', pise: 'Banquier pisan', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
 
   return {
+    CHEVAUX: CHEVAUX,
     proj: proj, FACTIONS: FACTIONS, RELIGIONS: RELIGIONS, LIEUX: LIEUX, ROUTES: ROUTES, ARMES: ARMES, UNITES: U, PEAU: PEAU,
     NAVIRES: NAVIRES, PERSOS: PERSOS, COMBATS: COMBATS, RENCONTRES: RENCONTRES, HISTOIRE: HISTOIRE, LEGENDES: LEGENDES,
     COMPAGNONS: COMPAGNONS, HEROS: HEROS, CAPITALES: CAPITALES, GUERRES: GUERRES, RIVAUX: RIVAUX, TALENTS: TALENTS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES

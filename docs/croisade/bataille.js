@@ -49,6 +49,21 @@
     this.P = M.creerPerso(look, this.taille, { spectre: def.spectre });
     M.equiper(this.P, this.armeId);
     this.g = this.P.g;
+    // À cheval (seulement dans les grandes batailles en terrain ouvert)
+    var ch = opts.cheval || def.cheval;
+    if (ch && B.montes) {
+      this.monte = true;
+      this.cheval = ch;
+      this.H = M.creerCheval({ robe: ch.robe, crin: ch.crin, caparacon: ch.caparacon, croix: ch.croix });
+      this.H.g.scale.setScalar(this.taille);
+      this.g = new T.Group();
+      this.g.add(this.H.g); this.g.add(this.P.g);
+      this.P.g.position.set(0, 1.08 * this.taille, -0.12);
+      this.rayon = 0.85 * this.taille;
+      this.vit = ch.vit || 6;
+      this.allure = 0;
+      this.pvMax = this.pv = this.pvMax + (ch.pv || 30);
+    }
     B.scene.add(this.g);
     this.pos = this.g.position;
     this.ang = 0;
@@ -84,15 +99,15 @@
   Combattant.prototype.attaquer = function (dir, fort) {
     if (this.etat !== 'libre' || this.etourdi > 0) return false;
     var cout = this.A.end * (fort ? 1.5 : 1);
-    if (this.joueur && this.end < 5) { M.texte(this.teteP(), 'Épuisé', 'gris'); return false; }
+    if (this.joueur && this.end < 5) { M.texte(this.teteP(), _t('Épuisé'), 'gris'); return false; }
     var dur = this.A.dur * (this.joueur ? 1 : 1.25) * (this.def.boss ? 1.1 : 1);
     this.etat = 'attaque'; this.t = 0;
-    this.att = { dir: dir, dur: dur, wf: this.joueur ? 0.34 : 0.5, touches: [], fort: !!fort };
+    this.att = { dir: dir, dur: dur, wf: this.joueur || this.monte ? 0.34 : 0.5, touches: [], fort: !!fort };
     this.bloc = false;
     if (this.joueur) { this.end -= cout; this.endPause = 0.7; }
     return true;
   };
-  Combattant.prototype.teteP = function () { return new T.Vector3(this.pos.x, this.pos.y + 2.3 * this.taille, this.pos.z); };
+  Combattant.prototype.teteP = function () { return new T.Vector3(this.pos.x, this.pos.y + (this.monte ? 3.4 : 2.3) * this.taille, this.pos.z); };
 
   // ---------- Coup porté ----------
   function frapper(a, c, deg, dir, o) {
@@ -104,12 +119,12 @@
     if (c.bloc && face && !o.imparable) {
       var bonneDir = !B.directionnel || !c.joueur || c.blocDir === dir || o.sansDir;
       if (c.joueur && !bonneDir) {
-        M.texte(c.teteP(), 'Mauvaise parade !', 'rouge');
+        M.texte(c.teteP(), _t('Mauvaise parade !'), 'rouge');
       } else if (c.joueur) {
         if (c.blocT < 0.22 && !o.projectile) {
           // Parade parfaite : l'ennemi est déséquilibré
           M.son('parade'); M.eclats(arme(c), 0xf7dc6f, 14, 6);
-          M.texte(c.teteP(), 'PARADE !', 'or');
+          M.texte(c.teteP(), _t('PARADE !'), 'or');
           if (a.etat !== 'mort') { a.etat = 'touche'; a.t = 0; a.etourdi = 1.0; }
           B.stats.parades++;
           return false;
@@ -117,14 +132,14 @@
         var cout = deg * (o.brise ? 2.4 : 1.2) * (c.fureur > 0 ? 0 : 1);
         c.end -= cout; c.endPause = 0.6;
         M.son('metal'); M.eclats(arme(c), 0xfdebd0, 6, 4);
-        if (c.end <= 0) { c.end = 0; c.bloc = false; c.etat = 'touche'; c.t = 0; c.etourdi = 0.8; M.texte(c.teteP(), 'Garde brisée !', 'rouge'); }
+        if (c.end <= 0) { c.end = 0; c.bloc = false; c.etat = 'touche'; c.t = 0; c.etourdi = 0.8; M.texte(c.teteP(), _t('Garde brisée !'), 'rouge'); }
         else {
           if (a.etat === 'attaque' && !o.projectile) { a.etourdi = Math.max(a.etourdi, 0.25); }
           return false;
         }
       } else if (!o.brise || Math.random() < 0.4) {
         M.son('metal'); M.eclats(arme(c), 0xfdebd0, 5, 3);
-        if (a.joueur) M.texte(c.teteP(), 'Paré', 'gris');
+        if (a.joueur) M.texte(c.teteP(), _t('Paré'), 'gris');
         return false;
       }
     }
@@ -139,16 +154,19 @@
     c.pv -= deg;
     c.flash = 0.12;
     var dirRecul = new T.Vector3(c.pos.x - a.pos.x, 0, c.pos.z - a.pos.z).normalize();
-    var recul = (o.recul || 1) * (c.def.boss ? 1.2 : 4) / c.taille;
+    var recul = (o.recul || 1) * (c.def.boss ? 1.2 : 4) / c.taille * (c.monte ? 0.2 : 1);
     c.vel.addScaledVector(dirRecul, recul);
     M.son('coup');
-    M.eclats(new T.Vector3(c.pos.x, c.pos.y + 1.3 * c.taille, c.pos.z), c.def.pierre ? 0x95a5a6 : c.def.spectre ? 0x85c1e9 : 0xb03a2e, c.def.pierre ? 8 : 5, 3);
+    M.eclats(new T.Vector3(c.pos.x, c.pos.y + (c.monte ? 2.4 : 1.3) * c.taille, c.pos.z), c.def.pierre ? 0x95a5a6 : c.def.spectre ? 0x85c1e9 : 0xb03a2e, c.def.pierre ? 8 : 5, 3);
     M.texte(c.teteP(), String(deg), c.joueur ? 'rouge' : (a.joueur ? 'blanc' : 'petit'));
     if (a.joueur || c.joueur) { B.arret = 0.05; M.secouer(c.joueur ? 0.25 : 0.12); }
     // Réaction : les boss ne bronchent pas à chaque coup
     if (c.def.boss) {
       c.poise += deg;
       if (c.poise > c.pvMax * 0.12) { c.poise = 0; c.etat = 'touche'; c.t = 0; c.att = null; c.etourdi = 0.6; }
+    } else if (c.monte) {
+      // un cavalier ne s'arrête pas pour un coup : il chancelle seulement
+      if (deg > c.pvMax * 0.2 || o.etourdir) { c.etat = 'touche'; c.t = 0; c.att = null; c.bloc = false; c.etourdi = 0.3; }
     } else if (c.etat !== 'esquive') {
       c.etat = 'touche'; c.t = 0; c.att = null; c.bloc = false; c.etourdi = c.joueur ? 0.25 : 0.4;
     }
@@ -183,7 +201,7 @@
   }
 
   function roulade(c, dir) {
-    if (c.etat === 'mort') return;
+    if (c.etat === 'mort' || c.monte) return;
     c.etat = 'esquive'; c.t = 0; c.att = null; c.bloc = false;
     c.rouleDir = dir.clone().setY(0).normalize();
     if (c.joueur) { c.end -= 18; c.endPause = 0.6; }
@@ -192,8 +210,9 @@
   // ---------- Projectiles et zones ----------
   function tirer(a, cible, deg, o) {
     o = o || {};
-    var dep = new T.Vector3(a.pos.x, a.pos.y + 1.5 * a.taille, a.pos.z);
-    var but = new T.Vector3(cible.pos.x + cible.vel.x * 0.3, cible.pos.y + 1.2, cible.pos.z + cible.vel.z * 0.3);
+    var dep = new T.Vector3(a.pos.x, a.pos.y + (a.monte ? 2.6 : 1.5) * a.taille, a.pos.z);
+    var vc = cible.monte ? cible.devant().multiplyScalar(cible.allure || 0) : cible.vel;
+    var but = new T.Vector3(cible.pos.x + vc.x * 0.35, cible.pos.y + (cible.monte ? 2.2 : 1.2), cible.pos.z + vc.z * 0.35);
     var dir = but.sub(dep).normalize();
     dir.x += (Math.random() - 0.5) * 0.08; dir.y += (Math.random() - 0.5) * 0.04; dir.z += (Math.random() - 0.5) * 0.08;
     var m = new T.Group();
@@ -384,8 +403,8 @@
   }
   function afficherVague() {
     var n = B.cfg.vagues.length;
-    if (n > 1) message('Vague ' + B.vague + ' / ' + n);
-    else if (n === 1 && !B.cfg.boss) message(B.cfg.titre || 'Combat !');
+    if (n > 1) message(_t('Vague ') + B.vague + ' / ' + n);
+    else if (n === 1 && !B.cfg.boss) message(B.cfg.titre || _t('Combat !'));
   }
   function majHud() {
     var j = B.joueur;
@@ -400,7 +419,7 @@
       p.classList.toggle('pret', k <= 0);
       el('hudPouvoirNom').textContent = A.pouvoir.nom;
     } else p.classList.add('hide');
-    el('hudArme').textContent = A.nom + (B.armes.length > 1 ? '  ⇄' : '');
+    el('hudArme').textContent = A.nom + (B.armes.length > 1 ? '  ⇄' : '') + (j.monte ? '  🐎 ' + Math.round(j.allure * 3.6) + ' km/h' : '');
     if (B.boss) el('hudBossPv').style.width = Math.max(0, B.boss.pv / B.boss.pvMax * 100) + '%';
     var dir = B.directionnel ? (j.bloc ? j.blocDir : (M.directionSouris() || B.prochDir)) : null;
     var hd = el('hudDir');
@@ -514,6 +533,71 @@
     return mv;
   }
 
+  // ---------- IA des cavaliers : charger, frapper en passant, faire demi-tour ----------
+  function iaCavalier(c, dt) {
+    var mv = new T.Vector3();
+    if (c.etat === 'special') return mv;
+    var cible = choisirCible(c);
+    if (c.equipe === 0 && B.ordre !== 'charge') {
+      var ancre = B.ordre === 'tenir' ? B.ancre : B.joueur.pos;
+      if (!cible || Math.hypot(cible.pos.x - ancre.x, cible.pos.z - ancre.z) > (B.ordre === 'tenir' ? 8 : 12)) {
+        var idx = B.combattants.indexOf(c) % 8;
+        var base = B.ordre === 'tenir' ? B.ancreAng : B.joueur.ang;
+        var lat = (idx % 2 ? 1 : -1) * (3.2 + Math.floor(idx / 2) * 2.4), prof = 2.5;
+        var cx = ancre.x - Math.sin(base) * prof + Math.cos(base) * lat, cz = ancre.z - Math.cos(base) * prof - Math.sin(base) * lat;
+        mv.set(cx - c.pos.x, 0, cz - c.pos.z);
+        var d0 = mv.length();
+        if (d0 < 1.6) { c.ang += difAngle(c.ang, base) * Math.min(1, dt * 2); return mv.set(0, 0, 0); }
+        return mv.normalize().multiplyScalar(Math.min(1.55, d0 / 4));
+      }
+    }
+    if (!cible) return mv;
+    var d = dist(c, cible), vers = angleVers(c.pos, cible.pos);
+    if (c.peur > 0) return mv.set(c.pos.x - cible.pos.x, 0, c.pos.z - cible.pos.z).normalize().multiplyScalar(1.55);
+    if (c.def.tir && (c.tirs || 0) < 8) {
+      // Archer à cheval (8 flèches, puis il charge au sabre) : tourne autour de la cible à bonne distance et tire en galopant
+      var rad = new T.Vector3(c.pos.x - cible.pos.x, 0, c.pos.z - cible.pos.z).normalize();
+      var tan = new T.Vector3(-rad.z, 0, rad.x).multiplyScalar(c.decale > 0 ? 1 : -1);
+      mv.copy(tan).addScaledVector(rad, (c.def.tir.portee * 0.6 - d) * 0.25).normalize();
+      if (c.etat === 'libre') {
+        c.tirT -= dt;
+        if (c.tirT <= 0 && d < c.def.tir.portee) { c.etat = 'tir'; c.t = 0; c.tirCible = cible; c.tirT = c.def.tir.cad * (0.8 + Math.random() * 0.5); }
+      }
+      if (d < 3.2 && c.etat === 'libre' && c.recharge <= 0) { c.cibleCoup = cible; if (c.attaquer(Math.random() < 0.5 ? 'droite' : 'gauche')) c.recharge = 1.5; }
+      return mv;
+    }
+    // Après une charge : continuer tout droit, puis revenir
+    if (c.passeT > 0) { c.passeT -= dt; return mv.copy(c.devant()).multiplyScalar(1.55); }
+    // Viser un peu à gauche de la cible pour la frapper du côté de l'arme (main droite)
+    var lanceDroite = c.A.forme === 'lance' && !cible.monte; // lance couchée : droit sur la cible
+    if (d > 3 && !lanceDroite) mv.set(cible.pos.x + Math.cos(vers) * 1.3 - c.pos.x, 0, cible.pos.z - Math.sin(vers) * 1.3 - c.pos.z).normalize();
+    else mv.set(cible.pos.x - c.pos.x, 0, cible.pos.z - c.pos.z).normalize();
+    if (d < c.A.portee + 1.8 + cible.rayon + (c.allure || 0) * 0.2 && c.etat === 'libre' && c.recharge <= 0) {
+      c.cibleCoup = cible;
+      if (c.attaquer(lanceDroite ? 'estoc' : 'droite')) { c.recharge = 1.4 + Math.random() * 0.8; c.passeT = 0.6 + Math.random() * 0.5; }
+    }
+    if (d < 1.8) c.passeT = Math.max(c.passeT || 0, 0.6);
+    return mv.multiplyScalar(1.55);
+  }
+  // Un cheval lancé renverse les fantassins devant lui (sauf les lanciers en garde)
+  function pietiner(c) {
+    var dv = c.devant();
+    hostiles(c).forEach(function (e) {
+      if (e.monte || (e.def.boss && e.taille > 1.4) || (e.pietineT || 0) > B.temps) return;
+      var dx = e.pos.x - c.pos.x, dz = e.pos.z - c.pos.z, dd = Math.hypot(dx, dz);
+      if (dd > c.rayon + e.rayon + 0.5 || (dx * dv.x + dz * dv.z) / (dd || 1) < 0.3) return;
+      e.pietineT = B.temps + 0.9;
+      if (e.bloc && e.A.forme === 'lance' && Math.abs(difAngle(e.ang, angleVers(e.pos, c.pos))) < 1.2) {
+        c.allure *= 0.15;
+        M.texte(e.teteP(), _t('Piques !'), 'or');
+        frapper(e, c, (e.joueur ? e.A.deg : (e.def.deg || 12)) * 1.6, 'estoc', { sansDir: true, imparable: true, recul: 0 });
+        return;
+      }
+      frapper(c, e, 4 + c.allure * 1.6 * ((c.cheval && c.cheval.charge) || 1), 'estoc', { sansDir: true, imparable: true, recul: 1.6, etourdir: 0.5 });
+      c.allure *= 0.85;
+    });
+  }
+
   // ---------- Joueur ----------
   function commandeJoueur(j, dt) {
     var mv = new T.Vector3();
@@ -526,7 +610,7 @@
     }
     var courir = (M.E.touches.ShiftLeft || M.E.touches.ShiftRight || M.tenu('courir')) && j.end > 5 && dep.l > 0.1 && !j.bloc;
     j.court = courir;
-    if (courir) { j.end -= dt * 14; j.endPause = 0.4; }
+    if (courir) { j.end -= dt * (j.monte ? 5 : 14); j.endPause = 0.4; }
     // Parade (clic droit / bouton bouclier)
     var veutBloquer = M.E.souris.droit || M.tenu('bloc') || M.E.touches.KeyV;
     if (veutBloquer && (j.etat === 'libre') && j.etourdi <= 0) {
@@ -546,7 +630,8 @@
       var dir = B.directionnel ? (M.directionSouris() || B.prochDir) : B.prochDir;
       if (j.attaquer(dir)) {
         B.prochDir = DIRS[(DIRS.indexOf(B.prochDir) + 1) % 4];
-        if (proche) j.ang = angleVers(j.pos, proche.pos);
+        if (j.monte) { /* à cheval, on frappe en passant sans se tourner */ }
+        else if (proche) j.ang = angleVers(j.pos, proche.pos);
         else if (mv.lengthSq() > 0.01) j.ang = Math.atan2(mv.x, mv.z);
         else j.ang = B.yaw;
         M.son('swing');
@@ -562,8 +647,8 @@
       message(j.A.nom);
     }
     if (M.a('pouvoir')) {
-      if (!j.A.pouvoir) message('Seules les armes légendaires ont un pouvoir', 'petit');
-      else if (B.pouvoirT > 0) message('Pouvoir en recharge…', 'petit');
+      if (!j.A.pouvoir) message(_t('Seules les armes légendaires ont un pouvoir'), 'petit');
+      else if (B.pouvoirT > 0) message(_t('Pouvoir en recharge…'), 'petit');
       else if (j.etat === 'libre' || j.etat === 'attaque') {
         POUVOIRS[j.A.pouvoir.id](j);
         B.pouvoirT = j.A.pouvoir.recharge;
@@ -575,6 +660,7 @@
       var o = M.a('ordre1') ? 'suivre' : M.a('ordre2') ? 'tenir' : M.a('ordre3') ? 'charge' : { suivre: 'tenir', tenir: 'charge', charge: 'suivre' }[B.ordre];
       donnerOrdre(o);
     }
+    if (j.monte) return mv.multiplyScalar(dep.l > 0.05 ? (courir ? 1.55 : 0.85) * (j.bloc ? 0.6 : 1) : 0);
     if (j.etat === 'libre' && mv.lengthSq() > 0.01 && !j.bloc) j.ang += difAngle(j.ang, Math.atan2(mv.x, mv.z)) * Math.min(1, dt * 12);
     if (j.bloc && proche) j.ang += difAngle(j.ang, angleVers(j.pos, proche.pos)) * Math.min(1, dt * 10);
     return mv.multiplyScalar(dep.l > 0.05 ? (courir ? 1.55 : 1) * (j.bloc ? 0.45 : 1) : 0);
@@ -582,7 +668,7 @@
   function donnerOrdre(o) {
     B.ordre = o;
     B.ancre = B.joueur.pos.clone(); B.ancreAng = B.joueur.ang;
-    var noms = { suivre: '🚩 Suivez-moi !', tenir: '🛡️ Tenez la position !', charge: '⚔️ Chargez !' };
+    var noms = { suivre: _t('🚩 Suivez-moi !'), tenir: _t('🛡️ Tenez la position !'), charge: _t('⚔️ Chargez !') };
     message(noms[o]);
     M.son('cor');
     Array.prototype.forEach.call(document.querySelectorAll('[data-ordre]'), function (b) { b.classList.toggle('actif', b.dataset.ordre === o); });
@@ -600,34 +686,61 @@
     if (c.bloc) c.blocT += dt;
     if (c.endPause > 0) c.endPause -= dt; else c.end = Math.min(100, c.end + dt * (c.bloc ? 10 : 28));
     if (c.etat === 'mort') {
-      c.g.rotation.x = Math.max(-Math.PI / 2, -c.t * 4);
+      if (c.monte) { c.g.rotation.z = Math.min(Math.PI / 2, c.t * 2.5); c.allure = 0; }
+      else c.g.rotation.x = Math.max(-Math.PI / 2, -c.t * 4);
       c.g.position.y = c.t > 2.5 ? -(c.t - 2.5) * 0.6 : 0;
       if (c.t > 4 && !c.joueur) { B.scene.remove(c.g); c.supprime = true; }
       return;
     }
-    var mv = c.joueur ? commandeJoueur(c, dt) : ia(c, dt);
+    var mv = c.joueur ? commandeJoueur(c, dt) : c.monte ? iaCavalier(c, dt) : ia(c, dt);
     var vitesse = c.vit * (c.joueur ? 1.15 : 1);
     if (c.etat === 'attaque') vitesse *= c.joueur ? 0.35 : 0.2;
     if (c.etourdi > 0 || c.etat === 'touche') vitesse = 0;
+    if (c.monte) {
+      // Le cheval avance toujours vers l'avant : on le dirige, il accélère et freine doucement
+      var veut = mv.length(), cibleV = 0;
+      if (veut > 0.05) {
+        var dA = difAngle(c.ang, Math.atan2(mv.x, mv.z));
+        if (c.joueur && Math.abs(dA) > 2.3) cibleV = 0; // reculer = freiner
+        else {
+          var rot = dt * (c.allure > 7 ? 1.9 : 2.8);
+          c.ang += Math.max(-rot, Math.min(rot, dA));
+          cibleV = veut * c.vit * (1 - Math.min(0.5, Math.abs(dA) * 0.25));
+        }
+      }
+      if (c.etourdi > 0 || c.etat === 'touche' || c.etat === 'special') cibleV = 0;
+      c.allure += (cibleV - c.allure) * Math.min(1, dt * (cibleV > c.allure ? 1.3 : 2.2));
+      mv = c.devant(); vitesse = c.allure;
+    }
     // États
     if (c.etat === 'attaque') {
       var a = c.att, k = c.t / a.dur, wf = a.wf;
-      if (k >= wf && k < wf + 0.25) {
+      if (k >= wf && k < wf + (c.monte ? 0.4 : 0.25)) {
         // fenêtre de frappe
         var cibles = hostiles(c);
         for (var i = 0; i < cibles.length; i++) {
           var e = cibles[i];
           if (a.touches.indexOf(e) >= 0) continue;
-          var dd = dist(c, e), port = c.A.portee * c.taille + e.rayon;
+          var dd = dist(c, e), port = c.A.portee * c.taille + e.rayon + (c.monte ? 0.9 : 0);
           if (dd > port) continue;
           var ang = Math.abs(difAngle(c.ang, angleVers(c.pos, e.pos))) * 180 / Math.PI;
           var arc = a.dir === 'estoc' ? Math.min(c.A.arc, 40) : c.A.arc;
+          if (c.monte) arc = a.dir === 'estoc' ? 70 : 220; // à cheval on frappe sur les côtés
           if (ang > arc / 2 + 10) continue;
           a.touches.push(e);
           var deg = (c.joueur ? c.A.deg * (B.niveauDeg || 1) : (c.def.deg || 10) * (c.armeId && FF.ARMES[c.armeId].type === 'legendaire' ? 1.1 : 1));
           if (c.equipe === 0 && B.cfg.faction === 'latins') deg *= 1.2; // Charge des chevaliers
           if (c.fureur > 0) deg *= 1.3;
           if (a.dir === 'estoc' && c.A.forme === 'lance') deg *= 1.15;
+          if (c.monte && c.allure > 2) {
+            // La charge : plus le cheval va vite, plus le coup est terrible
+            var kc = 1 + c.allure / 9 * ((c.cheval && c.cheval.charge) || 1);
+            if (a.dir === 'estoc' && c.A.forme === 'lance') kc *= 1.3;
+            deg *= kc;
+            if (c.allure > 6 && (c.joueur || e.joueur)) M.texte(c.teteP(), _t('Charge !'), 'or');
+            if (c.joueur && c.allure > 6) B.stats.charges = (B.stats.charges || 0) + 1;
+          }
+          if (e.monte && !c.monte && c.A.forme === 'lance') deg *= 1.5; // la lance contre les cavaliers
           if (c.equipe === 1) deg *= 1; // les dégâts ennemis sont ajustés à l'arrivée selon la difficulté
           frapper(c, e, deg, a.dir, { brise: c.A.brise, recul: c.A.recul });
           if (c.A.forme !== 'hache' && c.A.forme !== 'baton' && !c.def.boss) break; // une seule cible sauf armes larges
@@ -642,9 +755,11 @@
       c.pos.addScaledVector(c.rouleDir, dt * 9 * (1 - kk * 0.6));
       if (c.t > 0.45) c.etat = 'libre';
     } else if (c.etat === 'tir') {
-      vitesse = 0;
-      if (c.tirCible && c.tirCible.vivant()) c.ang = angleVers(c.pos, c.tirCible.pos);
-      if (c.t > 0.75) { if (c.tirCible && c.tirCible.vivant()) tirer(c, c.tirCible, c.def.tir.deg); c.etat = 'libre'; }
+      if (!c.monte) {
+        vitesse = 0;
+        if (c.tirCible && c.tirCible.vivant()) c.ang = angleVers(c.pos, c.tirCible.pos);
+      }
+      if (c.t > 0.75) { if (c.tirCible && c.tirCible.vivant()) { tirer(c, c.tirCible, c.def.tir.deg); c.tirs = (c.tirs || 0) + 1; } c.etat = 'libre'; }
     } else if (c.etat === 'special') {
       vitesse = 0;
       majSpecial(c, dt);
@@ -654,6 +769,7 @@
     c.pos.z += (mv.z * vitesse + c.vel.z) * dt;
     c.vel.multiplyScalar(Math.exp(-dt * 7));
     c.vitesseAnim = mv.length() * vitesse;
+    if (c.monte && c.allure > 4 && c.etat !== 'mort') pietiner(c);
     animer(c, dt);
   }
 
@@ -684,7 +800,7 @@
   function animer(c, dt) {
     var P = c.P;
     c.marche += dt * (c.vitesseAnim || 0) * 2.4;
-    var amp = Math.min(1, (c.vitesseAnim || 0) / 3) * 0.75;
+    var amp = c.monte ? 0 : Math.min(1, (c.vitesseAnim || 0) / 3) * 0.75;
     P.jambeG.rotation.x = Math.sin(c.marche) * amp;
     P.jambeD.rotation.x = -Math.sin(c.marche) * amp;
     P.brasG.rotation.x = -Math.sin(c.marche) * amp * 0.6;
@@ -709,6 +825,20 @@
       P.corps.rotation.x = -0.25;
     }
     if (c.etourdi > 0 && c.etat !== 'esquive') P.corps.rotation.z = Math.sin(c.t * 14) * 0.08;
+    if (c.monte) {
+      // Galop du cheval et cavalier en selle
+      var H = c.H, al = c.allure || 0;
+      c.galop = (c.galop || 0) + dt * (al > 0.3 ? 2 + al * 1.25 : 0);
+      var ampC = Math.min(1, al / 5) * 0.65, ph = [0, 0.5, 2.6, 3.1];
+      for (var q = 0; q < 4; q++) H.jambes[q].rotation.x = Math.sin(c.galop + ph[q]) * ampC;
+      H.corps.position.y = Math.abs(Math.sin(c.galop)) * ampC * 0.18;
+      H.corps.rotation.x = Math.sin(c.galop) * ampC * 0.06;
+      H.tete.rotation.x = Math.sin(c.galop + 1) * ampC * 0.15;
+      P.g.position.y = (1.08 + H.corps.position.y) * c.taille;
+      P.jambeG.rotation.x = P.jambeD.rotation.x = -0.85;
+      P.jambeG.rotation.z = -0.38; P.jambeD.rotation.z = 0.38;
+      P.corps.position.y = 0;
+    }
     P.brasD.rotation.x = pose.x; P.brasD.rotation.z = pose.z;
     P.roulis.rotation.y = pose.r; P.poignet.rotation.x = pose.p;
     P.haut.rotation.y = pose.t;
@@ -751,7 +881,7 @@
         var dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, d = Math.hypot(dx, dz), m = a.rayon + b.rayon;
         if (d < m && d > 0.0001) {
           var p = (m - d) / 2;
-          var wa = a.def.boss ? 0.2 : 1, wb = b.def.boss ? 0.2 : 1, s = wa + wb;
+          var wa = a.def.boss ? 0.2 : a.monte ? 0.35 : 1, wb = b.def.boss ? 0.2 : b.monte ? 0.35 : 1, s = wa + wb;
           a.pos.x -= dx / d * p * 2 * wa / s; a.pos.z -= dz / d * p * 2 * wa / s;
           b.pos.x += dx / d * p * 2 * wb / s; b.pos.z += dz / d * p * 2 * wb / s;
         }
@@ -790,7 +920,7 @@
           if (c.equipe === p.equipe || !c.vivant()) continue;
           if (p.touches && p.touches.indexOf(c) >= 0) continue;
           var dx = c.pos.x - p.pos.x, dz = c.pos.z - p.pos.z;
-          if (Math.hypot(dx, dz) < c.rayon + p.rayon && p.pos.y < 2.6 * c.taille) {
+          if (Math.hypot(dx, dz) < c.rayon + p.rayon && p.pos.y < (c.monte ? 3.7 : 2.6) * c.taille) {
             var touche = frapper(p.auteur, c, p.deg, 'estoc', { projectile: true, sansDir: true, imparable: p.vague, recul: p.vague ? 2 : 0.5 });
             if (p.touches) p.touches.push(c);
             if (!p.perce) { fini = true; if (!touche) M.eclats(p.pos.clone(), 0xbdc3c7, 3, 2); break; }
@@ -827,7 +957,7 @@
       if (dj < 4 && j.vivant()) { pc.m.position.x += (j.pos.x - pc.m.position.x) * dt * 6; pc.m.position.z += (j.pos.z - pc.m.position.z) * dt * 6; }
       if (dj < 0.9 && j.vivant()) {
         if (pc.soin) { j.pv = Math.min(j.pvMax, j.pv + pc.soin); M.texte(j.teteP(), '+' + pc.soin, 'vert'); }
-        else { var g = Math.round(pc.n * (B.cfg.faction === 'romains' ? 1.4 : 1)); B.or += g; M.texte(j.teteP(), '+' + g + ' or', 'or'); M.son('or'); }
+        else { var g = Math.round(pc.n * (B.cfg.faction === 'romains' ? 1.4 : 1)); B.or += g; M.texte(j.teteP(), '+' + g + _t(' or'), 'or'); M.son('or'); }
         B.scene.remove(pc.m); B.pieces.splice(i, 1);
       } else if (pc.t > 30) { B.scene.remove(pc.m); B.pieces.splice(i, 1); }
     }
@@ -836,9 +966,17 @@
   // ---------- Caméra à la 3e personne ----------
   function camera(dt) {
     var j = B.joueur, rc = M.rotationCamera();
+    if (B.cine) {
+      // Caméra de cinéma (bande-annonce) : position et cible données de l'extérieur
+      var cc = B.cine(B.temps, B);
+      M.cam.position.copy(cc.p); M.cam.lookAt(cc.l);
+      M.suivreOmbre(cc.l.x, cc.l.z);
+      B.combattants.forEach(function (c) { c.cache = c !== j && Math.hypot(c.pos.x - cc.p.x, c.pos.z - cc.p.z) < 2.6; c.g.visible = !c.cache; });
+      return;
+    }
     B.yaw -= rc.dx * 0.0042;
     B.pitch = Math.max(0.12, Math.min(0.85, B.pitch + rc.dy * 0.003));
-    var dist = 7.2, h = 1.6, cx, cz;
+    var dist = j.monte ? 9.5 : 7.2, h = j.monte ? 2.6 : 1.6, cx, cz;
     // Rapprocher la caméra si elle sortait de l'arène (murs, maisons)
     var lim = B.forme.type === 'rect' ? 1e9 : B.forme.r + 4;
     for (var essai = 0; essai < 10; essai++) {
@@ -853,7 +991,7 @@
     M.cam.position.y += (cy - M.cam.position.y) * k;
     M.cam.position.z += (cz - M.cam.position.z) * k;
     M.appliquerSecousse(dt);
-    M.cam.lookAt(j.pos.x, j.pos.y + 1.7, j.pos.z);
+    M.cam.lookAt(j.pos.x, j.pos.y + (j.monte ? 2.8 : 1.7), j.pos.z);
     M.suivreOmbre(j.pos.x, j.pos.z);
     // Cacher les combattants collés à la caméra : sinon un allié derrière le joueur bouche toute la vue
     var cp = M.cam.position;
@@ -888,7 +1026,7 @@
     B.combattants.forEach(function (c) { if (c.cible && c.equipe === 1) c.cible.nbAssaillants = (c.cible.nbAssaillants || 0) + 1; });
     if (B.fini) { B.finT -= dt; if (B.finT <= 0) terminer(); return; }
     // Fin ?
-    if (!B.joueur.vivant()) { B.fini = 'defaite'; B.finT = 2; message(B.cfg.amical ? 'Tu as perdu le duel…' : 'Tu es tombé…', 'rouge'); return; }
+    if (!B.joueur.vivant()) { B.fini = 'defaite'; B.finT = 2; message(B.cfg.amical ? _t('Tu as perdu le duel…') : _t('Tu es tombé…'), 'rouge'); return; }
     var restants = B.combattants.filter(function (c) { return c.equipe === 1 && c.vivant(); }).length;
     if (restants === 0 && B.temps > 1) {
       B.attente = (B.attente || 0) + dt;
@@ -896,7 +1034,7 @@
         B.attente = 0;
         if (B.vague < B.cfg.vagues.length) vagueSuivante();
         else if (B.cfg.boss && !B.bossLance) lancerBoss();
-        else { B.fini = 'victoire'; B.finT = 2.2; message(B.cfg.amical ? 'Duel gagné !' : 'Victoire !', 'or'); M.son('victoire'); }
+        else { B.fini = 'victoire'; B.finT = 2.2; message(B.cfg.amical ? _t('Duel gagné !') : _t('Victoire !'), 'or'); M.son('victoire'); }
       }
     }
   }
@@ -912,6 +1050,7 @@
     B.combattants.forEach(function (c) { if (c.el) c.el.remove(); });
     M.viderEffets();
     el('hudBoss').classList.add('hide');
+    document.body.classList.remove('modePhoto');
     B = null;
   }
 
@@ -925,7 +1064,9 @@
       stats: { tues: 0, parades: 0, pouvoirs: 0 }, ordre: 'charge', pouvoirT: 0, prochDir: 'droite',
       diff: DIFF[cfg.diff] || DIFF.normal, directionnel: !!cfg.directionnel, yaw: 0, pitch: 0.32
     };
-    var dec = M.construireDecor(cfg.decor || 'plaine', cfg.graine || 7);
+    // Les chevaux ne vont qu'en terrain ouvert (pas dans les rues, les cryptes ou sur les remparts)
+    B.montes = !!cfg.montes && ['plaine', 'desert', 'foret', 'montagne'].indexOf(cfg.decor || 'plaine') >= 0;
+    var dec = M.construireDecor(cfg.decor || 'plaine', cfg.graine || 7, { rayon: B.montes ? 30 : 22, ambiance: cfg.ambiance });
     B.scene = M.scene; B.obstacles = dec.obstacles; B.forme = dec.forme;
     // Joueur
     var jd = Object.assign({ id: 'joueur', nom: cfg.joueur.nom, pv: cfg.joueur.pvMax || 120, vit: 3.9, look: cfg.joueur.look }, {});
@@ -933,7 +1074,7 @@
     if (!B.armes.length) B.armes = ['epee'];
     B.armeIdx = 0;
     var start = B.forme.type === 'rect' ? { x: 0, z: B.forme.h / 2 - 3 } : { x: 0, z: B.forme.r - 6 };
-    B.joueur = apparaitre(jd, 0, start.x, start.z, { joueur: true, arme: B.armes[0], pv: jd.pv });
+    B.joueur = apparaitre(jd, 0, start.x, start.z, { joueur: true, arme: B.armes[0], pv: jd.pv, cheval: cfg.joueur.cheval });
     B.joueur.ang = Math.PI;
     B.yaw = Math.PI;
     B.niveauDeg = cfg.joueur.bonusDeg || 1;
@@ -963,5 +1104,6 @@
   M.enBataille = function () { return !!B; };
   // Pour les tests automatiques : accès à l'état
   M._bataille = function () { return B; };
+  M._cine = function (f) { if (B) B.cine = f; };
   M._vaincreTous = function () { if (B) B.combattants.forEach(function (c) { if (c.equipe === 1 && c.vivant()) mourir(c, B.joueur); }); };
 })();

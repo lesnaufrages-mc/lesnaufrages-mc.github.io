@@ -44,6 +44,8 @@
     if (!s) return s;
     s.banque = s.banque || { solde: 0, maj: s.jour || 0, pret: 0, echeance: 0, retard: 0 };
     s.inv = s.inv || {}; s.marche = s.marche || {}; s.villages = s.villages || {}; s.xp = s.xp || {}; s.tournois = s.tournois || {};
+    s.prisonniers = s.prisonniers || {}; s.rel = s.rel || {}; s.courriers = s.courriers || []; s.paix = s.paix || {}; s.garnison = s.garnison || {};
+    s.nouvelles = s.nouvelles || []; s.fiefNiv = s.fiefNiv || 0; if (s.fief === undefined) { s.fief = null; s.suzerain = null; s.fiefMaj = 0; }
     return s;
   }
 
@@ -58,8 +60,8 @@
       ? { peau: 0xf1c27d, tunique: 0xf8f9f9, croix: 0xc0392b, pantalon: 0x5d6d7e, casque: 'nasal', bouclier: 'kite', bc: 0xc0392b, cape: 0x922b21 }
       : { peau: 0xe0ac69, tunique: 0x7d3c98, croix: 0xf1c40f, pantalon: 0x1b2631, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98, cape: 0x4a235a };
   }
-  function dateTexte() {
-    var d = new Date(Date.UTC(S.debut[0], S.debut[1], S.debut[2]) + S.jour * 86400000);
+  function dateTexte(j) {
+    var d = new Date(Date.UTC(S.debut[0], S.debut[1], S.debut[2]) + (j == null ? S.jour : j) * 86400000);
     return d.getUTCDate() + ' ' + MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
   }
   function drapeau(f) { return !!(S && (S.drapeaux[f] || f === S.faction)); }
@@ -432,7 +434,9 @@
     var chemin = ici ? [] : trajet(S.lieu, id);
     var jours = chemin.reduce(function (s, e) { return s + e.jours; }, 0);
     var h = '<div class="lieuTete"><span class="pastille" style="background:' + F.couleur + '"></span><div><b>' + (L.village ? '🌾 ' : '') + esc(L.nom) + '</b><small>' + (L.village ? 'Village · ' : '') + esc(F.nom) + ' · ' + esc(R.nom) + '</small></div></div>';
-    if (F.souverain) h += '<p class="muted">👑 ' + esc(F.souverain) + '</p>';
+    if (F.souverain) h += '<p class="muted">👑 ' + esc(F.souverain) + (!/^(latins|romains|legende)$/.test(L.faction) ? ' · 🤝 relation ' + relation(L.faction) : '') + '</p>';
+    if (S.guerres) { var gl = enGuerre(L.faction); if (gl.length) h += '<p class="rouge">⚔️ En guerre contre ' + esc(gl.map(function (x) { return FF.FACTIONS[x].nom; }).join(', ')) + '</p>'; }
+    if (S.fief === id) h += '<p class="objectif">🏰 Ton fief · ' + revenuFief() + ' or par semaine · défense ' + defenseFief() + '</p>';
     h += '<p>' + esc(L.desc) + '</p>';
     h += '<p class="muted">' + (R.icone || '') + ' ' + esc(R.nom) + (L.minorites ? ' · Aussi : ' + L.minorites.map(function (r) { return (FF.RELIGIONS[r].icone || '') + ' ' + esc(FF.RELIGIONS[r].nom.split(' (')[0].toLowerCase()); }).join(', ') : '') + '</p>';
     var C = FF.COMMERCE[id];
@@ -441,17 +445,20 @@
     if (id === objectifLieu()) h += '<p class="objectif">⭐ ' + esc(etapeActuelle().objectif) + '</p>';
     if (FF.LEGENDES[id] && !S.legendes[id]) h += '<p class="legende">✦ Lieu de légende : ' + esc(FF.LEGENDES[id].titre) + '</p>';
     var bt = '';
+    if (ici && S.fief === id) bt += '<button class="btn or" data-act="fief">🏰 Gérer mon fief</button>';
     if (ici) bt += '<button class="btn or" data-act="entrer">' + (estCamp(id) ? '⛺ Aller au camp' : L.village ? '🌾 Entrer dans le village' : '🏰 Entrer dans la ville') + '</button>';
     else if (chemin.length) bt += '<button class="btn or" data-act="aller">🐎 Voyager (' + jours + ' jours' + (chemin.some(function (e) { return e.type === 'mer'; }) ? ', traversée en mer' : '') + ')</button>';
     else bt += '<p class="muted">Aucune route connue.</p>';
     $('panneauLieu').innerHTML = h + bt;
     $('panneauLieu').classList.remove('hide');
-    var b = $('panneauLieu').querySelector('[data-act]');
-    if (b) b.onclick = function () {
-      $('panneauLieu').classList.add('hide');
-      if (b.dataset.act === 'entrer') entrerLieu(id);
-      else partir(chemin);
-    };
+    Array.prototype.forEach.call($('panneauLieu').querySelectorAll('[data-act]'), function (b) {
+      b.onclick = function () {
+        if (b.dataset.act === 'fief') return fief(function () { choisirLieu(id); });
+        $('panneauLieu').classList.add('hide');
+        if (b.dataset.act === 'entrer') entrerLieu(id);
+        else partir(chemin);
+      };
+    });
   }
   // Plus court chemin (en jours) entre deux lieux
   function joursRoute(a, b, type) { var A = FF.LIEUX[a], B = FF.LIEUX[b]; return Math.max(2, Math.round(Math.hypot(A.x - B.x, A.y - B.y) / (type === 'mer' ? 14 : 8))); }
@@ -478,6 +485,7 @@
   }
   function arriveeEtape(v) {
     S.lieu = v.vers; S.jour += v.jours;
+    majMonde(v.jours);
     sauver();
     majBarre();
     // Rencontre en route ?
@@ -732,6 +740,7 @@
       h += '<p>💰 Or ramassé : ' + gain + (perte ? ' · Or perdu : ' + perte + ' (l\'or déposé à la banque, lui, est à l\'abri)' : '') + '</p>';
       if (res.stats) h += '<p>⚔️ Ennemis vaincus : ' + res.stats.tues + (res.stats.parades ? ' · Parades parfaites : ' + res.stats.parades : '') + '</p>';
       if (res.coules != null) h += '<p>⚓ Navires coulés : ' + res.coules + ' · capturés : ' + res.captures + '</p>';
+      h += capturer(C, res); sauver();
       var lp = Object.keys(morts).filter(function (k) { return FF.UNITES[k]; }).map(function (k) { return morts[k] + ' ' + FF.UNITES[k].nom.toLowerCase(); });
       if (lp.length) h += '<p class="muted">Tombés au combat : ' + esc(lp.join(', ')) + (res.victoire ? ' (la moitié des blessés s\'en remettront)' : '') + '</p>';
       if (!res.victoire) h += '<button class="btn or" id="reessayer">Réessayer</button>';
@@ -955,6 +964,7 @@
       var maRel = FF.FACTIONS[S.faction].religion, gr = FF.RELIGIONS[L.religion].groupe;
       var base = L.religion === maRel ? 10 : gr === 'chretien' ? 5 : gr === 'juif' || gr === 'autre' ? 0 : -10;
       if (S.vus['savoir_' + L.religion]) base += 5;
+      if (S.rel && S.rel[L.faction] != null) base += Math.round(S.rel[L.faction] / 5);
       v = S.villages[id] = { rel: base, vol: base >= 0 ? 2 : 0, maj: S.jour, aide: -99 };
     }
     var p = Math.floor((S.jour - v.maj) / 4);
@@ -1049,6 +1059,7 @@
     h += '<h3>Héros de passage</h3>' + (ici.length ? ici.map(function (x) { var T = FF.TALENTS[x.talent]; return '<button class="btn or" data-heros="' + x.id + '">' + T.icone + ' ' + esc(x.nom) + ' · ' + esc(T.nom) + '</button>'; }).join('') :
       '<p class="muted">Personne à engager ici aujourd\'hui. Les héros voyagent : ils changent de taverne tous les 10 jours.</p>');
     if (recruesIci(lieu).some(function (k) { return FF.UNITES[k].merc; })) h += '<button class="btn" data-t="mercs">💰 Engager des mercenaires</button>';
+    h += '<button class="btn" data-t="rancons">⛓️ Marchand de rançons' + (nbPrisonniers() ? ' (' + nbPrisonniers() + ' prisonniers)' : '') + '</button>';
     h += '<button class="btn" data-t="rumeur">👂 Écouter les rumeurs</button>';
     fenetre('🍺 Taverne de ' + FF.LIEUX[lieu].nom, h, retour);
     Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-parler]'), function (b) {
@@ -1063,6 +1074,7 @@
       };
     });
     Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-heros]'), function (b) { b.onclick = function () { rencontreHeros(b.dataset.heros, lieu, function () { taverne(lieu, retour); }); }; });
+    $('fenCorps').querySelector('[data-t="rancons"]').onclick = function () { rancons(lieu, function () { taverne(lieu, retour); }); };
     var m = $('fenCorps').querySelector('[data-t="mercs"]');
     if (m) m.onclick = function () { recruter(lieu, true, function () { taverne(lieu, retour); }); };
     $('fenCorps').querySelector('[data-t="rumeur"]').onclick = function () {
@@ -1070,6 +1082,217 @@
       $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
       dialogue([{ q: 'narrateur', t: '« ' + r[Math.floor(Math.random() * r.length)] + ' »' }], function () { taverne(lieu, retour); });
     };
+  }
+
+  // ---------- Prisonniers et rançons ----------
+  function capPrisonniers() { return 5 + niveau() * 2; }
+  function nbPrisonniers() { var n = 0; for (var k in S.prisonniers) n += S.prisonniers[k]; return n; }
+  function capturer(C, res) {
+    if (C.amical || C.mer || C.seul || !res.victoire) return '';
+    var types = [];
+    (C.vagues || []).forEach(function (v) { v.forEach(function (g) { var U = FF.UNITES[g[0]]; if (U && !U.boss && !U.pierre && !U.spectre) for (var i = 0; i < g[1]; i++) types.push(g[0]); }); });
+    if (!types.length) return '';
+    var place = capPrisonniers() - nbPrisonniers();
+    if (place <= 0) return '<p class="muted">⛓️ Tu ne peux pas garder plus de ' + capPrisonniers() + ' prisonniers : vends-les dans une taverne.</p>';
+    var n = Math.min(Math.round(((res.stats && res.stats.tues) || types.length) * 0.35 + Math.random() * 0.8), place, types.length);
+    var pris = {};
+    for (var i = 0; i < n; i++) { var k = types[Math.floor(Math.random() * types.length)]; S.prisonniers[k] = (S.prisonniers[k] || 0) + 1; pris[k] = (pris[k] || 0) + 1; }
+    var l = Object.keys(pris).map(function (k) { return FF.UNITES[k].nom.toLowerCase() + ' × ' + pris[k]; });
+    return l.length ? '<p>⛓️ Prisonniers capturés : ' + esc(l.join(', ')) + ' <span class="muted">(un marchand de rançons les achète dans les tavernes)</span></p>' : '';
+  }
+  function prixRancon(k) { var U = FF.UNITES[k]; return Math.max(10, Math.round((U.or || 8) * 2 + (U.prix || U.pv * 0.4) * 0.5)); }
+  function rancons(lieu, retour) {
+    var ks = Object.keys(S.prisonniers).filter(function (k) { return S.prisonniers[k] > 0; });
+    var h = '<p>Un homme au regard rusé t\'attend dans un coin de la taverne : « Des prisonniers ? Je paie bien. Leurs familles paieront encore mieux. »</p>';
+    if (!ks.length) h += '<p class="muted">Tu n\'as aucun prisonnier. Gagne des batailles pour en capturer (' + capPrisonniers() + ' au maximum).</p>';
+    else {
+      var total = 0;
+      h += '<div class="liste">' + ks.map(function (k) {
+        var p = prixRancon(k); total += p * S.prisonniers[k];
+        return '<div class="ligneUnite"><div><b>' + S.prisonniers[k] + ' × ' + esc(FF.UNITES[k].nom) + '</b><small>Rançon : ' + p + ' or chacun</small></div><div><button class="btn petit or" data-vendre="' + k + '">Vendre 1</button>' +
+          '<button class="btn petit" data-enrole="' + k + '"' + (nbTroupes() >= placeTroupes() ? ' disabled' : '') + '>Enrôler 1</button></div></div>';
+      }).join('') + '</div>';
+      h += '<button class="btn or" id="toutVendre">💰 Tout vendre (' + total + ' or)</button>';
+      h += '<p class="muted">Enrôler : 60 % de chances que le prisonnier accepte de se battre pour toi. Sinon, il s\'enfuit.</p>';
+    }
+    fenetre('⛓️ Marchand de rançons', h, retour);
+    function apres() { sauver(); majBarre(); rancons(lieu, retour); }
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-vendre]'), function (b) { b.onclick = function () { var k = b.dataset.vendre; if (!S.prisonniers[k]) return; S.prisonniers[k]--; S.or += prixRancon(k); M.son('or'); apres(); }; });
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-enrole]'), function (b) {
+      b.onclick = function () {
+        var k = b.dataset.enrole; if (!S.prisonniers[k] || nbTroupes() >= placeTroupes()) return;
+        S.prisonniers[k]--;
+        if (Math.random() < 0.6) { S.troupes[k] = (S.troupes[k] || 0) + 1; petitMsg('Le ' + FF.UNITES[k].nom.toLowerCase() + ' jure de te servir.'); }
+        else petitMsg('Le prisonnier s\'est enfui dès qu\'on l\'a détaché…');
+        apres();
+      };
+    });
+    var t = $('toutVendre');
+    if (t) t.onclick = function () { Object.keys(S.prisonniers).forEach(function (k) { S.or += prixRancon(k) * S.prisonniers[k]; }); S.prisonniers = {}; M.son('or'); apres(); };
+  }
+
+  // ---------- Royaumes : relations, messagers, vassalité, fief, guerres ----------
+  function royaumesDiplo() { return Object.keys(FF.FACTIONS).filter(function (k) { var F = FF.FACTIONS[k]; return k !== 'latins' && k !== 'romains' && k !== 'legende' && capitale(k); }); }
+  function capitale(f) {
+    if (FF.CAPITALES[f]) return FF.CAPITALES[f];
+    var l = Object.keys(FF.LIEUX).filter(function (k) { return FF.LIEUX[k].faction === f && !FF.LIEUX[k].village; })[0];
+    return l || Object.keys(FF.LIEUX).filter(function (k) { return FF.LIEUX[k].faction === f; })[0] || null;
+  }
+  function relation(f) {
+    if (S.rel[f] == null) {
+      var maRel = FF.FACTIONS[S.faction].religion, r = FF.FACTIONS[f].religion;
+      S.rel[f] = r === maRel ? 10 : FF.RELIGIONS[r].groupe === 'chretien' ? 0 : -15;
+    }
+    return S.rel[f];
+  }
+  function changerRel(f, n) { S.rel[f] = Math.max(-100, Math.min(100, relation(f) + n)); }
+  function nomRel(r) { return r >= 50 ? 'amitié' : r >= 20 ? 'bonne entente' : r > -20 ? 'neutre' : r > -50 ? 'méfiance' : 'hostilité'; }
+  function nouvelle(t) { S.nouvelles.unshift({ j: S.jour, t: t }); if (S.nouvelles.length > 30) S.nouvelles.length = 30; }
+  function enGuerre(f) { return S.guerres.filter(function (g) { return g.a === f || g.b === f; }).map(function (g) { return g.a === f ? g.b : g.a; }); }
+  function guerreEntre(a, b) { return S.guerres.filter(function (g) { return (g.a === a && g.b === b) || (g.a === b && g.b === a); })[0]; }
+  function initMonde() {
+    if (S.guerres) return;
+    S.guerres = FF.GUERRES.map(function (g) { return { a: g[0], b: g[1], fa: Math.round(Math.random() * 30), fb: Math.round(Math.random() * 30), debut: S.jour }; });
+  }
+  // Le temps passe : messagers, guerres, revenus du fief
+  function majMonde(jours) {
+    initMonde();
+    // messagers arrivés
+    S.courriers = S.courriers.filter(function (c) {
+      if (S.jour < c.arrive) return true;
+      var g = 6 + Math.floor(Math.random() * 6) + (c.cadeau ? 6 : 0);
+      changerRel(c.f, g);
+      nouvelle('🕊️ Ton messager est arrivé à ' + FF.LIEUX[capitale(c.f)].nom + ' : relation avec ' + FF.FACTIONS[c.f].nom + ' +' + g + '.');
+      petitMsg('🕊️ Ton messager est bien arrivé : ' + FF.FACTIONS[c.f].nom + ' +' + g);
+      return false;
+    });
+    // guerres : la fatigue de guerre monte jusqu'à la paix
+    S.guerres = S.guerres.filter(function (g) {
+      g.fa += jours * (0.3 + Math.random() * 0.5); g.fb += jours * (0.3 + Math.random() * 0.5);
+      if (g.fa >= 100 || g.fb >= 100) {
+        var perdant = g.fa >= g.fb ? g.a : g.b, gagnant = perdant === g.a ? g.b : g.a;
+        S.paix[g.a + '|' + g.b] = S.jour + 60;
+        nouvelle('🕊️ Paix entre ' + FF.FACTIONS[g.a].nom + ' et ' + FF.FACTIONS[g.b].nom + '. Épuisé, ' + FF.FACTIONS[perdant].nom + ' cède à ' + FF.FACTIONS[gagnant].nom + '.');
+        return false;
+      }
+      return true;
+    });
+    // nouvelles guerres (rivalités de l'époque)
+    S.prochaineGuerre = S.prochaineGuerre || S.jour + 15;
+    if (S.jour >= S.prochaineGuerre) {
+      S.prochaineGuerre = S.jour + 15 + Math.floor(Math.random() * 15);
+      var libres = FF.RIVAUX.filter(function (r) { return !guerreEntre(r[0], r[1]) && !((S.paix[r[0] + '|' + r[1]] || 0) > S.jour || (S.paix[r[1] + '|' + r[0]] || 0) > S.jour); });
+      if (S.guerres.length < 9 && libres.length && Math.random() < 0.6) {
+        var r = libres[Math.floor(Math.random() * libres.length)];
+        S.guerres.push({ a: r[0], b: r[1], fa: 0, fb: 0, debut: S.jour });
+        nouvelle('⚔️ ' + FF.FACTIONS[r[0]].nom + ' déclare la guerre à ' + FF.FACTIONS[r[1]].nom + ' !');
+        if (S.suzerain === r[0] || S.suzerain === r[1]) petitMsg('⚔️ Ton suzerain est en guerre ! Ouvre 🕊️ Royaumes pour le servir.');
+      }
+    }
+    // fief : revenus chaque semaine, raids en temps de guerre
+    if (S.fief) {
+      var gagne = 0;
+      while (S.jour - S.fiefMaj >= 7) {
+        S.fiefMaj += 7;
+        var rev = revenuFief(), raid = enGuerre(S.suzerain).length && Math.random() < 0.3;
+        if (raid) {
+          var force = 4 + Math.floor(Math.random() * 8) + niveau(), def = defenseFief();
+          if (def >= force) { S.or += rev; changerRel(S.suzerain, 2); nouvelle('🛡️ Des pillards ennemis ont attaqué ' + FF.LIEUX[S.fief].nom + '. Ta garnison les a repoussés ! (+' + rev + ' or)'); }
+          else {
+            var ks = Object.keys(S.garnison).filter(function (k) { return S.garnison[k] > 0; });
+            if (ks.length) { var k = ks[Math.floor(Math.random() * ks.length)]; S.garnison[k]--; if (!S.garnison[k]) delete S.garnison[k]; }
+            nouvelle('🔥 ' + FF.LIEUX[S.fief].nom + ' a été pillé ! Pas de revenus cette semaine. Renforce ta garnison.');
+          }
+        } else { S.or += rev; gagne += rev; }
+      }
+      if (gagne) { nouvelle('💰 Ton fief de ' + FF.LIEUX[S.fief].nom + ' t\'a rapporté ' + gagne + ' or.'); petitMsg('💰 Revenus de ton fief : +' + gagne + ' or'); }
+    }
+  }
+  function revenuFief() { return (FF.LIEUX[S.fief].village ? 35 : 55) + S.fiefNiv * 15 + Math.max(0, Math.floor(relation(S.suzerain) / 10)) * 3; }
+  function defenseFief() { var d = S.fiefNiv * 3; for (var k in S.garnison) d += S.garnison[k] * Math.max(1, Math.round(FF.UNITES[k].pv / 30)); return d; }
+  function choisirFief(f) {
+    var v = Object.keys(FF.LIEUX).filter(function (k) { return FF.LIEUX[k].faction === f && FF.LIEUX[k].village; });
+    if (v.length) return v[0];
+    var c = Object.keys(FF.LIEUX).filter(function (k) { return FF.LIEUX[k].faction === f && k !== capitale(f) && !estCamp(k); });
+    return c.length ? c[c.length - 1] : capitale(f);
+  }
+  function joursVers(lieu) { if (lieu === S.lieu) return 1; var ch = trajet(S.lieu, lieu); return ch.length ? ch.reduce(function (s, e) { return s + e.jours; }, 0) : 20; }
+
+  function diplomatie(retour) {
+    initMonde();
+    var h = '';
+    if (S.suzerain) h += '<p class="objectif">👑 Tu es vassal de <b>' + esc(FF.FACTIONS[S.suzerain].nom) + '</b> · 🏰 Fief : <b>' + esc(FF.LIEUX[S.fief].nom) + '</b> (' + revenuFief() + ' or par semaine, défense ' + defenseFief() + ')</p>';
+    else h += '<p class="muted">Gagne la confiance d\'un royaume (relation 25 ou plus, niveau 2) pour lui prêter serment : il te donnera un fief.</p>';
+    if (S.nouvelles.length) h += '<h3>📜 Nouvelles</h3><ul class="nouvelles">' + S.nouvelles.slice(0, 4).map(function (n) { return '<li><small>' + esc(dateTexte(n.j)) + '</small> ' + esc(n.t) + '</li>'; }).join('') + '</ul>';
+    h += '<h3>👑 Royaumes</h3><div class="liste">' + royaumesDiplo().sort(function (a, b) { return relation(b) - relation(a); }).map(function (f) {
+      var F = FF.FACTIONS[f], r = relation(f), g = enGuerre(f), enRoute = S.courriers.some(function (c) { return c.f === f; });
+      var l = '<div class="ligneUnite diplo"><div><b><span class="pastille" style="background:' + F.couleur + '"></span>' + esc(F.nom) + (S.suzerain === f ? ' 👑' : '') + '</b>' +
+        '<small>' + (F.souverain ? esc(F.souverain) + ' · ' : '') + 'Relation ' + r + ' (' + nomRel(r) + ')' + (g.length ? ' · ⚔️ en guerre contre ' + esc(g.map(function (x) { return FF.FACTIONS[x].nom; }).join(', ')) : '') + '</small></div><div>';
+      l += enRoute ? '<small class="muted">🕊️ messager en route</small>' : '<button class="btn petit" data-msg="' + f + '"' + (S.or < 30 ? ' disabled' : '') + '>🕊️ Messager (30 or)</button>';
+      if (g.length && r >= 0) l += '<button class="btn petit or" data-servir="' + f + '"' + ((S.servi || 0) > S.jour ? ' disabled' : '') + '>⚔️ Servir</button>';
+      if (!S.suzerain && r >= 25 && niveau() >= 2) l += '<button class="btn petit or" data-serment="' + f + '">🤝 Prêter serment</button>';
+      if (S.suzerain === f) l += '<button class="btn petit" data-renoncer="1">Renoncer</button>';
+      return l + '</div></div>';
+    }).join('') + '</div>';
+    if (S.guerres.length) h += '<h3>⚔️ Guerres en cours</h3>' + S.guerres.map(function (g) {
+      return '<div class="guerre"><span>' + esc(FF.FACTIONS[g.a].nom) + '</span><b>contre</b><span>' + esc(FF.FACTIONS[g.b].nom) + '</span>' +
+        '<small>Fatigue de guerre : ' + Math.round(g.fa) + ' % / ' + Math.round(g.fb) + ' % (à 100 %, un camp demande la paix)</small></div>';
+    }).join('');
+    h += '<p class="muted">🕊️ Un messager porte une lettre et un cadeau au souverain. Il met autant de jours que le voyage depuis ta position. ⚔️ Servir : tu combats pour un royaume en guerre (relation 0 ou plus) contre de l\'or et sa reconnaissance.</p>';
+    fenetre('🕊️ Royaumes et diplomatie', h, retour);
+    function act(sel, f) { Array.prototype.forEach.call($('fenCorps').querySelectorAll(sel), function (b) { b.onclick = function () { f(b); }; }); }
+    act('[data-msg]', function (b) {
+      var f = b.dataset.msg; if (S.or < 30) return;
+      S.or -= 30; var j = joursVers(capitale(f)); S.courriers.push({ f: f, arrive: S.jour + j, cadeau: true });
+      sauver(); majBarre(); M.son('or'); petitMsg('🕊️ Ton messager part pour ' + FF.LIEUX[capitale(f)].nom + ' (' + j + ' jours).'); diplomatie(retour);
+    });
+    act('[data-serment]', function (b) {
+      var f = b.dataset.serment; S.suzerain = f; S.fief = choisirFief(f); S.fiefMaj = S.jour; S.renom += 5; S.garnison = S.garnison || {};
+      enGuerre(f).forEach(function (e) { changerRel(e, -10); });
+      nouvelle('👑 Tu prêtes serment à ' + FF.FACTIONS[f].souverain + '. Tu reçois le fief de ' + FF.LIEUX[S.fief].nom + '.');
+      sauver(); majBarre(); M.son('victoire');
+      $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+      dialogue([{ q: 'narrateur', t: 'Tu t\'agenouilles devant ' + FF.FACTIONS[f].souverain + ' et places tes mains dans les siennes. C\'est l\'hommage : tu deviens son vassal.' },
+        { q: 'narrateur', t: 'En échange de ta fidélité, il te confie le fief de ' + FF.LIEUX[S.fief].nom + '. Il te rapportera de l\'or chaque semaine. Laisse-y une garnison pour le protéger des pillards.' }], function () { diplomatie(retour); });
+    });
+    act('[data-renoncer]', function () {
+      changerRel(S.suzerain, -30); nouvelle('Tu renonces à ton serment envers ' + FF.FACTIONS[S.suzerain].nom + '. Ton fief lui revient.');
+      for (var k in S.garnison) S.troupes[k] = (S.troupes[k] || 0) + S.garnison[k];
+      S.suzerain = null; S.fief = null; S.garnison = {}; S.fiefNiv = 0; sauver(); diplomatie(retour);
+    });
+    act('[data-servir]', function (b) { servir(b.dataset.servir, retour); });
+  }
+  function servir(f, retour) {
+    var ennemi = enGuerre(f)[0]; if (!ennemi) return;
+    var Lc = FF.LIEUX[capitale(ennemi)], R = FF.RENCONTRES[Lc.region] || FF.RENCONTRES.occident;
+    var paie = 40 + niveau() * 15, vassal = S.suzerain === f;
+    $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+    S.servi = S.jour + 5;
+    combat({ titre: 'Pour ' + FF.FACTIONS[f].nom + ' contre ' + FF.FACTIONS[ennemi].nom, decor: R.decor, vagues: R.vagues.concat([R.vagues[0]]) }, function (res) {
+      if (!res.victoire) return diplomatie(retour);
+      var g = guerreEntre(f, ennemi); if (g) { if (g.a === ennemi) g.fa += 15; else g.fb += 15; }
+      S.or += paie; S.renom += 3; changerRel(f, vassal ? 8 : 5); changerRel(ennemi, -5);
+      nouvelle('⚔️ Tu as battu une troupe de ' + FF.FACTIONS[ennemi].nom + ' pour ' + FF.FACTIONS[f].nom + ' (+' + paie + ' or).');
+      sauver(); majBarre(); diplomatie(retour);
+    }, {});
+  }
+  function fief(retour) {
+    var L = FF.LIEUX[S.fief], h = '<p>' + esc(L.desc) + '</p>';
+    h += '<p>💰 Revenus : <b>' + revenuFief() + ' or</b> par semaine · 🛡️ Défense : <b>' + defenseFief() + '</b>' + (enGuerre(S.suzerain).length ? ' · <span class="rouge">⚔️ ton suzerain est en guerre : des pillards peuvent attaquer</span>' : '') + '</p>';
+    var cout = 200 + S.fiefNiv * 150, noms = ['un moulin', 'une palissade de bois', 'une tour de pierre'];
+    if (S.fiefNiv < 3) h += '<button class="btn or" id="developper"' + (S.or < cout ? ' disabled' : '') + '>🏗️ Construire ' + noms[S.fiefNiv] + ' (' + cout + ' or) : +15 or par semaine, +3 défense</button>';
+    else h += '<p class="muted">Ton domaine est entièrement développé.</p>';
+    h += '<h3>Garnison</h3><div class="liste">';
+    var ks = {}; Object.keys(S.troupes).concat(Object.keys(S.garnison)).forEach(function (k) { ks[k] = 1; });
+    h += Object.keys(ks).map(function (k) {
+      return '<div class="ligneUnite"><div><b>' + esc(FF.UNITES[k].nom) + '</b><small>Avec toi : ' + (S.troupes[k] || 0) + ' · En garnison : ' + (S.garnison[k] || 0) + '</small></div><div>' +
+        '<button class="btn petit" data-laisser="' + k + '"' + (!S.troupes[k] ? ' disabled' : '') + '>Laisser 1</button><button class="btn petit" data-reprendre="' + k + '"' + (!S.garnison[k] || nbTroupes() >= placeTroupes() ? ' disabled' : '') + '>Reprendre 1</button></div></div>';
+    }).join('') + '</div><p class="muted">Les soldats en garnison ne te suivent pas au combat, mais protègent ton fief des pillards.</p>';
+    fenetre('🏰 Mon fief de ' + L.nom, h, retour);
+    function act(sel, f) { Array.prototype.forEach.call($('fenCorps').querySelectorAll(sel), function (b) { b.onclick = function () { f(b); sauver(); majBarre(); fief(retour); }; }); }
+    act('[data-laisser]', function (b) { var k = b.dataset.laisser; if (!S.troupes[k]) return; S.troupes[k]--; if (!S.troupes[k]) delete S.troupes[k]; S.garnison[k] = (S.garnison[k] || 0) + 1; });
+    act('[data-reprendre]', function (b) { var k = b.dataset.reprendre; if (!S.garnison[k] || nbTroupes() >= placeTroupes()) return; S.garnison[k]--; if (!S.garnison[k]) delete S.garnison[k]; S.troupes[k] = (S.troupes[k] || 0) + 1; });
+    act('#developper', function () { var c = 200 + S.fiefNiv * 150; if (S.or < c || S.fiefNiv >= 3) return; S.or -= c; S.fiefNiv++; M.son('victoire'); petitMsg('🏗️ Travaux terminés !'); });
   }
 
   // ---------- Héros de taverne ----------
@@ -1187,6 +1410,7 @@
       if (Cp.taverne) { var T = FF.TALENTS[Cp.talent]; return '<li>' + esc(Cp.nom) + ' · ' + T.icone + ' ' + esc(T.nom) + ' <small class="muted">(' + esc(T.desc) + ')</small> <button class="btn petit" data-renvoi="' + c + '">Renvoyer</button></li>'; }
       return '<li>' + esc(Cp.nom) + (c !== 'yusuf' ? ' · ❤️ ' + (S.aff[c] || 0) + (S.drapeaux['romance_' + c] ? ' 💕' : '') : ' (guide, ne combat pas)') + '</li>'; }).join('') + '</ul>' : '<p class="muted">Aucun pour l\'instant.</p>');
     h += '<p class="muted">🍺 Des héros attendent dans les tavernes : ' + FF.HEROS.filter(function (x) { return S.compagnons.indexOf(x.id) < 0; }).map(function (x) { return esc(x.nom.split(' ')[0]) + ' (' + esc(ouEstHeros(x.id)) + ')'; }).join(', ') + '.</p>';
+    h += '<p>⛓️ Prisonniers : ' + nbPrisonniers() + ' / ' + capPrisonniers() + (S.suzerain ? ' · 👑 Vassal de ' + esc(FF.FACTIONS[S.suzerain].nom) + ' · 🏰 Fief : ' + esc(FF.LIEUX[S.fief].nom) : '') + '</p>';
     h += '<h3>Troupes (' + nbTroupes() + ' / ' + placeTroupes() + ')</h3>';
     var ks = Object.keys(S.troupes);
     h += ks.length ? '<div class="liste">' + ks.map(function (k) {
@@ -1319,6 +1543,7 @@
     $('barreObjectif').textContent = e ? '⭐ ' + e.objectif : '✦ Démo terminée : explore les légendes';
   }
   $('bCompagnie').onclick = compagnie;
+  $('bDiplo').onclick = function () { diplomatie(); };
   $('bJournal').onclick = journal;
   $('bCodex').onclick = codex;
   $('bMenu').onclick = function () { M.arreter(); accueil(); };
@@ -1400,5 +1625,5 @@
   accueil();
   // Pour les tests automatiques
   window.FFJeu = { etat: function () { return S; }, combat: combat, entrerLieu: entrerLieu, mission: mission, nouvellePartie: nouvellePartie, ecran: ecran, sauver: sauver,
-    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci };
+    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, diplomatie: diplomatie, fief: fief, rancons: rancons, majMonde: majMonde, choisirLieu: choisirLieu, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci };
 })();

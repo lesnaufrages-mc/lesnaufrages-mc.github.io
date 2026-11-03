@@ -44,6 +44,8 @@
     if (!s) return s;
     s.banque = s.banque || { solde: 0, maj: s.jour || 0, pret: 0, echeance: 0, retard: 0 };
     s.inv = s.inv || {}; s.marche = s.marche || {}; s.villages = s.villages || {}; s.xp = s.xp || {}; s.tournois = s.tournois || {};
+    s.buff = s.buff || {}; s.armures = s.armures || []; s.bijoux = s.bijoux || {}; s.aiguise = s.aiguise || {}; s.tenue = s.tenue || {};
+    s.manteaux = s.manteaux || []; s.lesBottes = s.lesBottes || []; s.fers = s.fers || {}; s.primes = s.primes || {}; if (s.contrat === undefined) s.contrat = null;
     s.prisonniers = s.prisonniers || {}; s.rel = s.rel || {}; s.courriers = s.courriers || []; s.paix = s.paix || {}; s.garnison = s.garnison || {};
     s.chevaux = s.chevaux || []; if (s.cheval === undefined) s.cheval = null; if (s.aCheval === undefined) s.aCheval = true;
     s.nouvelles = s.nouvelles || []; s.fiefNiv = s.fiefNiv || 0; if (s.fief === undefined) { s.fief = null; s.suzerain = null; s.fiefMaj = 0; }
@@ -53,13 +55,24 @@
   // Progression
   function niveau() { return 1 + Math.floor((S.renom || 0) / 25); }
   function pvMax() { return 100 + (niveau() - 1) * 10; }
+  // Vie en plus grâce à l'armure et au manteau (comptée en bataille)
+  function bonusPvCombat() { return (S.armure && FF.ARMURES[S.armure] ? FF.ARMURES[S.armure].pv : 0) + (S.manteau && FF.MANTEAUX[S.manteau] ? FF.MANTEAUX[S.manteau].pv : 0); }
   function placeTroupes() { return Math.min(30, 6 + niveau() * 2); }
   function nbTroupes() { var n = 0; for (var k in S.troupes) n += S.troupes[k]; return n; }
   function etapeActuelle() { return FF.HISTOIRE[S.faction][S.etape] || null; }
   function lookHeros() {
-    return S.faction === 'latins'
+    var l = S.faction === 'latins'
       ? { peau: 0xf1c27d, tunique: 0xf8f9f9, croix: 0xc0392b, pantalon: 0x5d6d7e, casque: 'nasal', bouclier: 'kite', bc: 0xc0392b, cape: 0x922b21 }
       : { peau: 0xe0ac69, tunique: 0x7d3c98, croix: 0xf1c40f, pantalon: 0x1b2631, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98, cape: 0x4a235a };
+    if (!S) return l;
+    var Ar = S.armure && FF.ARMURES[S.armure];
+    if (Ar && Ar.casque) l.casque = Ar.casque;
+    var T0 = S.tenue || {};
+    if (T0.tunique != null) l.tunique = T0.tunique;
+    if (T0.cape != null) l.cape = T0.cape;
+    if (T0.pantalon != null) l.pantalon = T0.pantalon;
+    if (S.manteau && FF.MANTEAUX[S.manteau]) l.cape = FF.MANTEAUX[S.manteau].couleur;
+    return l;
   }
   function dateTexte(j) {
     var d = new Date(Date.UTC(S.debut[0], S.debut[1], S.debut[2]) + (j == null ? S.jour : j) * 86400000);
@@ -543,64 +556,113 @@
   function idxEtape(lieu) { var h = FF.HISTOIRE[S.faction]; for (var i = 0; i < h.length; i++) if (h[i].lieu === lieu) return i; return 99; }
 
   // ---------- Entrer dans un lieu ----------
-  function entrerLieu(id) {
+  // depart : on ressort d'un bâtiment (on réapparaît devant sa porte)
+  function entrerLieu(id, depart) {
     if (estCamp(id)) return camp(id);
     var L = FF.LIEUX[id];
-    if (L.village) return entrerVillage(id);
-    var pnjs = [];
+    if (L.village) return entrerVillage(id, depart);
+    var pnjs = [], bats = [];
     var e = etapeActuelle();
     if (e && e.lieu === id) {
       var q = (e.avant.filter(function (l) { return l.q && l.q !== 'narrateur' && l.q !== 'heros'; })[0] || { q: 'anselme' }).q;
       pnjs.push({ id: 'quete', nom: FF.PERSOS[q].nom, role: '⭐ ' + e.titre, look: lookPerso(q), icone: '⭐' });
     }
     if (FF.LEGENDES[id] && !S.legendes[id] && S.etape >= 1) pnjs.push({ id: 'legende', nom: id === 'bagdad' ? 'Wang' : _t('Vieil ermite'), role: '✦ ' + FF.LEGENDES[id].titre, icone: '✦', look: id === 'bagdad' ? lookPerso('marchand') : { tunique: 0x5d4037, casque: 'capuche', barbe: 0xd5d8dc } });
-    pnjs.push({ id: 'forgeron', nom: _t('Forgeron'), role: _t('Armes'), icone: '⚒️', etal: 0x7f8c8d, look: { tunique: 0x5d4037, pantalon: 0x3e2723, barbe: 0x3e2723, cheveux: 0x3e2723 }, arme: 'masse' });
-    if (recruesIci(id).length) pnjs.push({ id: 'recruteur', nom: _t('Capitaine'), role: _t('Recrues et mercenaires'), icone: '🛡️', etal: 0xc0392b, look: { tunique: 0x7b241c, pantalon: 0x34495e, casque: 'nasal', bouclier: 'kite', bc: 0x7b241c }, arme: 'lance' });
-    pnjs.push({ id: 'taverne', nom: _t('Aubergiste'), role: _t('Taverne : compagnons et rumeurs'), icone: '🍺', etal: 0xd68910, look: { tunique: 0xa04000, pantalon: 0x4a235a, cheveux: 0x6e2c00 } });
-    herosIci(id).forEach(function (h) { var T = FF.TALENTS[h.talent]; pnjs.push({ id: 'heros_' + h.id, nom: h.nom, role: T.icone + ' ' + T.nom + _t(' · à engager'), icone: T.icone, look: h.unite.look, arme: h.unite.arme }); });
+    var musul = L.religion === 'sunnite' || L.religion === 'chiite';
+    var coiffe = function (c) { return musul ? 'turban' : c; };
+    // Les bâtiments où l'on entre, avec les gens qui y travaillent
+    var tav = { type: 'taverne', nom: _t('Taverne et auberge'), icone: '🍺', desc: _t('Boire, manger, dormir'), pnjs: [{ id: 'taverne', nom: _t('Aubergiste'), role: _t('Taverne : compagnons et rumeurs'), icone: '🍺', look: { tunique: 0xa04000, pantalon: 0x4a235a, cheveux: 0x6e2c00 } }] };
+    herosIci(id).forEach(function (h) { var T = FF.TALENTS[h.talent]; tav.pnjs.push({ id: 'heros_' + h.id, nom: h.nom, role: T.icone + ' ' + T.nom + _t(' · à engager'), icone: T.icone, look: h.unite.look, arme: h.unite.arme }); });
+    bats.push(tav);
+    bats.push({ type: 'forge', nom: _t('Forge et écurie'), icone: '⚒️', desc: _t('Chevaux, aiguiser, fers'), pnjs: [{ id: 'forgeron', nom: _t('Forgeron'), role: _t('Écurie, aiguiser, fers à cheval'), icone: '⚒️', look: { tunique: 0x5d4037, pantalon: 0x3e2723, barbe: 0x3e2723, cheveux: 0x3e2723 }, arme: 'masse' }] });
+    if (recruesIci(id).length) bats.push({ type: 'caserne', nom: _t('Caserne'), icone: '🛡️', desc: _t('Recrues et mercenaires'), pnjs: [{ id: 'recruteur', nom: _t('Capitaine'), role: _t('Recrues et mercenaires'), icone: '🛡️', look: { tunique: 0x7b241c, pantalon: 0x34495e, casque: coiffe('nasal'), bouclier: 'kite', bc: 0x7b241c }, arme: 'lance' }] });
+    bats.push({ type: 'marchand', nom: _t('Comptoir du marchand'), icone: '🛒', desc: _t('Marchandises'), pnjs: [{ id: 'marchand', nom: _t('Marchand'), role: _t('Marchandises'), icone: '🛒', look: { tunique: 0x1e8449, pantalon: 0x4a235a, cheveux: 0x3e2723, barbe: 0x3e2723, casque: coiffe('aucun') } }] });
+    bats.push({ type: 'armurier', nom: _t('Armurier'), icone: '⚔️', desc: _t('Armes et armures'), pnjs: [{ id: 'armurier', nom: _t('Armurier'), role: _t('Armes et armures'), icone: '🪖', look: { tunique: 0x566573, pantalon: 0x3e2723, barbe: 0x7b7d7d, cheveux: 0x7b7d7d } }] });
+    bats.push({ type: 'apothicaire', nom: _t('Apothicaire'), icone: '⚗️', desc: _t('Remèdes, onguents, épices'), pnjs: [{ id: 'apothicaire', nom: _t('Apothicaire'), role: _t('Remèdes, onguents, épices'), icone: '⚗️', look: { tunique: 0x117864, pantalon: 0x1b2631, casque: coiffe('capuche'), barbe: 0xd5d8dc } }] });
+    if (FF.BANQUES[id]) bats.push({ type: 'banque', nom: _t('Banque et change'), icone: '🏦', desc: _t('Dépôts, prêts, change'), pnjs: [{ id: 'banque', nom: FF.BANQUES[id].split(' (')[0], role: _t('Banquier et changeur'), icone: '🏦', look: { tunique: 0x154360, pantalon: 0x1b2631, casque: coiffe('aucun'), cheveux: 0x5d4037, cape: 0x7d6608 } }] });
+    bats.push({ type: 'coutelier', nom: _t('Coutelier'), icone: '🗡️', desc: _t('Dagues et couteaux'), pnjs: [{ id: 'coutelier', nom: _t('Coutelier'), role: _t('Dagues et couteaux'), icone: '🗡️', look: { tunique: 0x6d4c41, pantalon: 0x34495e, cheveux: 0x1c1c1c } }] });
+    bats.push({ type: 'orfevre', nom: _t('Orfèvre'), icone: '💍', desc: _t('Bijoux et cadeaux'), pnjs: [{ id: 'orfevre', nom: _t('Orfèvre'), role: _t('Bijoux et cadeaux'), icone: '💍', look: { tunique: 0x7d6608, pantalon: 0x4a235a, casque: coiffe('aucun'), cheveux: 0xd5d8dc, barbe: 0xd5d8dc } }] });
+    bats.push({ type: 'prevote', nom: _t('Prévôté'), icone: '⚖️', desc: _t('Primes et contrats'), pnjs: [
+      { id: 'prevot', nom: _t('Prévôt'), role: _t('Primes contre les brigands'), icone: '⚖️', look: { tunique: 0x1b2631, pantalon: 0x34495e, casque: coiffe('aucun'), cheveux: 0x3e2723, barbe: 0x3e2723, cape: 0x7b241c } },
+      { id: 'notaire', nom: _t('Notaire'), role: _t('Contrats de livraison'), icone: '📜', look: { tunique: 0x4a235a, pantalon: 0x1b2631, casque: coiffe('capuche') } }] });
+    bats.push({ type: 'cordonnier', nom: _t('Cordonnier'), icone: '👢', desc: _t('Bottes'), pnjs: [{ id: 'cordonnier', nom: _t('Cordonnier'), role: _t('Bottes'), icone: '👢', look: { tunique: 0x8d5a2b, pantalon: 0x4e342e, cheveux: 0x6e2c00 } }] });
     var cour = FF.COURS[id];
     if (cour && S.etape >= (cour.min || 0) && (id !== 'jerusalem' || S.fini)) pnjs.push({ id: 'cour', nom: _t('Héraut'), role: '👑 ' + cour.titre, icone: '👑', look: { tunique: 0xf1c40f, pantalon: 0x7d3c98, cheveux: 0x1c1c1c } });
     pnjsReligion(L, true).forEach(function (p) { pnjs.push(p); });
-    pnjs.push({ id: 'marchand', nom: _t('Marchand'), role: _t('Marchandises'), icone: '🛒', etal: 0x27ae60, look: { tunique: 0x1e8449, pantalon: 0x4a235a, cheveux: 0x3e2723, barbe: 0x3e2723 } });
-    if (FF.BANQUES[id]) pnjs.push({ id: 'banque', nom: FF.BANQUES[id].split(' (')[0], role: _t('Banque'), icone: '🏦', etal: 0xb7950b, look: { tunique: 0x154360, pantalon: 0x1b2631, casque: L.religion === 'sunnite' || L.religion === 'chiite' ? 'turban' : 'aucun', cheveux: 0x5d4037, cape: 0x7d6608 } });
     if (ARENES.indexOf(id) >= 0) pnjs.push({ id: 'arene', nom: _t('Maître d\'armes'), role: _t('Tournoi'), icone: '🏆', look: { tunique: 0x922b21, pantalon: 0x1b2631, casque: 'nasal', barbe: 0x5d4037 }, arme: 'epee' });
     S.vus[id] = true;
     ecran('jeu3d');
     M.ville({
       lieu: L, joueur: { look: lookHeros(), arme: S.equip[0] }, pnjs: pnjs, nuit: false, cris: crisMarchands(id), couleur: (FF.FACTIONS[L.faction] || {}).couleur,
+      batiments: bats.map(function (b) { return { type: b.type, nom: b.nom, icone: b.icone, desc: b.desc }; }), depart: depart,
+      entrer: function (type) { entrerBatiment(id, type); },
       parler: function (pid, pnj) { M.pause(true); parlerPnj(pid, id, pnj); },
       sortir: function () { ecran('carte'); choisirLieu(id); },
       pause: menuPause
     });
-    LIEU3D = { id: id, pnjs: pnjs };
+    LIEU3D = { id: id, pnjs: pnjs, bats: bats, dedans: null };
     $('nomLieu3d').textContent = L.nom;
-    petitMsg(_t('Bienvenue à ') + L.nom + _t('. Approche-toi des gens pour leur parler. Touche Tab : menu de la ville.'));
+    if (!depart) {
+      petitMsg(_t('Bienvenue à ') + L.nom + _t('. Entre dans les boutiques et la taverne (touche E devant la porte). Touche Tab : menu de la ville.'));
+      livrerContrat(id);
+    }
   }
-  // Menu du lieu (touche Tab ou bouton 📋) : parler à tout le monde sans marcher, ou quitter tout de suite
+  // Entrer dans un bâtiment (taverne, forge, caserne…)
+  function entrerBatiment(id, type) {
+    var B = LIEU3D && LIEU3D.bats && LIEU3D.bats.filter(function (b) { return b.type === type; })[0];
+    if (!B) return;
+    var L = FF.LIEUX[id], ancien = LIEU3D;
+    M.arreter();
+    ecran('jeu3d');
+    M.ville({
+      lieu: L, interieur: type, joueur: { look: lookHeros(), arme: S.equip[0] }, pnjs: B.pnjs, couleur: (FF.FACTIONS[L.faction] || {}).couleur,
+      parler: function (pid, pnj) { M.pause(true); parlerPnj(pid, id, pnj); },
+      sortir: function () { entrerLieu(id, type); },
+      pause: menuPause
+    });
+    LIEU3D = { id: id, pnjs: ancien.pnjs, bats: ancien.bats, dedans: type };
+    $('nomLieu3d').textContent = L.nom + ' · ' + B.nom;
+    if (!S.vus['bat_' + type]) { S.vus['bat_' + type] = true; petitMsg(B.icone + ' ' + B.nom + _t(' : approche-toi des gens pour leur parler. Pour ressortir, passe la porte derrière toi.')); }
+  }
+  // Menu du lieu (touche Tab ou bouton 📋) : parler à tout le monde sans marcher, entrer dans un bâtiment, ou quitter tout de suite
   var LIEU3D = null;
   function menuLieu() {
     if (!LIEU3D || !M.enVille() || !$('dialogue').classList.contains('hide')) return;
     var id = LIEU3D.id, L = FF.LIEUX[id];
     M.pause(true);
-    var h = '<div class="menuLieu">' + LIEU3D.pnjs.map(function (p, i) {
+    var tous = [];
+    var bouton = function (p) {
       var r = p.role || p.nom, ic = p.icone || '💬';
-      return '<button class="btn" data-ml="' + i + '">' + (r.indexOf(ic) === 0 ? '' : ic + ' ') + esc(r) + ' <small class="muted">· ' + esc(p.nom) + '</small></button>';
-    }).join('');
-    h += '<button class="btn" data-ml="compagnie">🛡️ ' + _t('Ma compagnie') + '</button><button class="btn" data-ml="inventaire">🎒 ' + _t('Inventaire') + '</button>';
-    h += '<button class="btn" data-ml="marcher">🚶 ' + _t('Se promener dans les rues') + '</button>';
-    h += '<button class="btn or" data-ml="sortir">🚪 ' + (L.village ? _t('Quitter le village') : _t('Quitter la ville')) + '</button></div>';
+      tous.push(p);
+      return '<button class="btn" data-ml="' + (tous.length - 1) + '">' + (r.indexOf(ic) === 0 ? '' : ic + ' ') + esc(r) + ' <small class="muted">· ' + esc(p.nom) + '</small></button>';
+    };
+    var h = '<div class="menuLieu">';
+    if (LIEU3D.dedans) h += '<button class="btn or" data-ml="dehors">🚪 ' + _t('Sortir du bâtiment') + '</button>';
+    h += LIEU3D.pnjs.map(bouton).join('');
+    (LIEU3D.bats || []).forEach(function (B) {
+      h += '<h3>' + B.icone + ' ' + esc(B.nom) + (LIEU3D.dedans === B.type ? _t(' <small class="muted">(tu es ici)</small>') : ' <button class="btn petit" data-mb="' + B.type + '">🚪 ' + _t('Entrer') + '</button>') + '</h3>';
+      h += B.pnjs.map(bouton).join('');
+    });
+    h += '<h3>' + _t('Ta compagnie') + '</h3><button class="btn" data-ml="compagnie">🛡️ ' + _t('Ma compagnie') + '</button><button class="btn" data-ml="inventaire">🎒 ' + _t('Inventaire') + '</button>';
+    h += '<button class="btn" data-ml="marcher">🚶 ' + (LIEU3D.dedans ? _t('Rester ici') : _t('Se promener dans les rues')) + '</button>';
+    h += '<button class="btn or" data-ml="sortir">🗺️ ' + (L.village ? _t('Quitter le village') : _t('Quitter la ville')) + '</button></div>';
     h += _t('<p class="muted">Touche Tab : ouvrir ou fermer ce menu.</p>');
     fenetre((L.village ? '🏘️ ' : '🏰 ') + L.nom, h, reprendreVille);
     $('fenetre').menuLieu = true;
+    var fermer = function () { $('fenetre').onFerme = null; $('fenetre').menuLieu = false; $('fenetre').classList.add('hide'); };
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-mb]'), function (b) {
+      b.onclick = function () { fermer(); M.pause(false); entrerBatiment(id, b.dataset.mb); };
+    });
     Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-ml]'), function (b) {
       b.onclick = function () {
         var v = b.dataset.ml;
-        $('fenetre').onFerme = null; $('fenetre').menuLieu = false; $('fenetre').classList.add('hide');
+        fermer();
         if (v === 'marcher') return reprendreVille();
-        if (v === 'sortir') { M.pause(false); return M.quitterVille(); }
+        if (v === 'dehors') { M.pause(false); return M.quitterVille(); }
+        if (v === 'sortir') { M.pause(false); M.arreter(); ecran('carte'); choisirLieu(id); return; }
         if (v === 'compagnie') { compagnie(); $('fenetre').onFerme = menuLieu; return; }
         if (v === 'inventaire') return inventaire(menuLieu);
-        var p = LIEU3D.pnjs[+v];
+        var p = tous[+v];
         parlerPnj(p.id, id, p);
       };
     });
@@ -665,6 +727,15 @@
     if (pid === 'banque') return banque(lieu, reprendreVille);
     if (pid === 'arene') return tournoi(lieu, reprendreVille);
     if (pid === 'ancien') return ancien(lieu, reprendreVille);
+    if (pid === 'armurier') return armurier(reprendreVille);
+    if (pid === 'coutelier') return coutelier(reprendreVille);
+    if (pid === 'orfevre') return orfevre(lieu, reprendreVille);
+    if (pid === 'apothicaire') return apothicaire(lieu, reprendreVille);
+    if (pid === 'cordonnier') return cordonnier(reprendreVille);
+    if (pid === 'tailleur') return tailleur(reprendreVille);
+    if (pid === 'fourreur') return fourreur(reprendreVille);
+    if (pid === 'prevot') return prevot(lieu, reprendreVille);
+    if (pid === 'notaire') return notaire(lieu, reprendreVille);
     if (pid.indexOf('heros_') === 0) return rencontreHeros(pid.slice(6), lieu, reprendreVille);
     // Habitant : une rumeur, ou un bon conseil pour le commerce
     var r = RUMEURS[L.region] || RUMEURS.occident;
@@ -750,7 +821,7 @@
   function alliesCombat(max) {
     var lst = [], place = max;
     // les meilleures troupes d'abord
-    Object.keys(S.troupes).sort(function (a, b) { return (FF.UNITES[b].prix || 0) - (FF.UNITES[a].prix || 0); }).forEach(function (k) {
+    Object.keys(S.troupes).filter(function (k) { return !FF.UNITES[k].specialiste; }).sort(function (a, b) { return (FF.UNITES[b].prix || 0) - (FF.UNITES[a].prix || 0); }).forEach(function (k) {
       var n = Math.min(S.troupes[k], place);
       if (n > 0) { lst.push([k, n]); place -= n; }
     });
@@ -763,7 +834,19 @@
     if (wasVille) M.arreter();
     ecran('jeu3d');
     $('nomLieu3d').textContent = C.titre || '';
-    var joueur = { nom: S.heros, armes: S.equip.slice(), pvMax: pvMax(), look: lookHeros(), bonusDeg: 1 + (niveau() - 1) * 0.04, cheval: monture() };
+    var joueur = { nom: S.heros, armes: S.equip.slice(), pvMax: pvMax() + bonusPvCombat(), look: lookHeros(), bonusDeg: 1 + (niveau() - 1) * 0.04, cheval: monture(),
+      aiguise: S.aiguise, vitBonus: S.bottes && FF.BOTTES[S.bottes] ? FF.BOTTES[S.bottes].vit : 0 };
+    var buffs = S.buff || {}; S.buff = {}; // repas, repos, onguent, remède : valables pour une seule bataille
+    if (buffs.repas) joueur.pvMax += 15;
+    if (buffs.repos) joueur.pvMax += 10;
+    if (buffs.onguent) joueur.pvMax += 20;
+    // Spécialistes de siège
+    var siege = C.decor === 'remparts' && !C.seul && !C.amical, nSap = siege ? Math.min(3, S.troupes.sapeur || 0) : 0, nEng = siege ? Math.min(2, S.troupes.engigneur || 0) : 0;
+    if (nSap && C.vagues && C.vagues.length) {
+      C = Object.assign({}, C, { vagues: C.vagues.map(function (v, i) { return i ? v : v.map(function (g) { return g.slice(); }); }) });
+      var reste = nSap;
+      C.vagues[0].forEach(function (g) { while (reste > 0 && g[1] > 1) { g[1]--; reste--; } });
+    }
     var comp = C.seul ? [] : compagnonsCombat();
     var commun = { joueur: joueur, compagnons: comp, faction: S.faction, diff: OPT.diff, directionnel: OPT.dir && !M.mobile, pause: menuPause };
     var apres = function (res) {
@@ -771,11 +854,12 @@
       var morts = res.morts || {};
       Object.keys(morts).forEach(function (k) {
         if (!S.troupes[k]) return;
-        var perdus = Math.round(morts[k] * (res.victoire ? 0.5 : 0.8) * (talent('medecin') ? 0.67 : 1)); // la moitié des blessés survit après une victoire
+        var perdus = Math.round(morts[k] * (res.victoire ? 0.5 : 0.8) * (talent('medecin') ? 0.67 : 1) * (buffs.remede ? 0.5 : 1)); // la moitié des blessés survit après une victoire
         S.troupes[k] = Math.max(0, S.troupes[k] - perdus);
       });
       if (res.pertesEquipage) for (var i = 0; i < res.pertesEquipage; i++) { var ks = Object.keys(S.troupes).filter(function (k) { return S.troupes[k] > 0; }); if (!ks.length) break; S.troupes[ks[Math.floor(Math.random() * ks.length)]]--; }
       Object.keys(S.troupes).forEach(function (k) { if (!S.troupes[k]) delete S.troupes[k]; });
+      Object.keys(S.aiguise).forEach(function (a) { if (--S.aiguise[a] <= 0) delete S.aiguise[a]; }); // une lame s'émousse
       var gain = res.or || 0;
       S.or += gain;
       var perte = 0;
@@ -807,7 +891,7 @@
       }), apres);
     } else {
       var allies = C.seul ? [] : alliesCombat(Math.max(0, 11 - comp.length)).concat(C.alliesHisto || []);
-      M.bataille(Object.assign({}, commun, { titre: C.titre, decor: C.decor, vagues: C.vagues || [], boss: C.boss, allies: allies, amical: C.amical, montes: !C.seul && !C.amical, ambiance: C.ambiance || (opts.rencontre ? ['', '', 'crepuscule', 'nuit', 'aube'][S.jour % 5] : ''), graine: (C.titre || 'x').length * 13 }), apres);
+      M.bataille(Object.assign({}, commun, { titre: C.titre, decor: C.decor, vagues: C.vagues || [], boss: C.boss, allies: allies, amical: C.amical, montes: !C.seul && !C.amical, affaiblir: nEng * 0.12, annonce: nSap || nEng ? (nSap ? _t('⛏️ Tes sapeurs ont miné les murs') : _t('🏗️ Tes engins de siège frappent les remparts')) : '', ambiance: C.ambiance || (opts.rencontre ? ['', '', 'crepuscule', 'nuit', 'aube'][S.jour % 5] : ''), graine: (C.titre || 'x').length * 13 }), apres);
     }
   }
 
@@ -815,6 +899,7 @@
   function monture() {
     if (!S.cheval || !S.aCheval || !FF.CHEVAUX[S.cheval]) return null;
     var Ch = FF.CHEVAUX[S.cheval], o = Object.assign({ id: S.cheval }, Ch);
+    if (S.fers && S.fers[S.cheval]) o.vit = Ch.vit * 1.08;
     if (Ch.caparacon) { o.caparacon = S.faction === 'romains' ? 0x7d3c98 : 0xf8f9f9; o.croix = S.faction === 'romains' ? 0xf1c40f : 0xc0392b; }
     else o.caparacon = null;
     return o;
@@ -845,35 +930,217 @@
   }
 
   // ---------- Forge ----------
+  function barre(nom, k) { return '<label>' + nom + '<span><i style="width:' + Math.round(Math.min(1, k) * 100) + '%"></i></span></label>'; }
+  // ---------- Boutiques des villes ----------
+  function brancher(sel, f) { Array.prototype.forEach.call($('fenCorps').querySelectorAll(sel), function (b) { b.onclick = function () { f(b); }; }); }
+  function bourse() { return '<p class="muted">💰 ' + S.or + _t(' or') + '</p>'; }
+  function payer(n) { if (S.or < n) return false; S.or -= n; M.son('or'); return true; }
+  // Forgeron : écurie, aiguiser les armes, ferrer les chevaux
   function forge(retour) {
-    var h = _t('<p class="muted">Tu as ') + S.or + _t(' or. Tu portes deux armes : change en combat avec X, la molette ou ⇄.</p><div class="grille">');
+    var h = bourse() + _t('<h3>🔥 Aiguiser tes armes</h3><p class="muted">Une lame bien aiguisée fait 10 % de dégâts en plus pendant 3 batailles.</p><div class="liste">');
+    S.equip.forEach(function (id) {
+      var A = FF.ARMES[id]; if (!A) return;
+      var n = S.aiguise[id] || 0;
+      h += '<div class="ligneUnite"><div><b>' + esc(A.nom) + '</b><small>' + (n ? _t('Aiguisée : encore ') + n + _t(' bataille(s)') : _t('Pas aiguisée')) + '</small></div>' +
+        '<button class="btn or petit" data-aig="' + id + '"' + (S.or < 20 || n >= 3 ? ' disabled' : '') + _t('>Aiguiser (20 or)</button></div>');
+    });
+    h += '</div>';
+    var Ch = S.cheval && FF.CHEVAUX[S.cheval];
+    h += _t('<h3>🧲 Fers à cheval</h3>') + (Ch ? (S.fers && S.fers[S.cheval] ? '<p>' + esc(Ch.nom) + _t(' est déjà ferré : il galope 8 % plus vite.</p>') :
+      '<div class="ligneUnite"><div><b>' + esc(Ch.nom) + _t('</b><small>Des fers neufs : ton cheval galope 8 % plus vite.</small></div><button class="btn or petit" id="ferrer"') + (S.or < 25 ? ' disabled' : '') + _t('>Ferrer (25 or)</button></div>')) :
+      _t('<p class="muted">Tu n\'as pas encore de cheval : achète-en un à l\'écurie ci-dessous.</p>'));
+    h += ecurie();
+    h += _t('<p class="muted">Les armes s\'achètent chez l\'armurier (épées, haches, lances, arcs) et chez le coutelier (dagues).</p>');
+    fenetre(_t('⚒️ Forge et écurie'), h, retour);
+    brancherEcurie(retour);
+    brancher('[data-aig]', function (b) { if (!payer(20)) return; S.aiguise[b.dataset.aig] = 3; sauver(); majBarre(); forge(retour); });
+    var f = $('ferrer');
+    if (f) f.onclick = function () { if (!payer(25)) return; S.fers = S.fers || {}; S.fers[S.cheval] = true; sauver(); majBarre(); forge(retour); };
+  }
+  // Liste d'armes à acheter et à équiper (armurier, coutelier)
+  function boutiqueArmes(retour, titre, filtre, refaire, avant) {
+    var h = (avant || '') + _t('<p class="muted">Tu portes deux armes : change en combat avec X, la molette ou ⇄.</p><div class="grille">');
     Object.keys(FF.ARMES).forEach(function (id) {
       var A = FF.ARMES[id], a = S.armes.indexOf(id) >= 0;
-      if (A.type === 'legendaire' && !a) return;
+      if (A.type === 'legendaire' || !filtre(A, id)) return;
       var eq = S.equip.indexOf(id);
-      h += '<div class="carteArme ' + (A.type === 'legendaire' ? 'leg' : '') + '"><b>' + esc(A.nom) + '</b><small>' + esc(A.origine) + '</small>' +
-        '<div class="stats">' + barre(_t('Dégâts'), A.deg / 26) + barre(_t('Vitesse'), 0.42 / A.dur) + barre(_t('Portée'), A.portee / 3.3) + '</div><p>' + esc(A.desc) + (A.pouvoir ? ' <i>✨ ' + esc(A.pouvoir.nom) + '</i>' : '') + '</p>';
+      h += '<div class="carteArme"><b>' + esc(A.nom) + '</b><small>' + esc(A.origine) + '</small>' +
+        '<div class="stats">' + barre(_t('Dégâts'), A.deg / 26) + barre(_t('Vitesse'), 0.42 / A.dur) + barre(_t('Portée'), A.portee / 3.3) + '</div><p>' + esc(A.desc) + '</p>';
       if (!a) h += '<button class="btn or petit" data-acheter="' + id + '"' + (S.or < A.prix ? ' disabled' : '') + _t('>Acheter ') + A.prix + _t(' or</button>');
       else h += '<div class="rangee"><button class="btn petit' + (eq === 0 ? ' actif' : '') + '" data-eq="0" data-id="' + id + _t('">Main 1</button><button class="btn petit') + (eq === 1 ? ' actif' : '') + '" data-eq="1" data-id="' + id + _t('">Main 2</button></div>');
       h += '</div>';
     });
-    h += '</div>' + ecurie();
-    fenetre(_t('⚒️ Forge, armurerie et écurie'), h, retour);
-    brancherEcurie(retour);
-    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-acheter]'), function (b) {
-      b.onclick = function () { var A = FF.ARMES[b.dataset.acheter]; if (S.or < A.prix) return; S.or -= A.prix; S.armes.push(b.dataset.acheter); S.equip[0] = b.dataset.acheter; sauver(); M.son('or'); forge(retour); };
-    });
-    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-eq]'), function (b) {
-      b.onclick = function () {
-        var i = +b.dataset.eq, id = b.dataset.id, autre = S.equip.indexOf(id);
-        if (autre >= 0 && autre !== i) S.equip[autre] = S.equip[i];
-        S.equip[i] = id;
-        S.equip = S.equip.filter(function (x, k) { return x && S.equip.indexOf(x) === k; });
-        sauver(); forge(retour);
-      };
+    h += '</div>';
+    fenetre(titre, h, retour);
+    brancher('[data-acheter]', function (b) { var A = FF.ARMES[b.dataset.acheter]; if (!payer(A.prix)) return; S.armes.push(b.dataset.acheter); S.equip[0] = b.dataset.acheter; sauver(); majBarre(); refaire(); });
+    brancher('[data-eq]', function (b) {
+      var i = +b.dataset.eq, id = b.dataset.id, autre = S.equip.indexOf(id);
+      if (autre >= 0 && autre !== i) S.equip[autre] = S.equip[i];
+      S.equip[i] = id;
+      S.equip = S.equip.filter(function (x, k) { return x && S.equip.indexOf(x) === k; });
+      sauver(); refaire();
     });
   }
-  function barre(nom, k) { return '<label>' + nom + '<span><i style="width:' + Math.round(Math.min(1, k) * 100) + '%"></i></span></label>'; }
+  // Armurier : armures, casques, et les armes (sauf les dagues)
+  function armurier(retour) {
+    var h = bourse() + _t('<h3>🪖 Armures</h3><p class="muted">Une armure te donne des PV en plus à chaque bataille. Certaines changent aussi ton casque.</p><div class="liste">');
+    Object.keys(FF.ARMURES).forEach(function (id) {
+      var Ar = FF.ARMURES[id], a = S.armures.indexOf(id) >= 0;
+      h += '<div class="ligneUnite"><div><b>' + esc(Ar.nom) + '</b><small>❤️ +' + Ar.pv + ' PV · ' + esc(Ar.desc) + '</small></div>' +
+        (!a ? '<button class="btn or petit" data-arm="' + id + '"' + (S.or < Ar.prix ? ' disabled' : '') + '>' + Ar.prix + _t(' or</button>') :
+          '<button class="btn petit' + (S.armure === id ? ' actif' : '') + '" data-porte="' + id + '">' + (S.armure === id ? _t('✔ Portée') : _t('Porter')) + '</button>') + '</div>';
+    });
+    h += '</div>' + _t('<h3>⚔️ Armes</h3>');
+    boutiqueArmes(retour, _t('🛡️ Armurier'), function (A) { return A.forme !== 'dague'; }, function () { armurier(retour); }, h);
+    brancher('[data-arm]', function (b) { var Ar = FF.ARMURES[b.dataset.arm]; if (!payer(Ar.prix)) return; S.armures.push(b.dataset.arm); S.armure = b.dataset.arm; sauver(); majBarre(); armurier(retour); });
+    brancher('[data-porte]', function (b) { S.armure = S.armure === b.dataset.porte ? null : b.dataset.porte; sauver(); armurier(retour); });
+  }
+  function coutelier(retour) {
+    boutiqueArmes(retour, _t('🗡️ Coutelier'), function (A) { return A.forme === 'dague'; }, function () { coutelier(retour); },
+      bourse() + _t('<p>« Une dague, c\'est petit, rapide et ça passe sous les mailles. Tout bon soldat en a une à la ceinture. »</p>'));
+  }
+  // Orfèvre : bijoux qui servent à quelque chose
+  function orfevre(lieu, retour) {
+    var L = FF.LIEUX[lieu], f = L.faction, romance = S.compagnons.filter(function (c) { var Cp = FF.COMPAGNONS[c]; return Cp && !Cp.taverne && c !== 'yusuf'; });
+    var dispo = {
+      anneau: !S.bijoux.anneau,
+      coupe: FF.FACTIONS[f] && f !== S.faction && S.jour - (S.bijoux['coupe_' + f] == null ? -99 : S.bijoux['coupe_' + f]) >= 30,
+      broche: romance.length && S.jour - (S.bijoux.broche == null ? -99 : S.bijoux.broche) >= 15
+    };
+    var h = bourse() + _t('<p>« De l\'or, de l\'argent et des émaux. Un beau cadeau ouvre plus de portes qu\'une épée. »</p><div class="liste">');
+    Object.keys(FF.BIJOUX).forEach(function (id) {
+      var Bj = FF.BIJOUX[id];
+      var info = id === 'anneau' && S.bijoux.anneau ? _t('Tu as déjà ton anneau.') : id === 'coupe' && !dispo.coupe ? _t('Offerte récemment (une fois par mois et par royaume).') : id === 'broche' && !romance.length ? _t('Il faut une compagne ou un compagnon de route.') : id === 'broche' && !dispo.broche ? _t('Offerte récemment (tous les 15 jours).') : '';
+      h += '<div class="ligneUnite"><div><b>' + Bj.icone + ' ' + esc(Bj.nom) + '</b><small>' + esc(Bj.desc) + (id === 'coupe' && FF.FACTIONS[f] ? ' (' + esc(FF.FACTIONS[f].nom) + ')' : '') + (info ? ' — ' + info : '') + '</small></div>' +
+        '<button class="btn or petit" data-bij="' + id + '"' + (S.or < Bj.prix || !dispo[id] ? ' disabled' : '') + '>' + Bj.prix + _t(' or</button></div>');
+    });
+    h += '</div>';
+    fenetre(_t('💍 Orfèvre'), h, retour);
+    brancher('[data-bij]', function (b) {
+      var id = b.dataset.bij, Bj = FF.BIJOUX[id];
+      if (!dispo[id] || !payer(Bj.prix)) return;
+      if (id === 'anneau') { S.bijoux.anneau = true; S.renom += 5; petitMsg(_t('Ton sceau d\'or : +5 renommée.')); }
+      if (id === 'coupe') { S.bijoux['coupe_' + f] = S.jour; S.rel[f] = Math.min(100, (S.rel[f] || 0) + 10); petitMsg(_t('Tu fais porter la coupe au souverain : +10 relation avec ') + FF.FACTIONS[f].nom + '.'); }
+      if (id === 'broche') { var c = romance[0]; S.bijoux.broche = S.jour; S.aff[c] = (S.aff[c] || 0) + 1; petitMsg('❤️ ' + FF.COMPAGNONS[c].nom + _t(' est touché(e) par ton cadeau.')); }
+      sauver(); majBarre(); orfevre(lieu, retour);
+    });
+  }
+  // Apothicaire : onguents, remèdes, épices
+  function apothicaire(lieu, retour) {
+    var h = bourse() + _t('<p>« Des herbes de toute la Méditerranée. Les blessés de ta troupe me remercieront. »</p><div class="liste">');
+    Object.keys(FF.REMEDES).forEach(function (id) {
+      var R = FF.REMEDES[id], deja = (id === 'onguent' && S.buff.onguent) || (id === 'remede' && S.buff.remede), plein = id === 'epices' && charge() >= chargeMax();
+      h += '<div class="ligneUnite"><div><b>' + R.icone + ' ' + esc(R.nom) + '</b><small>' + esc(R.desc) + (deja ? _t(' — déjà prêt pour la prochaine bataille.') : plein ? _t(' — tes chariots sont pleins.') : '') + '</small></div>' +
+        '<button class="btn or petit" data-rem="' + id + '"' + (S.or < R.prix || deja || plein ? ' disabled' : '') + '>' + R.prix + _t(' or</button></div>');
+    });
+    h += '</div>';
+    fenetre(_t('⚗️ Apothicaire'), h, retour);
+    brancher('[data-rem]', function (b) {
+      var id = b.dataset.rem; if (!payer(FF.REMEDES[id].prix)) return;
+      if (id === 'onguent') S.buff.onguent = true;
+      else if (id === 'remede') S.buff.remede = true;
+      else S.inv.epices = (S.inv.epices || 0) + 1;
+      sauver(); majBarre(); apothicaire(lieu, retour);
+    });
+  }
+  // Équipement porté : bottes (cordonnier) et manteaux (fourreur)
+  function boutiqueTenue(retour, titre, intro, liste, cle, possedes, effet) {
+    var h = bourse() + '<p>' + intro + '</p><div class="liste">';
+    Object.keys(liste).forEach(function (id) {
+      var O = liste[id], a = S[possedes].indexOf(id) >= 0;
+      h += '<div class="ligneUnite"><div><b>' + esc(O.nom) + '</b><small>' + esc(O.desc) + '</small></div>' +
+        (!a ? '<button class="btn or petit" data-ach="' + id + '"' + (S.or < O.prix ? ' disabled' : '') + '>' + O.prix + _t(' or</button>') :
+          '<button class="btn petit' + (S[cle] === id ? ' actif' : '') + '" data-port="' + id + '">' + (S[cle] === id ? _t('✔ Porté') : _t('Porter')) + '</button>') + '</div>';
+    });
+    h += '</div>';
+    fenetre(titre, h, retour);
+    var refaire = function () { sauver(); majBarre(); boutiqueTenue(retour, titre, intro, liste, cle, possedes, effet); };
+    brancher('[data-ach]', function (b) { if (!payer(liste[b.dataset.ach].prix)) return; S[possedes].push(b.dataset.ach); S[cle] = b.dataset.ach; refaire(); });
+    brancher('[data-port]', function (b) { S[cle] = S[cle] === b.dataset.port ? null : b.dataset.port; refaire(); });
+  }
+  function cordonnier(retour) { boutiqueTenue(retour, _t('👢 Cordonnier'), _t('« De bonnes bottes, et tu marcheras jusqu\'à Jérusalem sans une ampoule. »'), FF.BOTTES, 'bottes', 'lesBottes'); }
+  function fourreur(retour) { boutiqueTenue(retour, _t('🦊 Fourreur'), _t('« Renard, loup, zibeline… L\'hiver d\'Anatolie est terrible : couvre-toi. »'), FF.MANTEAUX, 'manteau', 'manteaux'); }
+  // Tailleur : les couleurs de ta tenue
+  var COULEURS_TENUE = [['rouge', 0xc0392b, 'red'], ['bleu', 0x2874a6, 'blue'], ['vert', 0x1e8449, 'green'], ['or', 0xd4ac0d, 'gold'], ['pourpre', 0x7d3c98, 'purple'], ['blanc', 0xf4f1e8, 'white'], ['noir', 0x1c1c1c, 'black'], ['brun', 0x6d4c41, 'brown']];
+  function tailleur(retour) {
+    var parties = [['tunique', _t('Tunique')], ['cape', _t('Cape')], ['pantalon', _t('Chausses')]];
+    var h = bourse() + _t('<p>« Choisis tes couleurs, je couds pendant que tu attends. 10 or la pièce. »</p>');
+    parties.forEach(function (p) {
+      h += '<h3>' + p[1] + '</h3><div class="rangee">' + COULEURS_TENUE.map(function (c) {
+        var actif = S.tenue[p[0]] === c[1];
+        return '<button class="btn petit' + (actif ? ' actif' : '') + '" data-tp="' + p[0] + '" data-tc="' + c[1] + '"' + (S.or < 10 && !actif ? ' disabled' : '') + ' title="' + (FF_LANGUE === 'en' ? c[2] : c[0]) + '"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;background:#' + ('00000' + c[1].toString(16)).slice(-6) + '"></span></button>';
+      }).join('') + '</div>';
+    });
+    h += _t('<button class="btn" id="tenueOrigine">↩️ Reprendre les couleurs de ma faction (gratuit)</button><p class="muted">Un manteau de fourrure remplace la couleur de la cape.</p>');
+    fenetre(_t('🧵 Tailleur'), h, retour);
+    brancher('[data-tp]', function (b) {
+      var p = b.dataset.tp, c = +b.dataset.tc;
+      if (S.tenue[p] === c) return;
+      if (!payer(10)) return;
+      S.tenue[p] = c; sauver(); majBarre(); rafraichirHeros(); tailleur(retour);
+    });
+    $('tenueOrigine').onclick = function () { S.tenue = {}; sauver(); rafraichirHeros(); tailleur(retour); };
+  }
+  // Le héros change de tenue tout de suite dans la ville
+  function rafraichirHeros() { try { var V0 = M._ville && M._ville(); if (V0 && V0.j) { var P = V0.j.P, pos = P.g.position.clone(), rot = P.g.rotation.y; var P2 = M.creerPerso(lookHeros(), 1); M.equiper(P2, S.equip[0]); P2.g.position.copy(pos); P2.g.rotation.y = rot; M.scene.remove(P.g); M.scene.add(P2.g); V0.j.P = P2; V0.j.pos = P2.g.position; } } catch (e) {} }
+  // Prévôt : primes contre les brigands des environs
+  function prevot(lieu, retour) {
+    var L = FF.LIEUX[lieu], S0 = S.primes = S.primes || {};
+    var dispo = S.jour - (S0[lieu] == null ? -99 : S0[lieu]) >= 7, prime = 50 + niveau() * 10;
+    var h = _t('<p>« Des brigands attaquent les marchands sur les routes autour de ') + esc(L.nom) + _t('. La ville paie une prime à qui les chasse. »</p>');
+    if (dispo) h += '<button class="btn or" id="prime">⚔️ ' + _t('Chasser les brigands (prime : ') + prime + _t(' or, +2 renommée)') + '</button>';
+    else h += _t('<p class="muted">Les routes sont sûres pour l\'instant. Reviens dans ') + (7 - (S.jour - S0[lieu])) + _t(' jours.</p>');
+    fenetre(_t('⚖️ Prévôt'), h, retour);
+    var b = $('prime');
+    if (b) b.onclick = function () {
+      $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+      M.arreter();
+      var dec = /^(syrie|anatolie|egypte|orient)$/.test(L.region) ? 'desert' : L.region === 'balkans' || L.region === 'hongrie' ? 'plaine' : 'foret';
+      var n = Math.min(5, 2 + Math.floor(niveau() / 2));
+      combat({ titre: _t('Les brigands des routes de ') + L.nom, decor: dec, vagues: [[['brigand', n]], [['brigand', n - 1], ['noir_tir', 1]]] }, function (res) {
+        if (res.victoire) { S0[lieu] = S.jour; S.or += prime; S.renom += 2; sauver(); petitMsg(_t('Le prévôt te paie la prime : +') + prime + _t(' or !')); }
+        else petitMsg(_t('Les brigands t\'ont échappé… Reviens plus fort.'));
+        entrerLieu(lieu, 'prevote');
+      }, {});
+    };
+  }
+  // Notaire : contrats de livraison vers une autre ville
+  function villesContrat(lieu) {
+    var L = FF.LIEUX[lieu];
+    return Object.keys(FF.LIEUX).filter(function (k) { var X = FF.LIEUX[k]; return k !== lieu && !X.village && !estCamp(k) && X.faction !== 'legende' && Math.hypot(X.x - L.x, X.y - L.y) < 300; });
+  }
+  function notaire(lieu, retour) {
+    var L = FF.LIEUX[lieu], C = S.contrat;
+    var h = '';
+    if (C) {
+      h += _t('<p>📜 Ton contrat : livrer <b>') + esc(C.quoi) + _t('</b> à <b>') + esc(FF.LIEUX[C.vers].nom) + _t('</b> avant le ') + dateTexte(C.fin) + _t(' (') + C.or + _t(' or à la livraison).</p>');
+      h += _t('<button class="btn" id="annulerContrat">Rendre le contrat (sans pénalité)</button>');
+    } else {
+      var l = villesContrat(lieu);
+      var k = l[(hashTxt(lieu) + Math.floor(S.jour / 5)) % Math.max(1, l.length)];
+      if (!k) h += _t('<p class="muted">Pas de contrat aujourd\'hui.</p>');
+      else {
+        var X = FF.LIEUX[k], dist = Math.hypot(X.x - L.x, X.y - L.y), or = Math.round(30 + dist * 0.3), jours = Math.round(8 + dist / 12);
+        var QUOI = [_t('des lettres scellées'), _t('un coffret de reliques'), _t('un rouleau de soie'), _t('des actes de vente'), _t('une bourse pour un marchand')];
+        var quoi = QUOI[(hashTxt(k) + S.jour) % QUOI.length];
+        h += _t('<p>« J\'ai ') + quoi + _t(' à faire porter à ') + esc(X.nom) + _t('. Tu as ') + jours + _t(' jours. Le destinataire te paiera ') + or + _t(' or. »</p>');
+        h += _t('<button class="btn or" id="signer">✍️ Signer le contrat</button>');
+        var off = { vers: k, or: or, fin: S.jour + jours, quoi: quoi };
+      }
+    }
+    fenetre(_t('📜 Notaire'), h, retour);
+    var s1 = $('signer'), a1 = $('annulerContrat');
+    if (s1) s1.onclick = function () { S.contrat = off; sauver(); petitMsg(_t('Contrat signé ! Va à ') + FF.LIEUX[off.vers].nom + '.'); notaire(lieu, retour); };
+    if (a1) a1.onclick = function () { S.contrat = null; sauver(); notaire(lieu, retour); };
+  }
+  function livrerContrat(id) {
+    var C = S.contrat;
+    if (!C || C.vers !== id) return;
+    S.contrat = null;
+    if (S.jour <= C.fin) { S.or += C.or; S.renom += 1; petitMsg(_t('📜 Livraison faite à temps : +') + C.or + _t(' or !')); }
+    else petitMsg(_t('📜 Tu arrives trop tard : le destinataire refuse de payer.'));
+    sauver(); majBarre();
+  }
 
   // ---------- Recrutement ----------
   function recruesIci(lieu) {
@@ -883,8 +1150,18 @@
     var L = FF.LIEUX[lieu];
     if (S.faction === 'latins' && L.religion === 'catholique' && l.indexOf('sergent') < 0) l.push('sergent');
     if (S.faction === 'romains' && L.faction === 'romains' && l.indexOf('skutatos') < 0) l.push('skutatos');
+    // Corps d'armée ordinaires : on en trouve dans toutes les villes, selon la région
+    if (!L.village && !estCamp(lieu)) {
+      var ajout = ['fantassin', 'archer'];
+      if (L.religion === 'catholique') ajout.push('vougier', 'piquier', 'sergent_cheval', 'homme_armes');
+      else if (L.religion === 'orthodoxe' || L.faction === 'romains') ajout.push('piquier', 'eclaireur', 'sergent_cheval');
+      else ajout.push('eclaireur', 'piquier');
+      if (GRANDES_VILLES.indexOf(lieu) >= 0) ajout.push('sapeur', 'engigneur');
+      ajout.forEach(function (k) { var U = FF.UNITES[k]; if (U && (!U.faction || U.faction === S.faction) && l.indexOf(k) < 0) l.push(k); });
+    }
     return l;
   }
+  var GRANDES_VILLES = ['constantinople', 'paris', 'mayence', 'cologne', 'venise', 'genes', 'pise', 'rome', 'tolede', 'thessalonique', 'antioche', 'jerusalem', 'alexandrie', 'damas', 'londres', 'kiev', 'palerme', 'barcelone'];
   function prix(k) { return Math.round(FF.UNITES[k].prix * (S.faction === 'romains' ? 0.75 : 1)); }
   function recruter(lieu, mercsSeuls, retour) {
     var l = recruesIci(lieu).filter(function (k) { return !mercsSeuls || FF.UNITES[k].merc; });
@@ -892,7 +1169,7 @@
     l.forEach(function (k) {
       var U = FF.UNITES[k];
       h += '<div class="ligneUnite"><div><b>' + esc(U.nom) + '</b>' + (U.merc ? _t(' <span class="tag">mercenaire</span>') : '') + (k === 'hospitalier' ? _t(' <span class="tag or">ordre saint</span>') : '') +
-        '<small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.tir ? _t(' · 🏹 tir') : '') + (U.cheval ? _t(' · 🐎 cavalier') : '') + (U.histo ? ' — ' + esc(U.histo) : '') + '</small></div>' +
+        '<small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.tir ? _t(' · 🏹 tir') : '') + (U.cheval ? _t(' · 🐎 cavalier') : '') + (U.specialiste ? _t(' · 🛠️ spécialiste de siège') : '') + (U.histo ? ' — ' + esc(U.histo) : '') + '</small></div>' +
         '<button class="btn or petit" data-rec="' + k + '"' + (S.or < prix(k) || nbTroupes() >= placeTroupes() ? ' disabled' : '') + '>' + prix(k) + _t(' or</button></div>');
     });
     if (!l.length) h += _t('<p>Personne à engager ici.</p>');
@@ -984,6 +1261,7 @@
     majBanque();
     var b = S.banque;
     var h = _t('<p>« Ton argent est plus en sécurité ici que dans ta bourse. Le même compte sert chez tous les banquiers et changeurs de la carte. »</p>') +
+      _t('<p class="muted">🪙 Le changeur pèse tes pièces sur sa balance : deniers, besants d\'or, dinars et dirhams, tout se change ici.</p>') +
       _t('<p class="muted">💰 Sur toi : ') + S.or + _t(' or · 🏦 À la banque : ') + b.solde + _t(' or (+1 % tous les 10 jours). En cas de défaite, tu perds 20 % de l\'or sur toi, jamais celui de la banque.</p>') +
       _t('<h3>Dépôt</h3><div class="boutons">') +
       [50, 200].map(function (n) { return '<button class="btn petit" data-dep="' + n + '"' + (S.or < n ? ' disabled' : '') + _t('>Déposer ') + n + '</button>'; }).join('') +
@@ -1055,7 +1333,7 @@
   function volMax(v) { return v.rel < 0 ? 0 : Math.min(10, 2 + Math.floor(v.rel / 15) + (talent('recruteur') ? 2 : 0)); }
   function nomEntente(r) { return r < 0 ? _t('méfiants') : r < 20 ? 'neutres' : r < 50 ? 'amicaux' : _t('dévoués'); }
   function prixVolontaire(k) { return Math.max(4, Math.round(prix(k) * 0.6)); }
-  function entrerVillage(id) {
+  function entrerVillage(id, depart) {
     var L = FF.LIEUX[id];
     etatVillage(id);
     S.vus[id] = true; sauver();
@@ -1066,16 +1344,22 @@
     pnjsReligion(L, false).forEach(function (p) { pnjs.push(p); });
     var e = etapeActuelle();
     if (e && e.lieu === id) pnjs.unshift({ id: 'quete', nom: _t('Messager'), role: '⭐ ' + e.titre, icone: '⭐', look: { tunique: 0x2874a6, casque: 'capuche' } });
+    var bats = [
+      { type: 'tailleur', nom: _t('Tailleur'), icone: '🧵', desc: _t('Couleurs de ta tenue'), pnjs: [{ id: 'tailleur', nom: _t('Maître tailleur'), role: _t('Couleurs de ta tenue'), icone: '🧵', look: { tunique: 0x8e44ad, pantalon: 0x4a235a, cheveux: 0x3e2723 } }] },
+      { type: 'fourreur', nom: _t('Fourreur'), icone: '🦊', desc: _t('Manteaux de fourrure'), pnjs: [{ id: 'fourreur', nom: _t('Fourreur'), role: _t('Manteaux de fourrure'), icone: '🦊', look: { tunique: 0x6e2c00, pantalon: 0x3e2723, casque: 'fourrure', barbe: 0x5d4037 } }] }
+    ];
     ecran('jeu3d');
     M.ville({
       lieu: L, village: true, joueur: { look: lookHeros(), arme: S.equip[0] }, pnjs: pnjs, cris: crisMarchands(id),
+      batiments: bats.map(function (b) { return { type: b.type, nom: b.nom, icone: b.icone, desc: b.desc }; }), depart: depart,
+      entrer: function (type) { entrerBatiment(id, type); },
       parler: function (pid, pnj) { M.pause(true); parlerPnj(pid, id, pnj); },
       sortir: function () { ecran('carte'); choisirLieu(id); },
       pause: menuPause
     });
-    LIEU3D = { id: id, pnjs: pnjs };
+    LIEU3D = { id: id, pnjs: pnjs, bats: bats, dedans: null };
     $('nomLieu3d').textContent = L.nom;
-    petitMsg(_t('Bienvenue au village de ') + L.nom + _t('. L\'ancien cherche des gens de confiance. Touche Tab : menu du village.'));
+    if (!depart) petitMsg(_t('Bienvenue au village de ') + L.nom + _t('. L\'ancien cherche des gens de confiance. Touche Tab : menu du village.'));
   }
   function ancien(id, retour) {
     var L = FF.LIEUX[id], v = etatVillage(id), k = L.recrue || 'paysan', U = FF.UNITES[k];
@@ -1087,6 +1371,11 @@
       '<div class="ligneUnite"><div><b>' + esc(U.nom) + '</b><small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.tir ? _t(' · 🏹 tir') : '') + '</small></div><div class="boutons">' +
       '<button class="btn or petit" data-v="1"' + (!v.vol || !place || S.or < p ? ' disabled' : '') + _t('>Engager 1 (') + p + _t(' or)</button>') +
       '<button class="btn petit" data-v="tous"' + (!v.vol || !place || S.or < p ? ' disabled' : '') + _t('>Tous ceux possibles</button></div></div>');
+    // Avec une bonne entente, le village propose aussi ses chasseurs (archers) ou ses hommes de pied
+    var k2 = hashTxt(id) % 2 ? 'archer' : 'fantassin', U2 = FF.UNITES[k2], p2 = prixVolontaire(k2);
+    if (v.rel >= 20) h += '<div class="ligneUnite"><div><b>' + esc(U2.nom) + _t('</b><small>Des villageois déjà entraînés · ❤️ ') + U2.pv + ' · ⚔️ ' + U2.deg + (U2.tir ? _t(' · 🏹 tir') : '') + '</small></div><div class="boutons">' +
+      '<button class="btn or petit" data-v2="1"' + (!v.vol || !place || S.or < p2 ? ' disabled' : '') + _t('>Engager 1 (') + p2 + _t(' or)</button></div></div>');
+    else if (v.rel >= 0) h += _t('<p class="muted">Avec une entente de 20, le village te proposera aussi des hommes entraînés.</p>');
     // Entraide : une demande du village tous les 12 jours
     var dispo = S.jour - v.aide >= 12;
     var demande = (hashTxt(id) + Math.floor(S.jour / 12)) % 2 ? 'brigands' : 'grain';
@@ -1102,6 +1391,8 @@
         M.son('or'); sauver(); majBarre(); ancien(id, retour);
       };
     });
+    var b2 = $('fenCorps').querySelector('[data-v2]');
+    if (b2) b2.onclick = function () { if (!v.vol || nbTroupes() >= placeTroupes() || S.or < p2) return; S.or -= p2; v.vol--; S.troupes[k2] = (S.troupes[k2] || 0) + 1; M.son('or'); sauver(); majBarre(); ancien(id, retour); };
     var a = $('fenCorps').querySelector('[data-a]');
     if (a) a.onclick = function () {
       if (a.dataset.a === 'grain') { if (S.or < 40) return; S.or -= 40; v.rel += 12; S.renom += 1; v.aide = S.jour; sauver(); M.son('or'); petitMsg(_t('Le village te remercie.')); ancien(id, retour); return; }
@@ -1146,7 +1437,43 @@
     if (recruesIci(lieu).some(function (k) { return FF.UNITES[k].merc; })) h += _t('<button class="btn" data-t="mercs">💰 Engager des mercenaires</button>');
     h += _t('<button class="btn" data-t="rancons">⛓️ Marchand de rançons') + (nbPrisonniers() ? ' (' + nbPrisonniers() + _t(' prisonniers)') : '') + '</button>';
     h += _t('<button class="btn" data-t="rumeur">👂 Écouter les rumeurs</button>');
+    // L'auberge : boire, manger, dormir
+    h += _t('<h3>🍻 L\'auberge</h3><div class="rangee">') +
+      '<button class="btn petit" data-aub="boire"' + (S.or < 3 ? ' disabled' : '') + _t('>🍺 Boire une cervoise (3 or)</button>') +
+      '<button class="btn petit" data-aub="manger"' + (S.or < 6 || S.buff.repas ? ' disabled' : '') + _t('>🍲 Manger un repas chaud (6 or)</button>') +
+      '<button class="btn petit" data-aub="dormir"' + (S.or < 12 || S.buff.repos ? ' disabled' : '') + _t('>🛏️ Dormir à l\'auberge (12 or)</button></div>') +
+      _t('<p class="muted">Bien nourri : +15 PV à la prochaine bataille. Bien reposé : +10 PV et +1 jour qui passe.') + (S.buff.repas || S.buff.repos ? _t(' Tu es déjà ') + [S.buff.repas ? _t('bien nourri') : '', S.buff.repos ? _t('reposé') : ''].filter(Boolean).join(_t(' et ')) + '.' : '') + '</p>';
+    // Une compagnie de mercenaires à louer (elle change tous les 10 jours)
+    var Cmp = FF.COMPAGNIES[(hashTxt(lieu) + Math.floor(S.jour / 10)) % FF.COMPAGNIES.length], nCmp = 0;
+    for (var kc in Cmp.troupes) nCmp += Cmp.troupes[kc];
+    h += _t('<h3>⚔️ Compagnie à louer</h3>') + '<div class="ligneUnite"><div><b>' + esc(Cmp.nom) + '</b><small>' + esc(Cmp.desc) + ' · ' + Object.keys(Cmp.troupes).map(function (k) { return Cmp.troupes[k] + ' × ' + esc(FF.UNITES[k].nom); }).join(', ') + '</small></div>' +
+      '<button class="btn or petit" data-cmp="1"' + (S.or < Cmp.prix || nbTroupes() + nCmp > placeTroupes() || S.cmpLouee === lieu + Math.floor(S.jour / 10) ? ' disabled' : '') + '>' + Cmp.prix + _t(' or</button></div>') +
+      (nbTroupes() + nCmp > placeTroupes() ? _t('<p class="muted">Pas assez de place dans ton armée pour toute la compagnie.</p>') : '');
     fenetre(_t('🍺 Taverne de ') + FF.LIEUX[lieu].nom, h, retour);
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-aub]'), function (b) {
+      b.onclick = function () {
+        var t = b.dataset.aub;
+        if (t === 'boire') {
+          if (S.or < 3) return; S.or -= 3; M.son('or');
+          var r = RUMEURS[FF.LIEUX[lieu].region] || RUMEURS.occident, chansons = [_t('Un ménestrel chante la geste de Roland. Toute la salle reprend le refrain !'), _t('Tu trinques avec des marchands génois. L\'un d\'eux te glisse : '), _t('Un vieux soldat lève sa chope à ta santé. Il raconte : ')];
+          var c = chansons[Math.floor(Math.random() * chansons.length)];
+          if (Math.random() < 0.15) { S.renom += 1; c += _t(' (+1 renommée : on parle de toi dans la salle)'); }
+          sauver(); $('fenetre').onFerme = null; $('fenetre').classList.add('hide');
+          dialogue([{ q: 'narrateur', t: c + (c.slice(-2) === ': ' ? '« ' + r[Math.floor(Math.random() * r.length)] + ' »' : '') }], function () { taverne(lieu, retour); });
+          return;
+        }
+        if (t === 'manger') { if (S.or < 6) return; S.or -= 6; S.buff.repas = true; petitMsg(_t('Un ragoût brûlant, du pain et du fromage. Te voilà bien nourri !')); }
+        if (t === 'dormir') { if (S.or < 12) return; S.or -= 12; S.buff.repos = true; S.jour += 1; majMonde(1); petitMsg(_t('Une bonne nuit dans un vrai lit. Tu te sens reposé.')); }
+        M.son('or'); sauver(); majBarre(); taverne(lieu, retour);
+      };
+    });
+    var bc = $('fenCorps').querySelector('[data-cmp]');
+    if (bc) bc.onclick = function () {
+      if (S.or < Cmp.prix || nbTroupes() + nCmp > placeTroupes()) return;
+      S.or -= Cmp.prix; S.cmpLouee = lieu + Math.floor(S.jour / 10);
+      for (var k in Cmp.troupes) S.troupes[k] = (S.troupes[k] || 0) + Cmp.troupes[k];
+      M.son('cor'); sauver(); majBarre(); petitMsg(Cmp.nom + _t(' rejoint ta compagnie !')); taverne(lieu, retour);
+    };
     Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-parler]'), function (b) {
       b.onclick = function () {
         var c = b.dataset.parler, Cp = FF.COMPAGNONS[c], d = Cp.discussions[S.discussions[c] || 0];
@@ -1303,6 +1630,9 @@
   }
   function joursVers(lieu) { if (lieu === S.lieu) return 1; var ch = trajet(S.lieu, lieu); return ch.length ? ch.reduce(function (s, e) { return s + e.jours; }, 0) : 20; }
 
+  // Petite image de la bannière d'un royaume (dessinée par ville.js)
+  var IMG_BAN = {};
+  function imgBanniere(f) { try { if (!IMG_BAN[f]) IMG_BAN[f] = M.banniere(f).toDataURL(); return '<img class="banniere" alt="" src="' + IMG_BAN[f] + '">'; } catch (e) { return '<span class="pastille" style="background:' + ((FF.FACTIONS[f] || {}).couleur || '#888') + '"></span>'; } }
   function diplomatie(retour) {
     initMonde();
     var h = '';
@@ -1311,7 +1641,7 @@
     if (S.nouvelles.length) h += _t('<h3>📜 Nouvelles</h3><ul class="nouvelles">') + S.nouvelles.slice(0, 4).map(function (n) { return '<li><small>' + esc(dateTexte(n.j)) + '</small> ' + esc(n.t) + '</li>'; }).join('') + '</ul>';
     h += _t('<h3>👑 Royaumes</h3><div class="liste">') + royaumesDiplo().sort(function (a, b) { return relation(b) - relation(a); }).map(function (f) {
       var F = FF.FACTIONS[f], r = relation(f), g = enGuerre(f), enRoute = S.courriers.some(function (c) { return c.f === f; });
-      var l = '<div class="ligneUnite diplo"><div><b><span class="pastille" style="background:' + F.couleur + '"></span>' + esc(F.nom) + (S.suzerain === f ? ' 👑' : '') + '</b>' +
+      var l = '<div class="ligneUnite diplo"><div><b>' + imgBanniere(f) + esc(F.nom) + (S.suzerain === f ? ' 👑' : '') + '</b>' +
         '<small>' + (F.souverain ? esc(F.souverain) + ' · ' : '') + _t('Relation ') + r + ' (' + nomRel(r) + ')' + (g.length ? _t(' · ⚔️ en guerre contre ') + esc(g.map(function (x) { return FF.FACTIONS[x].nom; }).join(', ')) : '') + '</small></div><div>';
       l += enRoute ? _t('<small class="muted">🕊️ messager en route</small>') : '<button class="btn petit" data-msg="' + f + '"' + (S.or < 30 ? ' disabled' : '') + _t('>🕊️ Messager (30 or)</button>');
       if (g.length && r >= 0) l += '<button class="btn petit or" data-servir="' + f + '"' + ((S.servi || 0) > S.jour ? ' disabled' : '') + _t('>⚔️ Servir</button>');
@@ -1494,7 +1824,10 @@
     var detA = function (A) { return _t('Dégâts ') + A.deg + _t(' · portée ') + A.portee + (A.pouvoir ? ' · ✨ ' + esc(A.pouvoir.nom) : ''); };
     h += _t('<h3>Équipé</h3>') + '<div class="slotsInv">' +
       slot(_t('⚔️ Main 1'), S.equip[0] ? esc(FF.ARMES[S.equip[0]].nom) : '—', S.equip[0] ? detA(FF.ARMES[S.equip[0]]) : '') +
-      slot(_t('⚔️ Main 2'), S.equip[1] ? esc(FF.ARMES[S.equip[1]].nom) : '—', S.equip[1] ? detA(FF.ARMES[S.equip[1]]) : _t('Achète une 2e arme chez un forgeron')) +
+      slot(_t('⚔️ Main 2'), S.equip[1] ? esc(FF.ARMES[S.equip[1]].nom) : '—', S.equip[1] ? detA(FF.ARMES[S.equip[1]]) : _t('Achète une 2e arme chez un armurier')) +
+      slot(_t('🪖 Armure'), S.armure && FF.ARMURES[S.armure] ? esc(FF.ARMURES[S.armure].nom) : _t('Aucune'), S.armure && FF.ARMURES[S.armure] ? '+' + FF.ARMURES[S.armure].pv + ' PV' : _t('Chez l\'armurier')) +
+      slot(_t('🧥 Manteau'), S.manteau && FF.MANTEAUX[S.manteau] ? esc(FF.MANTEAUX[S.manteau].nom) : _t('Aucun'), S.manteau && FF.MANTEAUX[S.manteau] ? '+' + FF.MANTEAUX[S.manteau].pv + ' PV' : _t('Chez le fourreur des villages')) +
+      slot(_t('👢 Bottes'), S.bottes && FF.BOTTES[S.bottes] ? esc(FF.BOTTES[S.bottes].nom) : _t('Vieilles bottes'), S.bottes && FF.BOTTES[S.bottes] ? '+' + Math.round(FF.BOTTES[S.bottes].vit * 100) + _t(' % de vitesse') : _t('Chez le cordonnier')) +
       slot(_t('🐎 Monture'), Ch ? esc(Ch.nom) : _t('À pied'), Ch ? Math.round(Ch.vit * 3.6) + ' km/h · +' + Ch.pv + ' PV' + (S.aCheval ? '' : _t(' (laissé au camp)')) : _t('Achète un cheval à l\'écurie de la forge')) +
       '</div>';
     // Toutes les armes
@@ -1602,7 +1935,7 @@
         var R = FF.RELIGIONS[k], ou = Object.keys(FF.LIEUX).filter(function (l) { return FF.LIEUX[l].religion === k || (FF.LIEUX[l].minorites || []).indexOf(k) >= 0; }).map(function (l) { return FF.LIEUX[l].nom; });
         c += '<div class="codexLigne"><b>' + (R.icone || '') + ' ' + esc(R.nom) + (S.vus['savoir_' + k] ? _t(' <span class="tag or">connue</span>') : '') + '</b><p>' + esc(R.texte) + '</p>' +
           (R.chef && k !== 'mystere' ? '<small>👤 ' + esc(R.chef) + '</small><small>🏛️ ' + esc(R.culte) + '</small><small>🎉 ' + esc(R.fete) + '</small>' : '') + (ou.length ? '<small>📍 ' + esc(ou.join(', ')) + '</small>' : '') + '</div>'; });
-      if (o === 'factions') Object.keys(FF.FACTIONS).forEach(function (k) { var F = FF.FACTIONS[k]; if (k === 'legende') return; c += '<div class="codexLigne"><b><span class="pastille" style="background:' + F.couleur + '"></span> ' + esc(F.nom) + '</b><small>' + esc(FF.RELIGIONS[F.religion].nom) + '</small>' + (F.souverain ? '<p>👑 ' + esc(F.souverain) + '</p>' : '') + (F.histoire ? '<p>' + esc(F.histoire) + '</p>' : '') + (F.bonus ? '<ul>' + F.bonus.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' : '') + '</div>'; });
+      if (o === 'factions') Object.keys(FF.FACTIONS).forEach(function (k) { var F = FF.FACTIONS[k]; if (k === 'legende') return; c += '<div class="codexLigne"><b>' + imgBanniere(k) + esc(F.nom) + '</b><small>' + esc(FF.RELIGIONS[F.religion].nom) + '</small>' + (FF.BANNIERES[k] ? '<p class="muted">🚩 ' + esc(FF.BANNIERES[k].note) + '</p>' : '') + (F.souverain ? '<p>👑 ' + esc(F.souverain) + '</p>' : '') + (F.histoire ? '<p>' + esc(F.histoire) + '</p>' : '') + (F.bonus ? '<ul>' + F.bonus.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' : '') + '</div>'; });
       if (o === 'troupes') Object.keys(FF.UNITES).forEach(function (k) { var U = FF.UNITES[k]; if (!U.prix) return; c += '<div class="codexLigne"><b>' + esc(U.nom) + (U.merc ? _t(' <span class="tag">mercenaire</span>') : '') + '</b><small>❤️ ' + U.pv + ' · ⚔️ ' + U.deg + (U.faction ? ' · ' + esc(FF.FACTIONS[U.faction].nom) + _t(' seulement') : '') + '</small>' + (U.histo ? '<p>' + esc(U.histo) + '</p>' : '') + '</div>'; });
       $('codexCorps').innerHTML = c;
     }
@@ -1777,5 +2110,5 @@
   accueil();
   // Pour les tests automatiques
   window.FFJeu = { etat: function () { return S; }, combat: combat, entrerLieu: entrerLieu, mission: mission, nouvellePartie: nouvellePartie, ecran: ecran, sauver: sauver,
-    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, diplomatie: diplomatie, fief: fief, rancons: rancons, majMonde: majMonde, choisirLieu: choisirLieu, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci, forge: forge, inventaire: inventaire, menuLieu: menuLieu };
+    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, diplomatie: diplomatie, fief: fief, rancons: rancons, majMonde: majMonde, choisirLieu: choisirLieu, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci, forge: forge, inventaire: inventaire, menuLieu: menuLieu, entrerBatiment: entrerBatiment, armurier: armurier, tailleur: tailleur, prevot: prevot, notaire: notaire };
 })();

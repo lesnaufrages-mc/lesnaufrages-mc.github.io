@@ -359,6 +359,7 @@
     var def = typeof type === 'string' ? Object.assign({ id: type }, FF.UNITES[type]) : type;
     if (!def || !def.pv) return null;
     var c = new Combattant(def, equipe, opts);
+    if (equipe === 1 && B.cfg.affaiblir && !def.boss) { c.pv = c.pvMax = Math.round(c.pvMax * (1 - B.cfg.affaiblir)); } // engigneurs : défenseurs affaiblis
     c.pos.set(x, 0, z);
     c.ang = equipe === 1 ? angleVers(c.pos, B.joueur ? B.joueur.pos : new T.Vector3()) : Math.PI;
     B.combattants.push(c);
@@ -406,6 +407,7 @@
     var n = B.cfg.vagues.length;
     if (n > 1) message(_t('Vague ') + B.vague + ' / ' + n);
     else if (n === 1 && !B.cfg.boss) message(B.cfg.titre || _t('Combat !'));
+    if (n === 1 && B.cfg.annonce) setTimeout(function () { if (B) message(B.cfg.annonce, 'or'); }, 1600);
   }
   function majHud() {
     var j = B.joueur;
@@ -734,7 +736,7 @@
           if (c.monte) arc = a.dir === 'estoc' ? 70 : 220; // à cheval on frappe sur les côtés
           if (ang > arc / 2 + (c.joueur ? 22 : 10)) continue; // le joueur a un peu plus de marge
           a.touches.push(e);
-          var deg = (c.joueur ? c.A.deg * (B.niveauDeg || 1) : (c.def.deg || 10) * (c.armeId && FF.ARMES[c.armeId].type === 'legendaire' ? 1.1 : 1));
+          var deg = (c.joueur ? c.A.deg * (B.niveauDeg || 1) * (B.aiguise[c.armeId] ? 1.1 : 1) : (c.def.deg || 10) * (c.armeId && FF.ARMES[c.armeId].type === 'legendaire' ? 1.1 : 1));
           if (c.equipe === 0 && B.cfg.faction === 'latins') deg *= 1.2; // Charge des chevaliers
           if (c.fureur > 0) deg *= 1.3;
           if (a.dir === 'estoc' && c.A.forme === 'lance') deg *= 1.15;
@@ -1096,7 +1098,7 @@
     var dec = M.construireDecor(cfg.decor || 'plaine', cfg.graine || 7, { rayon: B.montes ? 30 : 22, ambiance: cfg.ambiance });
     B.scene = M.scene; B.obstacles = dec.obstacles; B.forme = dec.forme;
     // Joueur
-    var jd = Object.assign({ id: 'joueur', nom: cfg.joueur.nom, pv: cfg.joueur.pvMax || 120, vit: 3.9, look: cfg.joueur.look }, {});
+    var jd = Object.assign({ id: 'joueur', nom: cfg.joueur.nom, pv: cfg.joueur.pvMax || 120, vit: 3.9 * (1 + (cfg.joueur.vitBonus || 0)), look: cfg.joueur.look }, {});
     B.armes = (cfg.joueur.armes || ['epee']).filter(function (a) { return FF.ARMES[a]; });
     if (!B.armes.length) B.armes = ['epee'];
     B.armeIdx = 0;
@@ -1105,6 +1107,7 @@
     B.joueur.ang = Math.PI;
     B.yaw = Math.PI;
     B.niveauDeg = cfg.joueur.bonusDeg || 1;
+    B.aiguise = cfg.joueur.aiguise || {};
     // Compagnons et troupes alliées
     var n = 0;
     function placerAllie(def, opts) {

@@ -920,6 +920,27 @@ var FF = (function () {
     cluny: ['vin', ''], compostelle: ['poisson', ''], athos: ['vin huile', ''], sambie: ['ambre', ''], steppe: ['laine fourrures', ''], naplouse: ['huile', ''],
     byblos: ['huile', ''], hasbaya: ['huile ble', ''], midyat: ['vin', ''], natroun: ['sel', '']
   };
+  // ---------- Diplomatie : capitales, guerres de 1096, rivalités ----------
+  var CAPITALES = { france: 'paris', empire: 'aix', flandre: 'bruges', normandie: 'rouen', toulouse: 'toulouse', angleterre: 'londres', ecosse: 'dunfermline',
+    castille: 'tolede', barcelone: 'barcelone', almoravides: 'cordoue', saragosse: 'saragosse', papaute: 'rome', normands: 'bari', sicile: 'palerme', croatie: 'knin',
+    boheme: 'prague', pologne: 'cracovie', rus: 'kiev', danemark: 'roskilde', norvege: 'bergen', suede: 'uppsala', pise: 'pise', zirides: 'mahdia', mossoul: 'mossoul',
+    prusses: 'sambie', coumans: 'steppe', hongrie: 'hongrie', venise: 'venise', genes: 'genes', seldjoukides: 'nicee', emirs: 'damas', fatimides: 'caire',
+    armeniens: 'edesse', abbassides: 'bagdad', cid: 'valence', irlande: 'dublin' };
+  // Guerres réelles en 1096
+  var GUERRES = [
+    ['castille', 'almoravides'],   // la Reconquista : les Almoravides ont battu Alphonse VI à Sagrajas (1086)
+    ['empire', 'papaute'],         // la querelle des Investitures entre Henri IV et le pape
+    ['fatimides', 'emirs'],        // Fatimides et Turcs se disputent la Palestine (Jérusalem reprise en 1098)
+    ['rus', 'coumans'],            // Boniak attaque Kiev en 1096
+    ['seldjoukides', 'armeniens'], // les Turcs contre les princes arméniens du Taurus
+    ['angleterre', 'ecosse']       // Guillaume le Roux aide Edgar à chasser Donald III (1097)
+  ];
+  // Rivalités de l'époque qui peuvent tourner à la guerre pendant la partie
+  var RIVAUX = [['france', 'normandie'], ['france', 'angleterre'], ['castille', 'saragosse'], ['barcelone', 'saragosse'], ['empire', 'boheme'], ['empire', 'pologne'],
+    ['hongrie', 'croatie'], ['venise', 'normands'], ['genes', 'pise'], ['pise', 'zirides'], ['sicile', 'zirides'], ['danemark', 'norvege'], ['norvege', 'suede'],
+    ['ecosse', 'norvege'], ['rus', 'pologne'], ['emirs', 'mossoul'], ['fatimides', 'abbassides'], ['seldjoukides', 'mossoul'], ['hongrie', 'coumans'],
+    ['danemark', 'prusses'], ['pologne', 'prusses'], ['castille', 'almoravides'], ['cid', 'almoravides'], ['fatimides', 'emirs']];
+
   // Banquiers et changeurs (le même compte dans toutes les banques)
   var BANQUES = { constantinople: 'Trapézite (banquier)', venise: 'Banquier vénitien', genes: 'Banquier génois', bagdad: 'Sarraf (changeur)', alexandrie: 'Sarraf (changeur)',
     damas: 'Sarraf (changeur)', caire: 'Sarraf (changeur)', pise: 'Banquier pisan', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
@@ -927,7 +948,7 @@ var FF = (function () {
   return {
     proj: proj, FACTIONS: FACTIONS, RELIGIONS: RELIGIONS, LIEUX: LIEUX, ROUTES: ROUTES, ARMES: ARMES, UNITES: U, PEAU: PEAU,
     NAVIRES: NAVIRES, PERSOS: PERSOS, COMBATS: COMBATS, RENCONTRES: RENCONTRES, HISTOIRE: HISTOIRE, LEGENDES: LEGENDES,
-    COMPAGNONS: COMPAGNONS, HEROS: HEROS, TALENTS: TALENTS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES
+    COMPAGNONS: COMPAGNONS, HEROS: HEROS, CAPITALES: CAPITALES, GUERRES: GUERRES, RIVAUX: RIVAUX, TALENTS: TALENTS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = FF;

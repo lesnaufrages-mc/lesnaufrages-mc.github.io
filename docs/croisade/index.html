@@ -235,6 +235,10 @@ body:not(.modeVille) .villeSeul{display:none!important}
 .chapitres li.encours{color:var(--or2);font-weight:700}
 .chapitres small{color:var(--muted)}
 .codexLigne{padding:8px;border-bottom:1px solid var(--line)}
+@media (max-width:640px){#bCompagnie span,#bDiplo span,#bJournal span,#bCodex span{display:none}}
+.guerre{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin:4px 0}.guerre b{color:#ff6b6b;font-size:12px}.guerre small{flex-basis:100%;color:var(--muted)}
+.nouvelles{margin:4px 0 8px;padding-left:18px}.nouvelles li{margin:3px 0}.nouvelles small{color:var(--muted);margin-right:4px}
+.ligneUnite.diplo>div:last-child{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .codexLigne.leg b{color:#f7dc6f}
 .codexLigne small{display:block;color:var(--muted)}
 .codexLigne p{margin:4px 0}
@@ -289,7 +293,7 @@ body:not(.modeVille) .villeSeul{display:none!important}
   <div class="barre">
     <span id="barreDate"></span><span id="barreOr"></span><span id="barreTroupes"></span><span id="barreNiveau"></span>
     <span class="esp"></span>
-    <button id="bCompagnie">🛡️ Compagnie</button><button id="bJournal">📜 Journal</button><button id="bCodex">📖 Codex</button><button id="bMenu">☰</button>
+    <button id="bCompagnie">🛡️<span> Compagnie</span></button><button id="bDiplo">🕊️<span> Royaumes</span></button><button id="bJournal">📜<span> Journal</span></button><button id="bCodex">📖<span> Codex</span></button><button id="bMenu">☰</button>
   </div>
   <div id="barreObjectif"></div>
   <div class="zoom"><button id="zoomPlus" aria-label="Zoomer">+</button><button id="zoomMoins" aria-label="Dézoomer">−</button><button id="recentrer" aria-label="Recentrer">◎</button></div>
@@ -361,12 +365,12 @@ document.body.classList.add(window.matchMedia('(pointer: coarse)').matches ? 'ta
 <script src="../sauvegarde.js" data-jeu="ferrum"></script>
 <script src="../strategie/monde.js?v=14"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="donnees.js?v=4"></script>
-<script src="moteur.js?v=4"></script>
-<script src="bataille.js?v=4"></script>
-<script src="naval.js?v=4"></script>
-<script src="ville.js?v=4"></script>
-<script src="jeu.js?v=4"></script>
+<script src="donnees.js?v=5"></script>
+<script src="moteur.js?v=5"></script>
+<script src="bataille.js?v=5"></script>
+<script src="naval.js?v=5"></script>
+<script src="ville.js?v=5"></script>
+<script src="jeu.js?v=5"></script>
 <script src="../site.js" defer></script>
 </body>
 </html>

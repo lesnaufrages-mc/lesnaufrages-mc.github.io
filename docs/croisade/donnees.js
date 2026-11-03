@@ -369,6 +369,17 @@ var FF = (function () {
     cheval: { robe: 0xa04000, vit: 7, pv: 25 }, histo: 'Les archers à cheval seldjoukides tournent autour de l\'ennemi en tirant sans jamais s\'arrêter. C\'est ainsi qu\'ils encerclent les croisés à Dorylée.' });
   u('cavalier_fatimide', { nom: 'Cavalier fatimide', pv: 55, deg: 12, vit: 3.6, arme: 'lance', look: { tunique: 0xfdfefe, pantalon: 0x2e86c1, casque: 'turban', bouclier: 'rond', bc: 0x2e86c1 }, garde: 0.3, or: 13,
     cheval: { robe: 0xd5d8dc, caparacon: 0x2e86c1, vit: 6.4, pv: 30 } });
+  // Grades : volontaire > milicien > sergent / skutatos > chevalier monté / cataphracte > chef (avec l'expérience)
+  u('banneret', { nom: 'Chevalier banneret (chef)', pv: 140, deg: 21, vit: 3.6, arme: 'epee', look: { tunique: 0xf1c40f, croix: 0xc0392b, pantalon: 0x85929e, casque: 'heaume', bouclier: 'kite', bc: 0xf1c40f, cape: 0xc0392b }, prix: 260, garde: 0.5, faction: 'latins', chef: true,
+    cheval: { robe: 0x1c1c1c, caparacon: 0xf1c40f, croix: 0xc0392b, vit: 6.2, pv: 60, charge: 1.3 },
+    histo: 'Un chevalier assez riche pour lever sa propre bannière et mener d\'autres chevaliers. Sa présence donne du courage : tes troupes frappent plus fort tant qu\'il est debout.' });
+  u('komes', { nom: 'Komès (officier romain, chef)', pv: 140, deg: 19, vit: 3.5, arme: 'epee', look: { tunique: 0xf1c40f, pantalon: 0x4a235a, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98, cape: 0x7d3c98 }, prix: 250, garde: 0.55, faction: 'romains', chef: true,
+    cheval: { robe: 0x3e2723, caparacon: 0x7d3c98, croix: 0xf1c40f, vit: 5.8, pv: 70, charge: 1.2 },
+    histo: 'Le komès commande un bandon, une unité de l\'armée romaine. Tant qu\'il est debout, tes troupes frappent plus fort.' });
+  U.sergent.promo = 'chevalier_monte'; U.sergent.promoXp = 30;
+  U.skutatos.promo = 'cataphracte'; U.skutatos.promoXp = 30;
+  U.chevalier_monte.promo = 'banneret'; U.chevalier_monte.promoXp = 50;
+  U.cataphracte.promo = 'komes'; U.cataphracte.promoXp = 50;
   // Les nomades combattent à cheval
   U.turcopole.cheval = { robe: 0xa04000, vit: 6.8, pv: 25 };
   U.petchenegue.cheval = { robe: 0x6e2c00, vit: 6.8, pv: 25 };

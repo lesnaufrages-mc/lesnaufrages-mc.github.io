@@ -96,12 +96,14 @@
     $('fenCorps').innerHTML = html;
     $('fenetre').classList.remove('hide');
     $('fenetre').onFerme = fermer || null;
+    $('fenetre').menuLieu = false;
     $('fenCorps').scrollTop = 0;
   }
   function fermerFenetre() {
     $('fenetre').classList.add('hide');
     var f = $('fenetre').onFerme; $('fenetre').onFerme = null;
     if (f) f();
+    else if (M.enVille() && M.enPause() && $('dialogue').classList.contains('hide')) M.pause(false); // jamais bloqué en ville
   }
   $('fenFermer').onclick = fermerFenetre;
 
@@ -570,9 +572,48 @@
       sortir: function () { ecran('carte'); choisirLieu(id); },
       pause: menuPause
     });
+    LIEU3D = { id: id, pnjs: pnjs };
     $('nomLieu3d').textContent = L.nom;
-    petitMsg(_t('Bienvenue à ') + L.nom + _t('. Approche-toi des gens pour leur parler.'));
+    petitMsg(_t('Bienvenue à ') + L.nom + _t('. Approche-toi des gens pour leur parler. Touche Tab : menu de la ville.'));
   }
+  // Menu du lieu (touche Tab ou bouton 📋) : parler à tout le monde sans marcher, ou quitter tout de suite
+  var LIEU3D = null;
+  function menuLieu() {
+    if (!LIEU3D || !M.enVille() || !$('dialogue').classList.contains('hide')) return;
+    var id = LIEU3D.id, L = FF.LIEUX[id];
+    M.pause(true);
+    var h = '<div class="menuLieu">' + LIEU3D.pnjs.map(function (p, i) {
+      var r = p.role || p.nom, ic = p.icone || '💬';
+      return '<button class="btn" data-ml="' + i + '">' + (r.indexOf(ic) === 0 ? '' : ic + ' ') + esc(r) + ' <small class="muted">· ' + esc(p.nom) + '</small></button>';
+    }).join('');
+    h += '<button class="btn" data-ml="compagnie">🛡️ ' + _t('Ma compagnie') + '</button><button class="btn" data-ml="inventaire">🎒 ' + _t('Inventaire') + '</button>';
+    h += '<button class="btn" data-ml="marcher">🚶 ' + _t('Se promener dans les rues') + '</button>';
+    h += '<button class="btn or" data-ml="sortir">🚪 ' + (L.village ? _t('Quitter le village') : _t('Quitter la ville')) + '</button></div>';
+    h += _t('<p class="muted">Touche Tab : ouvrir ou fermer ce menu.</p>');
+    fenetre((L.village ? '🏘️ ' : '🏰 ') + L.nom, h, reprendreVille);
+    $('fenetre').menuLieu = true;
+    Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-ml]'), function (b) {
+      b.onclick = function () {
+        var v = b.dataset.ml;
+        $('fenetre').onFerme = null; $('fenetre').menuLieu = false; $('fenetre').classList.add('hide');
+        if (v === 'marcher') return reprendreVille();
+        if (v === 'sortir') { M.pause(false); return M.quitterVille(); }
+        if (v === 'compagnie') { compagnie(); $('fenetre').onFerme = menuLieu; return; }
+        if (v === 'inventaire') return inventaire(menuLieu);
+        var p = LIEU3D.pnjs[+v];
+        parlerPnj(p.id, id, p);
+      };
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Tab') return;
+    if (M.enVille && M.enVille()) {
+      e.preventDefault();
+      var f = $('fenetre');
+      if (!f.classList.contains('hide')) { if (f.menuLieu) { f.menuLieu = false; f.onFerme = null; f.classList.add('hide'); reprendreVille(); } return; }
+      menuLieu();
+    }
+  });
   function lookPerso(q) {
     var P = FF.PERSOS[q], L = (P && P.look) || {};
     return { peau: L.peau || 0xf1c27d, tunique: L.couronne ? 0x7d3c98 : L.turban ? 0xfdfefe : 0x5d6d7e, pantalon: 0x34495e, casque: L.turban ? 'turban' : L.couronne ? 'couronne' : L.casque ? 'nasal' : L.capuche ? 'capuche' : 'aucun', barbe: L.barbe, cheveux: L.cheveux, cape: L.couronne ? 0x4a235a : null };
@@ -1032,8 +1073,9 @@
       sortir: function () { ecran('carte'); choisirLieu(id); },
       pause: menuPause
     });
+    LIEU3D = { id: id, pnjs: pnjs };
     $('nomLieu3d').textContent = L.nom;
-    petitMsg(_t('Bienvenue au village de ') + L.nom + _t('. L\'ancien cherche des gens de confiance.'));
+    petitMsg(_t('Bienvenue au village de ') + L.nom + _t('. L\'ancien cherche des gens de confiance. Touche Tab : menu du village.'));
   }
   function ancien(id, retour) {
     var L = FF.LIEUX[id], v = etatVillage(id), k = L.recrue || 'paysan', U = FF.UNITES[k];
@@ -1075,7 +1117,11 @@
   }
 
   // ---------- Promotion des troupes (avec l'expérience des combats) ----------
-  function promoDe(k) { var U = FF.UNITES[k]; if (!U || !U.promo) return null; var c = typeof U.promo === 'object' ? U.promo[S.faction] : U.promo; return c && FF.UNITES[c] ? c : null; }
+  function promoDe(k) { var U = FF.UNITES[k]; if (!U || !U.promo) return null; var c = typeof U.promo === 'object' ? U.promo[S.faction] : U.promo; return c && FF.UNITES[c] && (!FF.UNITES[c].faction || FF.UNITES[c].faction === S.faction) ? c : null; }
+  var MAX_CHEFS = 2;
+  function nbChefs() { var n = 0; for (var k in S.troupes) if (FF.UNITES[k] && FF.UNITES[k].chef) n += S.troupes[k]; return n; }
+  // Échelle des grades de ta faction (affichée dans la compagnie)
+  function echelleGrades() { var l = ['paysan'], k = 'paysan', g; while ((g = promoDe(k)) && l.length < 8) { l.push(g); k = g; } return l; }
   function gagnerXp(res) {
     var ks = Object.keys(S.troupes).filter(function (k) { return S.troupes[k] > 0 && promoDe(k); });
     if (!ks.length) return;
@@ -1438,6 +1484,54 @@
   function nbReligions() { return religionsReelles().filter(function (k) { return S.vus['savoir_' + k]; }).length; }
 
   // ---------- Compagnie, journal, codex ----------
+  // ---------- Inventaire : équipement, armes, montures, marchandises, prisonniers ----------
+  function inventaire(retour) {
+    var h = '<div class="statsHeros"><canvas id="porInv" width="96" height="96"></canvas><div><b>' + esc(S.heros) + '</b><small>' + esc(FF.FACTIONS[S.faction].nom) + '</small>' +
+      _t('<p>Niveau ') + niveau() + _t(' · ❤️ ') + pvMax() + _t(' PV · 💰 ') + S.or + _t(' or</p></div></div>');
+    // Emplacements équipés
+    var Ch = S.cheval && FF.CHEVAUX[S.cheval];
+    var slot = function (titre, nom, detail) { return '<div class="slotInv"><small>' + titre + '</small><b>' + nom + '</b>' + (detail ? '<span>' + detail + '</span>' : '') + '</div>'; };
+    var detA = function (A) { return _t('Dégâts ') + A.deg + _t(' · portée ') + A.portee + (A.pouvoir ? ' · ✨ ' + esc(A.pouvoir.nom) : ''); };
+    h += _t('<h3>Équipé</h3>') + '<div class="slotsInv">' +
+      slot(_t('⚔️ Main 1'), S.equip[0] ? esc(FF.ARMES[S.equip[0]].nom) : '—', S.equip[0] ? detA(FF.ARMES[S.equip[0]]) : '') +
+      slot(_t('⚔️ Main 2'), S.equip[1] ? esc(FF.ARMES[S.equip[1]].nom) : '—', S.equip[1] ? detA(FF.ARMES[S.equip[1]]) : _t('Achète une 2e arme chez un forgeron')) +
+      slot(_t('🐎 Monture'), Ch ? esc(Ch.nom) : _t('À pied'), Ch ? Math.round(Ch.vit * 3.6) + ' km/h · +' + Ch.pv + ' PV' + (S.aCheval ? '' : _t(' (laissé au camp)')) : _t('Achète un cheval à l\'écurie de la forge')) +
+      '</div>';
+    // Toutes les armes
+    h += _t('<h3>Tes armes (') + S.armes.length + ')</h3><div class="grille">' + S.armes.map(function (id) {
+      var A = FF.ARMES[id], eq = S.equip.indexOf(id);
+      return '<div class="carteArme ' + (A.type === 'legendaire' ? 'leg' : '') + '"><b>' + esc(A.nom) + '</b><small>' + esc(A.origine) + '</small><div class="stats">' + barre(_t('Dégâts'), A.deg / 26) + barre(_t('Vitesse'), 0.42 / A.dur) + barre(_t('Portée'), A.portee / 3.3) + '</div>' +
+        '<div class="rangee"><button class="btn petit' + (eq === 0 ? ' actif' : '') + '" data-ieq="0" data-id="' + id + _t('">Main 1</button><button class="btn petit') + (eq === 1 ? ' actif' : '') + '" data-ieq="1" data-id="' + id + _t('">Main 2</button></div></div>');
+    }).join('') + '</div>';
+    // Montures
+    if (S.chevaux.length) {
+      h += _t('<h3>Tes chevaux</h3><div class="rangee">') + S.chevaux.map(function (id) { return '<button class="btn petit' + (S.cheval === id ? ' actif' : '') + '" data-imonte="' + id + '">🐎 ' + esc(FF.CHEVAUX[id].nom) + '</button>'; }).join('') + '</div>' +
+        '<label class="rangee"><input type="checkbox" id="invCheval"' + (S.aCheval ? ' checked' : '') + _t('> Combattre à cheval</label>');
+    }
+    // Marchandises
+    var inv = Object.keys(S.inv).filter(function (g) { return S.inv[g] > 0; }), valeur = 0;
+    h += _t('<h3>Marchandises (') + charge() + ' / ' + chargeMax() + ')</h3>';
+    h += inv.length ? '<div class="liste">' + inv.map(function (g) { var M0 = FF.MARCH[g]; valeur += M0.prix * S.inv[g]; return '<div class="ligneUnite"><div><b>' + M0.icone + ' ' + S.inv[g] + ' × ' + esc(M0.nom) + _t('</b><small>Prix de base : ') + M0.prix + _t(' or</small></div></div>'); }).join('') + '</div><p class="muted">' + _t('Valeur estimée : ') + valeur + _t(' or (vends-les là où on en manque).') + '</p>'
+      : _t('<p class="muted">Aucune marchandise. Achète-en chez un marchand pour faire du commerce.</p>');
+    // Prisonniers
+    var pk = Object.keys(S.prisonniers).filter(function (k) { return S.prisonniers[k] > 0; });
+    h += _t('<h3>Prisonniers (') + nbPrisonniers() + ' / ' + capPrisonniers() + ')</h3>' + (pk.length ? '<p>⛓️ ' + pk.map(function (k) { return S.prisonniers[k] + ' × ' + esc(FF.UNITES[k].nom); }).join(' · ') + _t(' <span class="muted">(le marchand de rançons de la taverne les achète)</span></p>') : _t('<p class="muted">Aucun prisonnier.</p>'));
+    fenetre(_t('🎒 Inventaire'), h, retour || (M.enVille() ? reprendreVille : null));
+    try { $('porInv').getContext('2d').drawImage(portrait('heros'), 0, 0); } catch (e) {}
+    var c = $('fenCorps');
+    var refaire = function () { sauver(); inventaire(retour); };
+    Array.prototype.forEach.call(c.querySelectorAll('[data-ieq]'), function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.ieq, id = b.dataset.id, autre = S.equip.indexOf(id);
+        if (autre >= 0 && autre !== i) S.equip[autre] = S.equip[i];
+        S.equip[i] = id;
+        S.equip = S.equip.filter(function (x, k) { return x && S.equip.indexOf(x) === k; });
+        refaire();
+      };
+    });
+    Array.prototype.forEach.call(c.querySelectorAll('[data-imonte]'), function (b) { b.onclick = function () { S.cheval = b.dataset.imonte; refaire(); }; });
+    var cb = $('invCheval'); if (cb) cb.onchange = function () { S.aCheval = cb.checked; refaire(); };
+  }
   function compagnie() {
     var h = '<div class="statsHeros"><canvas id="porHeros" width="96" height="96"></canvas><div><b>' + esc(S.heros) + '</b><small>' + esc(FF.FACTIONS[S.faction].nom) + '</small>' +
       _t('<p>Niveau ') + niveau() + ' · ⭐ ' + S.renom + _t(' renommée · ❤️ ') + pvMax() + _t(' PV · 💰 ') + S.or + _t(' or</p>') +
@@ -1455,12 +1549,12 @@
     h += ks.length ? '<div class="liste">' + ks.map(function (k) {
       var c = promoDe(k), U = FF.UNITES[k], ligne = '<div class="ligneUnite"><div><b>' + S.troupes[k] + ' × ' + esc(U.nom) + '</b>';
       if (c) {
-        var need = U.promoXp || 10, xp = S.xp[k] || 0, cout = Math.round(FF.UNITES[c].prix * 0.4);
-        ligne += _t('<small>Expérience ') + Math.min(xp, need) + ' / ' + need + _t(' pour devenir ') + esc(FF.UNITES[c].nom.toLowerCase()) + '</small></div>' +
-          '<button class="btn or petit" data-promo="' + k + '"' + (xp < need || S.or < cout ? ' disabled' : '') + _t('>⬆️ Promouvoir 1 (') + cout + _t(' or)</button></div>');
+        var need = U.promoXp || 10, xp = S.xp[k] || 0, cout = Math.round(FF.UNITES[c].prix * 0.4), plein = FF.UNITES[c].chef && nbChefs() >= MAX_CHEFS;
+        ligne += _t('<small>Expérience ') + Math.min(xp, need) + ' / ' + need + _t(' pour devenir ') + esc(FF.UNITES[c].nom.toLowerCase()) + (plein ? _t(' · déjà ') + MAX_CHEFS + _t(' chefs au maximum') : '') + '</small><span class="barreXp"><i style="width:' + Math.round(Math.min(1, xp / need) * 100) + '%"></i></span></div>' +
+          '<button class="btn or petit" data-promo="' + k + '"' + (xp < need || S.or < cout || plein ? ' disabled' : '') + _t('>⬆️ Promouvoir 1 (') + cout + _t(' or)</button></div>');
       } else ligne += '</div></div>';
       return ligne;
-    }).join('') + _t('</div><p class="muted">En bataille, jusqu\'à 11 soldats te suivent (les meilleurs d\'abord). Chaque victoire donne de l\'expérience aux troupes qui peuvent monter en grade.</p>') : _t('<p class="muted">Aucun soldat. Recrute dans les villes et les villages.</p>');
+    }).join('') + '</div><p class="muted">' + _t('Grades : ') + echelleGrades().map(function (g) { return esc(FF.UNITES[g].nom.split(' (')[0]); }).join(' → ') + _t('. Un chef donne +10 % de dégâts à toute ton armée tant qu\'il est debout.') + '</p>' + _t('<p class="muted">En bataille, jusqu\'à 11 soldats te suivent (les meilleurs d\'abord). Chaque victoire donne de l\'expérience aux troupes qui peuvent monter en grade.</p>') : _t('<p class="muted">Aucun soldat. Recrute dans les villes et les villages.</p>');
     majBanque();
     h += _t('<h3>Fortune</h3><p>💰 ') + S.or + _t(' or sur toi · 🏦 ') + S.banque.solde + _t(' or à la banque') + (S.banque.pret ? _t(' · 📜 dette : ') + S.banque.pret + _t(' or (à rendre avant le jour ') + S.banque.echeance + _t(', aujourd\'hui jour ') + S.jour + ')' : '') + '</p>';
     var inv = Object.keys(S.inv).filter(function (g) { return S.inv[g] > 0; });
@@ -1471,7 +1565,7 @@
     Array.prototype.forEach.call($('fenCorps').querySelectorAll('[data-promo]'), function (b) {
       b.onclick = function () {
         var k = b.dataset.promo, c = promoDe(k), U = FF.UNITES[k], need = U.promoXp || 10, cout = Math.round(FF.UNITES[c].prix * 0.4);
-        if (!S.troupes[k] || (S.xp[k] || 0) < need || S.or < cout) return;
+        if (!S.troupes[k] || (S.xp[k] || 0) < need || S.or < cout || (FF.UNITES[c].chef && nbChefs() >= MAX_CHEFS)) return;
         S.or -= cout; S.xp[k] -= need; S.troupes[k]--; if (!S.troupes[k]) delete S.troupes[k];
         S.troupes[c] = (S.troupes[c] || 0) + 1; sauver(); majBarre(); M.son('victoire');
         petitMsg(_t('Un ') + U.nom.toLowerCase() + _t(' devient ') + FF.UNITES[c].nom.toLowerCase() + ' !');
@@ -1544,7 +1638,7 @@
       _t('<li><kbd>Espace</kbd> roulade · <kbd>X</kbd> / molette : changer d\'arme · <kbd>E</kbd> pouvoir de l\'arme légendaire</li>') +
       _t('<li><kbd>1</kbd> suivez-moi · <kbd>2</kbd> tenez la position · <kbd>3</kbd> chargez (ordres aux troupes)</li>') +
       _t('<li>🐎 À cheval : <kbd>Z</kbd>/<kbd>W</kbd> avancer, <kbd>Maj</kbd> galoper, <kbd>S</kbd> freiner, frappe en passant : plus tu vas vite, plus ça fait mal !</li>') +
-      _t('<li><kbd>H</kbd> mode photo (cache l\'interface) · <kbd>Échap</kbd> pause</li></ul>') +
+      _t('<li><kbd>H</kbd> mode photo (cache l\'interface) · <kbd>Échap</kbd> pause</li>') + _t('<li><kbd>Tab</kbd> en ville ou au village : menu (parler à tous, quitter) · <kbd>I</kbd> inventaire</li>') + _t('<li>Après une parade parfaite, ton coup suivant est une riposte (+60 %). Enchaîne les coups pour un combo (jusqu\'à +30 %).</li></ul>') +
       _t('<p><b>Comme dans Mount &amp; Blade :</b> bouge la souris juste avant de frapper pour choisir la direction du coup (gauche, droite, haut, ou vers le bas pour l\'estoc). Active la <b>parade directionnelle</b> dans les options pour devoir parer dans la direction de la flèche affichée au-dessus de l\'ennemi.</p>') +
       _t('<p><b>En mer :</b> Z/S voiles, Q/D gouvernail, Espace tirer, E feu grégeois (Romains), F aborder.</p>');
     var mob = _t('<ul class="touches"><li>🕹️ Joystick à gauche pour bouger, glisse à droite pour tourner la caméra.</li><li>⚔️ frapper (glisse sur le bouton pour choisir la direction) · 🛡️ parer (maintenir) · 💨 roulade · ✨ pouvoir · ⇄ changer d\'arme · 🚩 ordre aux troupes</li><li>En mer : joystick = voiles et gouvernail, ⚔️ tirer, ✨ feu grégeois, ⇄ aborder.</li></ul>');
@@ -1583,6 +1677,17 @@
     $('barreObjectif').textContent = e ? '⭐ ' + e.objectif : _t('✦ Démo terminée : explore les légendes');
   }
   $('bCompagnie').onclick = compagnie;
+  $('bInventaire').onclick = function () { inventaire(); };
+  $('btnMenuLieu').onclick = function () { menuLieu(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'KeyI' || !S || !$('dialogue').classList.contains('hide') || (M.enBataille && M.enBataille()) || (M.enNaval && M.enNaval())) return;
+    if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (!$('fenetre').classList.contains('hide')) return;
+    var vis = !$('carte').classList.contains('hide') || M.enVille();
+    if (!vis) return;
+    if (M.enVille()) M.pause(true);
+    inventaire();
+  });
   $('bDiplo').onclick = function () { diplomatie(); };
   $('bJournal').onclick = journal;
   $('bCodex').onclick = codex;
@@ -1629,6 +1734,13 @@
   };
   $('btnRetourCreation').onclick = accueil;
   $('btnAide').onclick = function () { aide(); };
+  $('btnTrailer').onclick = function () {
+    var v = $('vidTrailer');
+    v.src = FF_LANGUE === 'en' ? 'video/trailer-en.mp4' : 'video/bande-annonce-fr.mp4';
+    $('fenTrailer').classList.remove('hide');
+    try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  };
+  $('fermerTrailer').onclick = function () { var v = $('vidTrailer'); v.pause(); $('fenTrailer').classList.add('hide'); };
   $('optDiff').onchange = function () { OPT.diff = this.value; sauverOptions(); };
   $('optDir').onchange = function () { OPT.dir = this.checked; sauverOptions(); };
   $('optSon').onchange = function () { OPT.son = this.checked; M.muet(!OPT.son); sauverOptions(); };
@@ -1665,5 +1777,5 @@
   accueil();
   // Pour les tests automatiques
   window.FFJeu = { etat: function () { return S; }, combat: combat, entrerLieu: entrerLieu, mission: mission, nouvellePartie: nouvellePartie, ecran: ecran, sauver: sauver,
-    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, diplomatie: diplomatie, fief: fief, rancons: rancons, majMonde: majMonde, choisirLieu: choisirLieu, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci, forge: forge };
+    marche: marche, banque: banque, tournoi: tournoi, ancien: ancien, compagnie: compagnie, prixAchat: prixAchat, prixVente: prixVente, codex: codex, taverne: taverne, diplomatie: diplomatie, fief: fief, rancons: rancons, majMonde: majMonde, choisirLieu: choisirLieu, rencontreHeros: rencontreHeros, parlerPnj: parlerPnj, herosIci: herosIci, forge: forge, inventaire: inventaire, menuLieu: menuLieu };
 })();

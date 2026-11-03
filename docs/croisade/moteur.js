@@ -147,15 +147,11 @@ var Moteur = (function () {
     var dt = Math.min(0.05, (t - dernier) / 1000);
     dernier = t;
     if (!mode || manuel) return;
-    try {
-      if (!enPause) mode.maj(dt);
-      E.souris.acc.x *= Math.exp(-dt * 7); E.souris.acc.y *= Math.exp(-dt * 7);
-      E.actions.length = 0;
-      if (scene) R.render(scene, cam);
-    } catch (err) {
-      // Une erreur ne doit pas figer le jeu : on la signale une fois et on continue.
-      if (!boucle.vu) { boucle.vu = true; console.error(err); }
-    }
+    // Une erreur ne doit pas figer le jeu : on la signale une fois et on continue (l'image est toujours redessinée).
+    try { if (!enPause) mode.maj(dt); } catch (err) { if (!boucle.vu) { boucle.vu = true; console.error(err); } }
+    E.souris.acc.x *= Math.exp(-dt * 7); E.souris.acc.y *= Math.exp(-dt * 7);
+    E.actions.length = 0;
+    try { if (scene && mode) R.render(scene, cam); } catch (err) { if (!boucle.vr) { boucle.vr = true; console.error(err); } }
   }
 
   // ---------- Commandes (clavier AZERTY/QWERTY, souris, tactile) ----------

@@ -289,15 +289,15 @@
   }
   // Ce que disent les gens quand tu passes à côté d'eux
   var PAROLES = {
-    garde: ['Circulez.', 'Pas de bagarre en ville !', 'Tout est calme aujourd\'hui.', 'Les portes ferment au coucher du soleil.', 'Range ton épée, étranger.'],
-    enfant: ['Un chevalier ! Un vrai !', 'Tu me montres ton épée ?', 'Attrape-moi si tu peux !', 'Hé ! Par ici !', 'Moi aussi, plus tard, je serai soldat !'],
-    porteur: ['Attention, ça passe !', 'Pardon, pardon !', 'Lourd, ce chargement…'],
-    paysan: ['La récolte sera bonne cette année.', 'Les brigands ont encore volé deux moutons.', 'Bonjour, seigneur.', 'Mes fils pourraient te suivre, si la paye est bonne.', 'Il faudra bientôt rentrer le foin.'],
-    habitant: ['Bonjour, voyageur.', 'Le pain a encore augmenté…', 'Tu viens de loin ?', 'On dit que les armées des Francs passent par ici.', 'Le marché est animé aujourd\'hui.', 'Ne bois pas l\'eau du port, crois-moi.']
+    garde: [_t('Circulez.'), _t('Pas de bagarre en ville !'), _t('Tout est calme aujourd\'hui.'), _t('Les portes ferment au coucher du soleil.'), _t('Range ton épée, étranger.')],
+    enfant: [_t('Un chevalier ! Un vrai !'), _t('Tu me montres ton épée ?'), _t('Attrape-moi si tu peux !'), _t('Hé ! Par ici !'), _t('Moi aussi, plus tard, je serai soldat !')],
+    porteur: [_t('Attention, ça passe !'), _t('Pardon, pardon !'), _t('Lourd, ce chargement…')],
+    paysan: [_t('La récolte sera bonne cette année.'), _t('Les brigands ont encore volé deux moutons.'), _t('Bonjour, seigneur.'), _t('Mes fils pourraient te suivre, si la paye est bonne.'), _t('Il faudra bientôt rentrer le foin.')],
+    habitant: [_t('Bonjour, voyageur.'), _t('Le pain a encore augmenté…'), _t('Tu viens de loin ?'), _t('On dit que les armées des Francs passent par ici.'), _t('Le marché est animé aujourd\'hui.'), _t('Ne bois pas l\'eau du port, crois-moi.')]
   };
-  var SALUT = { catholique: 'Que Dieu te garde.', orthodoxe: 'Que le Christ te garde.', sunnite: 'Salam aleykoum, voyageur.', chiite: 'Salam aleykoum, voyageur.', armenienne: 'Barev, voyageur !', juive: 'Shalom, voyageur.', mystere: '…',
-    copte: 'Que le Seigneur te bénisse.', syriaque: 'Shlomo, voyageur.', maronite: 'Que saint Maron te protège.', nestorienne: 'Shlama, voyageur.', druze: 'Salam, étranger.',
-    samaritaine: 'Shalom, voyageur.', paienne: 'Que les anciens dieux te regardent.' };
+  var SALUT = { catholique: _t('Que Dieu te garde.'), orthodoxe: _t('Que le Christ te garde.'), sunnite: _t('Salam aleykoum, voyageur.'), chiite: _t('Salam aleykoum, voyageur.'), armenienne: _t('Barev, voyageur !'), juive: _t('Shalom, voyageur.'), mystere: '…',
+    copte: _t('Que le Seigneur te bénisse.'), syriaque: _t('Shlomo, voyageur.'), maronite: _t('Que saint Maron te protège.'), nestorienne: _t('Shlama, voyageur.'), druze: _t('Salam, étranger.'),
+    samaritaine: _t('Shalom, voyageur.'), paienne: _t('Que les anciens dieux te regardent.') };
 
   function animerMarche(P, ph, amp) {
     P.jambeG.rotation.x = Math.sin(ph) * amp; P.jambeD.rotation.x = -Math.sin(ph) * amp;
@@ -316,7 +316,7 @@
   }
   function paroleDe(o) {
     var t = o.type;
-    if (t === 'marchand') { var l = V.cfg.cris || []; return l.length ? l[Math.floor(Math.random() * l.length)] : 'Approchez, approchez !'; }
+    if (t === 'marchand') { var l = V.cfg.cris || []; return l.length ? l[Math.floor(Math.random() * l.length)] : _t('Approchez, approchez !'); }
     var liste = PAROLES[t] || PAROLES.habitant;
     if ((t === 'habitant' || t === 'paysan') && Math.random() < 0.25) return SALUT[V.cfg.lieu.religion] || SALUT.catholique;
     return liste[Math.floor(Math.random() * liste.length)];
@@ -410,9 +410,9 @@
     if (V.sonT <= 0) { V.sonT = 6 + Math.random() * 8; M.son(V.village ? (Math.random() < 0.5 ? 'coq' : 'mouton') : (V.cfg.lieu.religion === 'catholique' || V.cfg.lieu.religion === 'orthodoxe') && Math.random() < 0.3 ? 'cloche' : 'foule'); }
     V.proche = proche;
     var inv = el('invite');
-    var nomP = proche ? (proche.data.role || !proche.marche ? proche.nom : proche.data.nomCourt || 'Habitant') : '';
-    if (proche) { inv.classList.remove('hide'); inv.innerHTML = (M.mobile ? '' : '<kbd>E</kbd> ') + 'Parler à <b>' + nomP + '</b>'; }
-    else if (j.pos.z > V.rayon - 4 && Math.abs(j.pos.x) < 4) { inv.classList.remove('hide'); inv.innerHTML = '⬇️ Sortir ' + (V.village ? 'du village' : 'de la ville'); }
+    var nomP = proche ? (proche.data.role || !proche.marche ? proche.nom : proche.data.nomCourt || _t('Habitant')) : '';
+    if (proche) { inv.classList.remove('hide'); inv.innerHTML = (M.mobile ? '' : '<kbd>E</kbd> ') + _t('Parler à <b>') + nomP + '</b>'; }
+    else if (j.pos.z > V.rayon - 4 && Math.abs(j.pos.x) < 4) { inv.classList.remove('hide'); inv.innerHTML = _t('⬇️ Sortir ') + (V.village ? _t('du village') : _t('de la ville')); }
     else inv.classList.add('hide');
     if ((M.a('interagir') || M.a('attaque')) && proche) {
       inv.classList.add('hide');
@@ -536,7 +536,7 @@
       var ex = Math.cos(e[0]) * e[1], ez = Math.sin(e[0]) * e[1];
       scene.add(etal(ex, ez, -e[0] - Math.PI / 2, couleurs[k % couleurs.length])); V.obstacles.push({ x: ex, z: ez, r: 1.4 });
       var mx = Math.cos(e[0]) * (e[1] - 1.7), mz = Math.sin(e[0]) * (e[1] - 1.7);
-      var o = ajouterPnj({ id: 'habitant', nom: 'Marchand', nomCourt: 'Marchand', look: Object.assign({ peau: FF.PEAU[Math.floor(r() * FF.PEAU.length)] }, LOOKS[Math.floor(r() * LOOKS.length)]), habitant: true }, mx, mz, false, 'marchand');
+      var o = ajouterPnj({ id: 'habitant', nom: _t('Marchand'), nomCourt: _t('Marchand'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * FF.PEAU.length)] }, LOOKS[Math.floor(r() * LOOKS.length)]), habitant: true }, mx, mz, false, 'marchand');
       o.ang = Math.atan2(-mx, -mz);
     });
     scene.add(charrette(-11, 12, 0.6, 'caisses')); V.obstacles.push({ x: -11, z: 12, r: 1.5 });
@@ -607,28 +607,28 @@
     var nh = V.cfg.habitants == null ? (village ? 6 : 9) : V.cfg.habitants;
     for (i = 0; i < nh; i++) {
       var pt = V.points[i % V.points.length];
-      ajouterPnj({ id: 'habitant', nom: village ? 'Villageois' : 'Habitant', nomCourt: village ? 'Villageois' : 'Habitant', look: look(village ? LOOKS_PAYSANS : LOOKS), habitant: true }, pt.x, pt.z, true, village ? 'paysan' : 'habitant');
+      ajouterPnj({ id: 'habitant', nom: village ? _t('Villageois') : _t('Habitant'), nomCourt: village ? _t('Villageois') : _t('Habitant'), look: look(village ? LOOKS_PAYSANS : LOOKS), habitant: true }, pt.x, pt.z, true, village ? 'paysan' : 'habitant');
     }
     // Enfants qui courent
     for (i = 0; i < (village ? 2 : 3); i++) {
       var pe = V.points[(i * 5 + 3) % V.points.length];
-      var oe = ajouterPnj({ id: 'habitant', nom: 'Enfant', nomCourt: 'Enfant', look: look(village ? LOOKS_PAYSANS : LOOKS), habitant: true }, pe.x, pe.z, true, 'enfant');
+      var oe = ajouterPnj({ id: 'habitant', nom: _t('Enfant'), nomCourt: _t('Enfant'), look: look(village ? LOOKS_PAYSANS : LOOKS), habitant: true }, pe.x, pe.z, true, 'enfant');
       oe.P.g.scale.setScalar(0.62); oe.vit = 3.4;
     }
     if (!village) {
       // Gardes : deux à la porte, deux en patrouille autour de la place
       var lg = lookGarde(style);
-      [-2.2, 2.2].forEach(function (x) { var g = ajouterPnj({ id: 'habitant', nom: 'Garde', nomCourt: 'Garde', look: Object.assign({ peau: FF.PEAU[Math.floor(r() * 3)] }, lg), arme: 'lance', habitant: true }, x, V.rayon - 1.2, false, 'garde'); g.ang = Math.PI; });
+      [-2.2, 2.2].forEach(function (x) { var g = ajouterPnj({ id: 'habitant', nom: _t('Garde'), nomCourt: _t('Garde'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * 3)] }, lg), arme: 'lance', habitant: true }, x, V.rayon - 1.2, false, 'garde'); g.ang = Math.PI; });
       for (i = 0; i < 2; i++) {
         var route = [];
         for (var k = 0; k < 10; k++) { var a2 = (k / 10) * Math.PI * 2 * (i ? -1 : 1) + i * Math.PI; route.push({ x: Math.cos(a2) * 13.5, z: Math.sin(a2) * 13.5 }); }
-        var gp = ajouterPnj({ id: 'habitant', nom: 'Garde', nomCourt: 'Garde', look: Object.assign({ peau: FF.PEAU[Math.floor(r() * 3)] }, lg), arme: 'lance', habitant: true }, route[0].x, route[0].z, true, 'garde');
+        var gp = ajouterPnj({ id: 'habitant', nom: _t('Garde'), nomCourt: _t('Garde'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * 3)] }, lg), arme: 'lance', habitant: true }, route[0].x, route[0].z, true, 'garde');
         gp.route = route; gp.iRoute = 1; gp.vit = 1.3;
       }
       // Porteurs avec une caisse sur la tête
       for (i = 0; i < 2; i++) {
         var pp = V.points[(i * 3 + 1) % V.points.length];
-        var po = ajouterPnj({ id: 'habitant', nom: 'Porteur', nomCourt: 'Porteur', look: look(LOOKS), habitant: true }, pp.x, pp.z, true, 'porteur');
+        var po = ajouterPnj({ id: 'habitant', nom: _t('Porteur'), nomCourt: _t('Porteur'), look: look(LOOKS), habitant: true }, pp.x, pp.z, true, 'porteur');
         M.boite(0.7, 0.55, 0.7, 0x8d6e63, po.P.haut, 0, 2.2, 0); po.vit = 1.2;
       }
       // Animaux : poules, chiens, et un cheval (ou un chameau) attaché près de la porte
@@ -639,7 +639,7 @@
     } else {
       // Paysans qui moissonnent au bord du village
       [[-6, -15], [7, -14.5], [-15, 4]].forEach(function (f) {
-        var o = ajouterPnj({ id: 'habitant', nom: 'Paysan', nomCourt: 'Paysan', look: look(LOOKS_PAYSANS), arme: 'hache', habitant: true }, f[0], f[1], false, 'faucheur');
+        var o = ajouterPnj({ id: 'habitant', nom: _t('Paysan'), nomCourt: _t('Paysan'), look: look(LOOKS_PAYSANS), arme: 'hache', habitant: true }, f[0], f[1], false, 'faucheur');
         o.ang = Math.atan2(f[0], f[1]); o.ph = r() * 6;
       });
       for (i = 0; i < 6; i++) ajouterBete('poule', -3 + r() * 6, 3 + r() * 4, { x: 0, z: 5 });

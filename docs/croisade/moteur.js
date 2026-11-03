@@ -80,7 +80,8 @@ var Moteur = (function () {
     hemi = new T.HemisphereLight(o.lumCiel || 0xffffff, o.lumSol || 0x6b5b45, o.hemi == null ? 0.75 : o.hemi);
     scene.add(hemi);
     soleil = new T.DirectionalLight(o.soleil || 0xfff1d6, o.forceSoleil == null ? 0.85 : o.forceSoleil);
-    soleil.position.set(30, 50, 20);
+    var sd = o.soleilDir || [30, 50, 20];
+    soleil.position.set(sd[0], sd[1], sd[2]);
     soleil.castShadow = true;
     soleil.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048);
     var sc = soleil.shadow.camera;
@@ -89,6 +90,16 @@ var Moteur = (function () {
     scene.add(soleil);
     scene.add(soleil.target);
     scene.userData.soleil = soleil;
+    scene.userData.soleilDir = sd;
+    // Disque du soleil (ou de la lune) bas sur l'horizon
+    if (o.disque) {
+      var n = Math.hypot(sd[0], sd[1], sd[2]);
+      var astre = new T.Mesh(new T.SphereGeometry(o.disqueR || 14, 16, 12), new T.MeshBasicMaterial({ color: o.disque, fog: false }));
+      astre.position.set(sd[0] / n * 380, sd[1] / n * 380, sd[2] / n * 380);
+      var halo = new T.Mesh(new T.SphereGeometry((o.disqueR || 14) * 2.2, 16, 12), new T.MeshBasicMaterial({ color: o.disque, fog: false, transparent: true, opacity: 0.18, depthWrite: false }));
+      halo.position.copy(astre.position);
+      scene.add(halo); scene.add(astre);
+    }
     return scene;
   };
   // Remet une scène déjà construite (retour d'un abordage)
@@ -96,7 +107,8 @@ var Moteur = (function () {
   // L'ombre suit le joueur
   M.suivreOmbre = function (x, z) {
     if (!soleil) return;
-    soleil.position.set(x + 30, 50, z + 20);
+    var sd = (scene && scene.userData.soleilDir) || [30, 50, 20];
+    soleil.position.set(x + sd[0], sd[1], z + sd[2]);
     soleil.target.position.set(x, 0, z);
   };
 
@@ -118,11 +130,23 @@ var Moteur = (function () {
   };
   M.pause = function (p) { enPause = p; viderEntrees(); if (p && document.pointerLockElement) document.exitPointerLock(); };
   M.enPause = function () { return enPause; };
+  // Pour enregistrer la bande-annonce image par image (pas fixe)
+  var manuel = false;
+  M._manuel = function (on) { manuel = !!on; };
+  M._pas = function (dt, n, sansRendu) {
+    for (var i = 0; i < (n || 1); i++) {
+      if (!mode) return;
+      mode.maj(dt);
+      E.souris.acc.x *= Math.exp(-dt * 7); E.souris.acc.y *= Math.exp(-dt * 7);
+      E.actions.length = 0;
+    }
+    if (scene && !sansRendu) R.render(scene, cam);
+  };
   function boucle(t) {
     raf = requestAnimationFrame(boucle);
     var dt = Math.min(0.05, (t - dernier) / 1000);
     dernier = t;
-    if (!mode) return;
+    if (!mode || manuel) return;
     try {
       if (!enPause) mode.maj(dt);
       E.souris.acc.x *= Math.exp(-dt * 7); E.souris.acc.y *= Math.exp(-dt * 7);
@@ -392,6 +416,41 @@ var Moteur = (function () {
     g.scale.set(s, s, s);
     return P;
   };
+  // Cheval en blocs (regarde vers +Z). o : robe, crin, caparacon (couleur), croix
+  M.creerCheval = function (o) {
+    o = o || {};
+    var g = new T.Group(), robe = o.robe || 0x6e2c00, crin = o.crin || 0x1c1c1c;
+    var H = { g: g, jambes: [] };
+    H.corps = new T.Group(); g.add(H.corps);
+    boite(0.78, 0.82, 2.1, robe, H.corps, 0, 1.5, 0);
+    boite(0.7, 0.6, 0.5, robe, H.corps, 0, 1.62, -1.05); // croupe
+    var queue = boite(0.18, 0.75, 0.18, crin, H.corps, 0, 1.35, -1.32); queue.rotation.x = -0.35;
+    H.tete = new T.Group(); H.tete.position.set(0, 1.75, 0.95); H.corps.add(H.tete);
+    var cou = boite(0.42, 1.05, 0.5, robe, H.tete, 0, 0.42, 0.18); cou.rotation.x = 0.55;
+    boite(0.4, 0.42, 0.85, robe, H.tete, 0, 0.85, 0.55);
+    boite(0.3, 0.3, 0.22, 0x3e2723, H.tete, 0, 0.78, 0.98); // museau
+    boite(0.1, 0.18, 0.08, robe, H.tete, -0.13, 1.12, 0.32); boite(0.1, 0.18, 0.08, robe, H.tete, 0.13, 1.12, 0.32); // oreilles
+    boite(0.08, 0.08, 0.04, 0x111111, H.tete, -0.21, 0.92, 0.62, { ombre: false }); boite(0.08, 0.08, 0.04, 0x111111, H.tete, 0.21, 0.92, 0.62, { ombre: false });
+    var cr = boite(0.12, 0.85, 0.32, crin, H.tete, 0, 0.62, -0.08); cr.rotation.x = 0.55;
+    // Selle, rênes
+    boite(0.84, 0.14, 0.75, 0x5d4037, H.corps, 0, 1.97, -0.1);
+    boite(0.88, 0.1, 0.12, 0x3e2723, H.corps, 0, 1.88, -0.45);
+    boite(0.46, 0.05, 0.05, 0x3e2723, H.tete, 0, 0.75, 0.9);
+    if (o.caparacon) {
+      boite(0.92, 0.75, 1.9, o.caparacon, H.corps, 0, 1.38, 0.05);
+      boite(0.46, 0.5, 0.9, o.caparacon, H.tete, 0, 0.95, 0.5);
+      if (o.croix) { boite(0.94, 0.14, 0.5, o.croix, H.corps, 0, 1.45, 0.3); boite(0.94, 0.5, 0.14, o.croix, H.corps, 0, 1.45, 0.3); }
+    }
+    // Jambes : avant gauche, avant droite, arrière gauche, arrière droite
+    [[-0.26, 0.78], [0.26, 0.78], [-0.26, -0.78], [0.26, -0.78]].forEach(function (p) {
+      var j = new T.Group(); j.position.set(p[0], 1.12, p[1]); H.corps.add(j);
+      boite(0.22, 0.62, 0.26, robe, j, 0, -0.3, 0);
+      boite(0.18, 0.46, 0.2, robe, j, 0, -0.82, 0);
+      boite(0.22, 0.1, 0.26, 0x2c2c2c, j, 0, -1.08, 0.02);
+      H.jambes.push(j);
+    });
+    return H;
+  };
   M.equiper = function (P, id) {
     if (P.arme) P.main.remove(P.arme);
     P.arme = M.creerArme(id);
@@ -567,7 +626,7 @@ var Moteur = (function () {
   var DECORS = {
     foret: { ciel: 0x6fa8dc, horizon: 0xcfe2f3, sol: [0x5b8c3a, 0x4e7d32, 0x679c43], props: 'foret', soleil: 0xfff1d6 },
     plaine: { ciel: 0x7fb3e6, horizon: 0xe8eef2, sol: [0x8aa64a, 0x9cb556, 0x7d9a42], props: 'plaine' },
-    desert: { ciel: 0x5dade2, horizon: 0xf6e7c8, sol: [0xd9b77e, 0xceaa6c, 0xe2c38e], props: 'desert', soleil: 0xffe9b8, forceSoleil: 1 },
+    desert: { ciel: 0x5dade2, horizon: 0xf6e7c8, sol: [0xd9b77e, 0xceaa6c, 0xe2c38e], props: 'desert', soleil: 0xffe9b8, forceSoleil: 0.82, hemi: 0.62 },
     ville: { ciel: 0x7fb3e6, horizon: 0xeaeaea, sol: [0xb8a888, 0xa89878, 0xc4b494], props: 'ville' },
     nuit: { ciel: 0x0b1530, horizon: 0x1c2b4a, sol: [0x5b5446, 0x4d473b, 0x635b4c], props: 'ville', soleil: 0x8fa8d8, forceSoleil: 0.45, hemi: 0.35, lumCiel: 0x8fa8d8, brouillard0: 20, brouillard1: 90, torches: true },
     montagne: { ciel: 0x85929e, horizon: 0xe5e8e8, sol: [0xf2f4f4, 0xe5e8e8, 0xd7dbdd], props: 'montagne', soleil: 0xeaf2f8, brouillard0: 25, brouillard1: 100 },
@@ -576,6 +635,13 @@ var Moteur = (function () {
     pont: { ciel: 0x5d9bd5, horizon: 0xd6eaf8, sol: null, props: 'pont' }
   };
   M.DECORS = DECORS;
+  // Heures du jour pour les batailles en plein air (même décor, autre lumière)
+  var AMBIANCES = {
+    crepuscule: { ciel: 0x34507f, horizon: 0xf4a261, soleil: 0xffa45c, forceSoleil: 1.05, hemi: 0.45, lumCiel: 0xffc59a, lumSol: 0x3d2f4f, brouillard0: 35, brouillard1: 150, soleilDir: [22, 11, -60], disque: 0xffb36b },
+    aube: { ciel: 0x7d9fd6, horizon: 0xf9d3b4, soleil: 0xffd6ad, forceSoleil: 0.9, hemi: 0.6, lumCiel: 0xffe2c8, brouillard0: 30, brouillard1: 130, soleilDir: [-60, 18, 30], disque: 0xfff0d0 },
+    nuit: { ciel: 0x070d22, horizon: 0x1f3158, soleil: 0x9fb8e8, forceSoleil: 0.5, hemi: 0.3, lumCiel: 0x8fa8d8, lumSol: 0x1a1a2a, brouillard0: 25, brouillard1: 110, soleilDir: [-22, 24, -60], disque: 0xe8eefc, disqueR: 9, feux: true }
+  };
+  M.AMBIANCES = AMBIANCES;
 
   // Sol en damier de couleurs, légèrement bosselé hors de l'arène
   function sol(couleurs, rayonPlat, graine) {
@@ -695,11 +761,12 @@ var Moteur = (function () {
   M.PROPS = P;
 
   // Construit un décor de bataille. Renvoie { obstacles: [{x,z,r}], forme: {type:'cercle',r} | {type:'rect',w,h} }
-  M.construireDecor = function (nom, graine) {
+  M.construireDecor = function (nom, graine, opt) {
     var D = DECORS[nom] || DECORS.plaine;
+    if (opt && opt.ambiance && AMBIANCES[opt.ambiance] && ['plaine', 'desert', 'foret', 'montagne'].indexOf(nom) >= 0) D = Object.assign({}, D, AMBIANCES[opt.ambiance]);
     M.nouvelleScene(D);
     var r = rng(graine || 7);
-    var obs = [], R0 = 22;
+    var obs = [], R0 = (opt && opt.rayon) || 22;
     var forme = { type: 'cercle', r: R0 };
     function ajout(o, ox, oz, rayon) { scene.add(o); if (rayon) obs.push({ x: ox, z: oz, r: rayon }); }
     function anneauProps(n, rmin, rmax, fabrique) {
@@ -766,6 +833,8 @@ var Moteur = (function () {
       boite(3, 1.2, 1.6, 0x707b7c, scene, 0, 0.6, -12); obs.push({ x: 0, z: -12, r: 1.4 });
       for (i = 0; i < 5; i++) { a = i / 5 * Math.PI * 2 + 0.3; P.torche(Math.cos(a) * 15, Math.sin(a) * 15, scene); }
     }
+    // Bataille de nuit en plein air : des feux de camp autour du champ
+    if (D.feux) for (var f = 0; f < 6; f++) { var af = f / 6 * Math.PI * 2 + 0.2; P.torche(Math.cos(af) * (R0 - 0.5), Math.sin(af) * (R0 - 0.5), scene); obs.push({ x: Math.cos(af) * (R0 - 0.5), z: Math.sin(af) * (R0 - 0.5), r: 0.3 }); }
     return { obstacles: obs, forme: forme, style: style };
   };
 

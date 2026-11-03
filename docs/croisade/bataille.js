@@ -125,6 +125,7 @@
           // Parade parfaite : l'ennemi est déséquilibré
           M.son('parade'); M.eclats(arme(c), 0xf7dc6f, 14, 6);
           M.texte(c.teteP(), _t('PARADE !'), 'or');
+          B.riposte = 1.3; // le prochain coup du joueur sera une riposte
           if (a.etat !== 'mort') { a.etat = 'touche'; a.t = 0; a.etourdi = 1.0; }
           B.stats.parades++;
           return false;
@@ -624,14 +625,19 @@
       }
     } else j.bloc = false;
     // Cible verrouillée douce : face à l'ennemi le plus proche devant soi quand on attaque
-    var proche = null, pd = 6;
-    hostiles(j).forEach(function (e) { var dd = dist(j, e); if (dd < pd && Math.abs(difAngle(B.yaw, angleVers(j.pos, e.pos))) < 1.4) { pd = dd; proche = e; } });
+    var proche = null, pd = 7.5;
+    hostiles(j).forEach(function (e) { var dd = dist(j, e); if (dd < pd && Math.abs(difAngle(B.yaw, angleVers(j.pos, e.pos))) < 1.8) { pd = dd; proche = e; } });
     if (M.a('attaque') && !j.bloc) {
       var dir = B.directionnel ? (M.directionSouris() || B.prochDir) : B.prochDir;
       if (j.attaquer(dir)) {
         B.prochDir = DIRS[(DIRS.indexOf(B.prochDir) + 1) % 4];
         if (j.monte) { /* à cheval, on frappe en passant sans se tourner */ }
-        else if (proche) j.ang = angleVers(j.pos, proche.pos);
+        else if (proche) {
+          j.ang = angleVers(j.pos, proche.pos);
+          // Petit pas en avant si l'ennemi est juste hors de portée
+          var manque = pd - (j.A.portee * j.taille + proche.rayon);
+          if (manque > 0 && manque < 3) j.vel.addScaledVector(j.devant(), Math.min(6, 2.5 + manque * 2));
+        }
         else if (mv.lengthSq() > 0.01) j.ang = Math.atan2(mv.x, mv.z);
         else j.ang = B.yaw;
         M.son('swing');
@@ -721,12 +727,12 @@
         for (var i = 0; i < cibles.length; i++) {
           var e = cibles[i];
           if (a.touches.indexOf(e) >= 0) continue;
-          var dd = dist(c, e), port = c.A.portee * c.taille + e.rayon + (c.monte ? 0.9 : 0);
+          var dd = dist(c, e), port = c.A.portee * c.taille + e.rayon + (c.monte ? 0.9 : 0) + (c.joueur ? 0.35 : 0);
           if (dd > port) continue;
           var ang = Math.abs(difAngle(c.ang, angleVers(c.pos, e.pos))) * 180 / Math.PI;
           var arc = a.dir === 'estoc' ? Math.min(c.A.arc, 40) : c.A.arc;
           if (c.monte) arc = a.dir === 'estoc' ? 70 : 220; // à cheval on frappe sur les côtés
-          if (ang > arc / 2 + 10) continue;
+          if (ang > arc / 2 + (c.joueur ? 22 : 10)) continue; // le joueur a un peu plus de marge
           a.touches.push(e);
           var deg = (c.joueur ? c.A.deg * (B.niveauDeg || 1) : (c.def.deg || 10) * (c.armeId && FF.ARMES[c.armeId].type === 'legendaire' ? 1.1 : 1));
           if (c.equipe === 0 && B.cfg.faction === 'latins') deg *= 1.2; // Charge des chevaliers
@@ -742,6 +748,14 @@
           }
           if (e.monte && !c.monte && c.A.forme === 'lance') deg *= 1.5; // la lance contre les cavaliers
           if (c.equipe === 1) deg *= 1; // les dégâts ennemis sont ajustés à l'arrivée selon la difficulté
+          if (c.equipe === 0 && !c.joueur && B.chefAllie) deg *= 1.1; // un chef encourage tes troupes
+          if (c.joueur) {
+            // Riposte après une parade parfaite, et combo de coups enchaînés
+            if (B.riposte > 0) { deg *= 1.6; B.riposte = 0; M.texte(c.teteP(), _t('Riposte !'), 'or'); B.stats.ripostes = (B.stats.ripostes || 0) + 1; }
+            if (B.comboT > 0) B.combo = Math.min(4, (B.combo || 0) + 1); else B.combo = 1;
+            B.comboT = 1.6;
+            if (B.combo >= 2) { deg *= 1 + 0.1 * (B.combo - 1); M.texte(new T.Vector3(e.pos.x, e.pos.y + 2.9 * e.taille, e.pos.z), _t('Combo ×') + B.combo, 'or'); }
+          }
           frapper(c, e, deg, a.dir, { brise: c.A.brise, recul: c.A.recul });
           if (c.A.forme !== 'hache' && c.A.forme !== 'baton' && !c.def.boss) break; // une seule cible sauf armes larges
         }
@@ -1014,13 +1028,21 @@
     B.dtIA = dt;
     if (M.a('pause')) { B.cfg.pause && B.cfg.pause(); return; }
     if (B.pouvoirT > 0) B.pouvoirT -= dt;
-    for (var i = 0; i < B.combattants.length; i++) majCombattant(B.combattants[i], dt);
+    if (B.riposte > 0) B.riposte -= dt;
+    if (B.comboT > 0) { B.comboT -= dt; if (B.comboT <= 0) B.combo = 0; }
+    B.chefAllie = B.combattants.some(function (c) { return c.equipe === 0 && c.def.chef && c.vivant(); });
+    // Chaque étape est protégée : une erreur ne doit jamais bloquer la fin de la bataille
+    for (var i = 0; i < B.combattants.length; i++) {
+      var c0 = B.combattants[i];
+      try { majCombattant(c0, dt); } catch (err) {
+        signaler(err);
+        c0.erreurs = (c0.erreurs || 0) + 1;
+        if (c0.erreurs > 20 && !c0.joueur) { if (c0.vivant()) { c0.pv = 0; c0.etat = 'mort'; c0.t = 0; } c0.supprime = true; if (c0.g) B.scene.remove(c0.g); if (c0.el) { c0.el.remove(); c0.el = null; } }
+      }
+    }
     B.combattants = B.combattants.filter(function (c) { return !c.supprime; });
-    collisions();
-    majProjectiles(dt);
-    M.majEffets(dt);
-    camera(dt);
-    majHud();
+    try { collisions(); majProjectiles(dt); } catch (err) { signaler(err); B.projectiles = []; }
+    try { M.majEffets(dt); camera(dt); majHud(); } catch (err) { signaler(err); }
     // Assaillants par cible (pour répartir les ennemis)
     B.combattants.forEach(function (c) { c.nbAssaillants = 0; });
     B.combattants.forEach(function (c) { if (c.cible && c.equipe === 1) c.cible.nbAssaillants = (c.cible.nbAssaillants || 0) + 1; });
@@ -1038,12 +1060,17 @@
       }
     }
   }
+  function signaler(err) { if (!signaler.vu) { signaler.vu = true; console.error(err); } }
   function terminer() {
     var res = { victoire: B.fini === 'victoire', morts: B.morts, or: B.or, stats: B.stats, pvRestants: B.joueur.pv };
     var cb = B.cb;
-    nettoyer();
+    try { nettoyer(); } catch (err) { signaler(err); B = null; }
     M.arreter();
-    cb(res);
+    try { cb(res); } catch (err) {
+      // Secours : on ne laisse jamais le joueur bloqué sur l'image de la bataille
+      signaler(err);
+      if (window.FFJeu) { try { FFJeu.ecran('carte'); } catch (e2) {} }
+    }
   }
   function nettoyer() {
     if (!B) return;

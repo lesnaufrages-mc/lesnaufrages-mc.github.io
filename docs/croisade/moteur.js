@@ -358,6 +358,8 @@ var Moteur = (function () {
   M.creerPerso = function (look, taille, o) {
     look = look || {};
     o = o || {};
+    var idMod = o.modele || look.modele;
+    if (idMod && MODELES[idMod]) { try { return persoModele(idMod, taille, o); } catch (e) { console.warn('modèle', idMod, e); } }
     var g = new T.Group();
     var corps = new T.Group(); g.add(corps);
     var peau = look.peau || 0xf1c27d, tun = look.tunique || 0x95a5a6, pant = look.pantalon || 0x34495e;
@@ -451,6 +453,144 @@ var Moteur = (function () {
       H.jambes.push(j);
     });
     return H;
+  };
+
+  // ---------- Modèles faits dans Blockbench (modeles.js) ----------
+  // Chaque modèle est une liste de cubes : [groupe, nom, x0, y0, z0, x1, y1, z1, couleur]. Le personnage regarde vers +Z,
+  // sa droite est du côté -X. On range les cubes dans les mêmes articulations que les personnages en blocs,
+  // pour garder toutes les animations (marche, coups, parade, cheval).
+  var MODELES = window.FF_MODELES || {};
+  var K_PERSO = 1.2, K_CHEVAL = 1.28;
+  // Si une troupe montée doit se battre à pied, on prend le modèle à pied le plus proche
+  var A_PIED = { chevalier_monte: 'chevalier', cataphracte: 'skutatos', cavalier_turc: 'archer_turc', cavalier_fatimide: 'fatimide', sergent_cheval: 'sergent', eclaireur: 'fantassin' };
+  function aPieds(id) { return !MODELES[id].some(function (c) { return c[0].indexOf('cheval_') === 0; }); }
+  M.aModele = function (id) { return !!(id && MODELES[id]); };
+  M.modeleAPied = function (id) { return MODELES[id] && !aPieds(id) ? A_PIED[id] : id; };
+  function boiteMod(c, parent, k, t, piv, opt) {
+    if (c[8] < 0) return null;
+    var w = Math.max((c[5] - c[2]) * k, 0.012), h = Math.max((c[6] - c[3]) * k, 0.012), d = Math.max((c[7] - c[4]) * k, 0.012);
+    return boite(w, h, d, c[8], parent, (c[2] + c[5]) / 2 * k + t[0] - piv[0], (c[3] + c[6]) / 2 * k + t[1] - piv[1], (c[4] + c[7]) / 2 * k + t[2] - piv[2], opt);
+  }
+  function bornes(cs) {
+    var b = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9];
+    cs.forEach(function (c) { for (var i = 0; i < 3; i++) { b[i] = Math.min(b[i], c[2 + i]); b[3 + i] = Math.max(b[3 + i], c[5 + i]); } });
+    return b;
+  }
+  function persoModele(id, taille, o) {
+    var cubes = MODELES[id], k = K_PERSO, opt = o.spectre ? { op: 0.7, lueur: 0x1b4f72 } : null;
+    var monte = !aPieds(id);
+    if (monte) cubes = cubes.filter(function (c) { return c[0].indexOf('cavalier_') === 0; }).map(function (c) { var d = c.slice(); d[0] = d[0].slice(9); return d; });
+    var gr = function (n) { return cubes.filter(function (c) { return c[0] === n; }); };
+    // Hanches : haut des jambes (à pied) ou bas du torse (à cheval)
+    var torse = cubes.filter(function (c) { return c[1] === 'torse'; });
+    var hanche = monte ? bornes(torse.length ? torse : gr('corps'))[1] : bornes(gr('jambes'))[4];
+    var t = [0, 0.95 - hanche * k, 0];
+    var g = new T.Group(), corps = new T.Group(); g.add(corps);
+    var P = { g: g, corps: corps, modele: id };
+    var bJ = bornes(gr('jambes')), lx = monte ? 0.17 : Math.max(0.08, (bJ[3] - bJ[0]) / 4 * k);
+    P.jambeG = new T.Group(); P.jambeG.position.set(lx, 0.95, 0); corps.add(P.jambeG);
+    P.jambeD = new T.Group(); P.jambeD.position.set(-lx, 0.95, 0); corps.add(P.jambeD);
+    P.haut = new T.Group(); P.haut.position.y = 0.95; corps.add(P.haut);
+    var bT = bornes(gr('tete')), yTete = bT[1] * k + t[1];
+    P.tete = new T.Group(); P.tete.position.y = yTete - 0.95; P.haut.add(P.tete);
+    var brasG = gr('bras').filter(function (c) { return c[2] + c[5] > 0; }), brasD = gr('bras').filter(function (c) { return c[2] + c[5] <= 0; });
+    var bG = bornes(brasG), bD = bornes(brasD);
+    var epG = [(bG[0] + bG[3]) / 2 * k, bG[4] * k + t[1], (bG[2] + bG[5]) / 2 * k], epD = [(bD[0] + bD[3]) / 2 * k, bD[4] * k + t[1], (bD[2] + bD[5]) / 2 * k];
+    if (!brasG.length) epG = [0.52, 1.75, 0]; if (!brasD.length) epD = [-0.52, 1.75, 0];
+    P.brasG = new T.Group(); P.brasG.position.set(epG[0], epG[1] - 0.95, epG[2]); P.haut.add(P.brasG);
+    P.brasD = new T.Group(); P.brasD.position.set(epD[0], epD[1] - 0.95, epD[2]); P.haut.add(P.brasD);
+    P.roulis = new T.Group(); P.roulis.position.y = brasD.length ? (bD[1] * k + t[1]) - epD[1] : -0.76; P.brasD.add(P.roulis);
+    P.poignet = new T.Group(); P.roulis.add(P.poignet);
+    P.main = new T.Group(); P.main.rotation.x = Math.PI / 2; P.poignet.add(P.main);
+    var pHaut = [0, 0.95, 0], pTete = [0, yTete, 0];
+    cubes.forEach(function (c) {
+      var n = c[0];
+      if (n === 'arme' || n === 'epee' || n === 'arc') return; // le jeu met lui-même l'arme en main
+      if (n === 'jambes') {
+        if (monte) boiteMod(c, corps, k, t, [0, 0, 0], opt); // jambes pliées sur la selle, fixes
+        else if (c[2] + c[5] > 0) boiteMod(c, P.jambeG, k, t, [lx, 0.95, 0], opt);
+        else boiteMod(c, P.jambeD, k, t, [-lx, 0.95, 0], opt);
+      } else if (n === 'tete') boiteMod(c, P.tete, k, t, pTete, opt);
+      else if (n === 'bras') { if (c[2] + c[5] > 0) boiteMod(c, P.brasG, k, t, epG, opt); else boiteMod(c, P.brasD, k, t, epD, opt); }
+      else if (n === 'bouclier') {
+        if (!P.bouclier) { P.bouclier = new T.Group(); P.brasG.add(P.bouclier); }
+        boiteMod(c, P.bouclier, k, t, epG, opt);
+      } else boiteMod(c, P.haut, k, t, pHaut, opt); // corps, équipement (carquois, sacoche…)
+    });
+    var s = taille || 1;
+    g.scale.set(s, s, s);
+    return P;
+  }
+  // Cheval d'une troupe montée (même animation que le cheval en blocs)
+  M.chevalModele = function (id) {
+    if (!MODELES[id] || aPieds(id)) return null;
+    var cubes = MODELES[id].filter(function (c) { return c[0].indexOf('cheval_') === 0 || c[0] === 'harnais'; }), k = K_CHEVAL, t = [0, 0, 0];
+    var g = new T.Group(), H = { g: g, jambes: [], modele: id };
+    H.corps = new T.Group(); g.add(H.corps);
+    var enc = cubes.filter(function (c) { return c[1] === 'encolure_1'; }), bE = bornes(enc.length ? enc : cubes.filter(function (c) { return c[0] === 'cheval_tete'; }));
+    var pT = [0, bE[1] * k, (bE[2] + bE[5]) / 2 * k];
+    H.tete = new T.Group(); H.tete.position.set(pT[0], pT[1], pT[2]); H.corps.add(H.tete);
+    var JAMBES = ['avant_d', 'avant_g', 'arriere_d', 'arriere_g'], pJ = [];
+    JAMBES.forEach(function (n, i) {
+      var cs = cubes.filter(function (c) { return c[0] === 'cheval_jambes' && c[1].slice(-n.length) === n; }), b = bornes(cs);
+      pJ[i] = cs.length ? [(b[0] + b[3]) / 2 * k, b[4] * k, (b[2] + b[5]) / 2 * k] : [0, 1, 0];
+      var j = new T.Group(); j.position.set(pJ[i][0], pJ[i][1], pJ[i][2]); H.corps.add(j); H.jambes.push(j);
+    });
+    var TETE = /^(muserolle|montant|frontal|chanfrein|bride|mors)/;
+    cubes.forEach(function (c) {
+      if (c[0] === 'cheval_tete' || (c[0] === 'harnais' && TETE.test(c[1]))) boiteMod(c, H.tete, k, t, pT);
+      else if (c[0] === 'cheval_jambes') { var i = JAMBES.findIndex(function (n) { return c[1].slice(-n.length) === n; }); if (i < 0) i = (c[2] + c[5] > 0 ? 1 : 0) + (c[4] + c[7] < 0 ? 2 : 0); boiteMod(c, H.jambes[i], k, t, pJ[i]); }
+      else boiteMod(c, H.corps, k, t, [0, 0, 0]);
+    });
+    return H;
+  };
+
+  // Objets de décor faits dans Blockbench (modeles-ville.js) : une seule géométrie par modèle (rapide à dessiner),
+  // couleurs par sommet. Un groupe nommé (ex. « ailes » du moulin) peut être séparé pour être animé autour de son pivot.
+  var VILLE_MOD = window.FF_VILLE || {}, VILLE_PIV = window.FF_VILLE_PIVOTS || {}, GEO_MOD = {};
+  var FACES = [[0, 1, 2, -1], [0, -1, 2, 1], [1, 2, 0, 1], [1, 0, 2, -1], [2, 0, 1, 1], [2, 1, 0, -1]]; // axe normal, axes u, v, signe
+  function geoCubes(cubes, piv) {
+    var pos = [], nor = [], col = [], idx = [], c = new T.Color();
+    cubes.forEach(function (q) {
+      if (q[8] < 0) return;
+      c.setHex(q[8]);
+      var mn = [q[2] - piv[0], q[3] - piv[1], q[4] - piv[2]], mx = [q[5] - piv[0], q[6] - piv[1], q[7] - piv[2]];
+      FACES.forEach(function (f) {
+        var a = f[0], u = f[1], v = f[2], sg = f[3], base = pos.length / 3;
+        var coin = [[mn[u], mn[v]], [mx[u], mn[v]], [mx[u], mx[v]], [mn[u], mx[v]]];
+        coin.forEach(function (cv) { var p = [0, 0, 0]; p[a] = sg > 0 ? mx[a] : mn[a]; p[u] = cv[0]; p[v] = cv[1]; pos.push(p[0], p[1], p[2]); var n = [0, 0, 0]; n[a] = sg; nor.push(n[0], n[1], n[2]); col.push(c.r, c.g, c.b); });
+        // Sens des triangles selon l'orientation de la face
+        var dir = (u + 1) % 3 === v ? sg : -sg;
+        if (dir > 0) idx.push(base, base + 1, base + 2, base, base + 2, base + 3); else idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+      });
+    });
+    var g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+    g.setAttribute('color', new T.Float32BufferAttribute(col, 3));
+    g.setIndex(idx);
+    g.computeBoundingSphere();
+    return g;
+  }
+  var MAT_MOD = new T.MeshLambertMaterial({ vertexColors: true });
+  M.aObjet = function (id) { return !!VILLE_MOD[id]; };
+  // Renvoie un groupe ; les sous-groupes animables sont dans g.userData.pieces (ex. pieces.ailes)
+  M.objetModele = function (id) {
+    var cubes = VILLE_MOD[id]; if (!cubes) return null;
+    var pivs = VILLE_PIV[id] || {};
+    if (!GEO_MOD[id]) {
+      GEO_MOD[id] = { reste: geoCubes(cubes.filter(function (c) { return !pivs[c[0]]; }), [0, 0, 0]), pieces: {} };
+      Object.keys(pivs).forEach(function (n) { GEO_MOD[id].pieces[n] = geoCubes(cubes.filter(function (c) { return c[0] === n; }), pivs[n]); });
+    }
+    var G = GEO_MOD[id], g = new T.Group(), m = new T.Mesh(G.reste, MAT_MOD);
+    m.castShadow = true; m.receiveShadow = true; g.add(m);
+    g.userData.pieces = {};
+    Object.keys(G.pieces).forEach(function (n) {
+      var pg = new T.Group(); pg.position.set(pivs[n][0], pivs[n][1], pivs[n][2]); g.add(pg);
+      var pm = new T.Mesh(G.pieces[n], MAT_MOD); pm.castShadow = true; pg.add(pm);
+      g.userData.pieces[n] = pg;
+    });
+    return g;
   };
   M.equiper = function (P, id) {
     if (P.arme) P.main.remove(P.arme);

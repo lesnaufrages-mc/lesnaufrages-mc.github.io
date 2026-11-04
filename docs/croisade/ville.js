@@ -11,7 +11,11 @@
   function difAngle(a, b) { var d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; }
 
   // Monument selon la religion
+  // Monuments faits dans Blockbench : cathédrale romane, église à coupole, mosquée, synagogue
+  var MONU_MOD = { catholique: ['cathedrale', 0.62], orthodoxe: ['eglise_coupole', 1.05], sunnite: ['mosquee', 1.05], chiite: ['mosquee', 1.05], juive: ['synagogue', 1.1] };
   function monument(religion, x, z, style) {
+    var mm = MONU_MOD[religion];
+    if (mm && M.aObjet(mm[0])) { var gm = M.objetModele(mm[0]); gm.position.set(x, 0, z); gm.scale.setScalar(mm[1]); return gm; }
     var g = new T.Group(); g.position.set(x, 0, z);
     var pierre = style === 'occident' ? 0xd5ccb8 : style === 'byzance' ? 0xe0c9a6 : 0xf2ead8;
     if (religion === 'catholique') {
@@ -79,6 +83,7 @@
     return g;
   }
   function fontaine(x, z) {
+    if (M.aObjet('fontaine')) { var gm = M.objetModele('fontaine'); gm.position.set(x, 0, z); return gm; }
     var g = new T.Group(); g.position.set(x, 0, z);
     var b = new T.Mesh(new T.CylinderGeometry(2.4, 2.6, 0.8, 10), M.mat(0xbdc3c7)); b.position.y = 0.4; g.add(b);
     var e = new T.Mesh(new T.CylinderGeometry(2.1, 2.1, 0.1, 10), M.mat(0x5dade2)); e.position.y = 0.75; g.add(e);
@@ -129,6 +134,7 @@
     return g;
   }
   function puits(x, z) {
+    if (M.aObjet('puits')) { var gm = M.objetModele('puits'); gm.position.set(x, 0, z); return gm; }
     var g = new T.Group(); g.position.set(x, 0, z);
     var m = new T.Mesh(new T.CylinderGeometry(1.1, 1.2, 0.9, 10), M.mat(0x95a5a6)); m.position.y = 0.45; m.castShadow = true; g.add(m);
     var e = new T.Mesh(new T.CylinderGeometry(0.9, 0.9, 0.05, 10), M.mat(0x1b4f72)); e.position.y = 0.85; g.add(e);
@@ -228,8 +234,19 @@
     var c = Math.cos(g.rotation.y), s = Math.sin(g.rotation.y);
     return { x: g.position.x + lx * c + lz * s, z: g.position.z - lx * s + lz * c };
   }
+  // Modèle Blockbench d'un bâtiment, s'il existe pour ce style (sinon on le construit en blocs)
+  function idBatiment(type, style) {
+    var id = style === 'occident' ? type : type + '_' + style;
+    return M.aObjet(id) ? id : null;
+  }
   function batiment(type, a, R, style, faction) {
     var g = new T.Group(); g.position.set(Math.cos(a) * R, 0, Math.sin(a) * R); g.rotation.y = Math.atan2(-Math.cos(a), -Math.sin(a));
+    var idM = idBatiment(type, style);
+    if (idM) {
+      g.add(M.objetModele(idM));
+      if (type === 'caserne') { banniere3d(-3, 3.5, 0, faction, g, 4.5, 0.9); banniere3d(2.2, 3.5, 0, faction, g, 4.5, 0.9); }
+      return g;
+    }
     var w = 6.6, d = 6, f = d / 2, c = COUL_BAT[type] || 0x8d6e63, bois = 0x5d4037;
     var pierre = type === 'caserne' || type === 'banque' || type === 'prevote';
     var mur = pierre ? (style === 'occident' ? 0xb8b0a0 : 0xd8c8a6) : style === 'occident' ? 0xe8dcc0 : style === 'byzance' ? 0xe6cfa8 : 0xf2e6cc;
@@ -323,6 +340,11 @@
     return g;
   }
   function moulin(x, z, ang) {
+    if (M.aObjet('moulin')) {
+      var gm = M.objetModele('moulin'); gm.position.set(x, 0, z); gm.rotation.y = ang;
+      if (V && gm.userData.pieces.ailes) V.tourne.push({ o: gm.userData.pieces.ailes, axe: 'z', v: 0.6 });
+      return gm;
+    }
     var g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ang;
     var t = new T.Mesh(new T.CylinderGeometry(1.6, 2.2, 6.5, 8), M.mat(0xe8dcc0)); t.position.y = 3.25; g.add(t);
     var toit = new T.Mesh(new T.ConeGeometry(2, 2, 8), M.mat(0x8e3b2e)); toit.position.y = 7.5; g.add(toit);
@@ -581,7 +603,7 @@
       var so2 = ajouterPnj({ id: 'habitant', nom: _t('Soldat'), nomCourt: _t('Soldat'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * 4)] }, lookGarde(style)), arme: 'epee', habitant: true }, qx, qz + 1.3, false, 'soldat');
       so2.ang = Math.PI; so2.artisan = 'frappe';
       // Recrues en rang
-      for (i = 0; i < 3; i++) { var rc = ajouterPnj({ id: 'habitant', nom: _t('Recrue'), nomCourt: _t('Recrue'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * FF.PEAU.length)] }, LOOKS_PAYSANS[i % LOOKS_PAYSANS.length]), arme: 'lance', habitant: true }, -2.2 + i * 1.1, 2.6, false, 'soldat'); rc.ang = 0; }
+      for (i = 0; i < 3; i++) { var rc = ajouterPnj({ id: 'habitant', nom: _t('Recrue'), nomCourt: _t('Recrue'), look: Object.assign({ peau: FF.PEAU[Math.floor(r() * FF.PEAU.length)] }, LOOKS_PAYSANS[i % LOOKS_PAYSANS.length], { modele: ['paysan', 'milicien', 'paysan'][i] }), arme: 'lance', habitant: true }, -2.2 + i * 1.1, 2.6, false, 'soldat'); rc.ang = 0; }
       feuI(0, 3.4, 0, 0.7, 10);
     } else if (type === 'prevote') {
       tableI(-2.6, fond + 1.2, 2.2, 1); M.boite(0.5, 0.03, 0.7, 0xf4ecd8, s, -2.9, 0.9, fond + 1.2, { ombre: false });
@@ -753,9 +775,9 @@
     { tunique: 0xbcaaa4, pantalon: 0x5d4037, cheveux: 0xd4ac0d }, { tunique: 0x6d8b74, pantalon: 0x4e342e, casque: 'chapel' }
   ];
   function lookGarde(style) {
-    if (style === 'orient') return { tunique: 0xfdfefe, pantalon: 0x1b4f72, casque: 'turban', bouclier: 'rond', bc: 0x1b4f72 };
-    if (style === 'byzance') return { tunique: 0x7d3c98, pantalon: 0x4a235a, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98 };
-    return { tunique: 0x5d6d7e, pantalon: 0x34495e, casque: 'nasal', bouclier: 'kite', bc: 0x922b21 };
+    if (style === 'orient') return { modele: 'fatimide', tunique: 0xfdfefe, pantalon: 0x1b4f72, casque: 'turban', bouclier: 'rond', bc: 0x1b4f72 };
+    if (style === 'byzance') return { modele: 'skutatos', tunique: 0x7d3c98, pantalon: 0x4a235a, casque: 'rond', bouclier: 'rond', bc: 0x7d3c98 };
+    return { modele: 'fantassin', tunique: 0x5d6d7e, pantalon: 0x34495e, casque: 'nasal', bouclier: 'kite', bc: 0x922b21 };
   }
   // Ce que disent les gens quand tu passes à côté d'eux
   var PAROLES = {
@@ -1107,17 +1129,21 @@
       if (Math.abs(difAngle(a, Math.PI / 2)) < 0.25) continue; // rue de la porte (sud = +Z)
       if (Math.abs(difAngle(a, -Math.PI / 2)) < 0.42) continue; // place du monument
       var d = V.rayon + 4 + r() * 2;
-      if (!pris.some(function (s) { return Math.abs(difAngle(a, s)) < 0.2; })) scene.add(M.PROPS.maison(Math.cos(a) * d, Math.sin(a) * d, -a - Math.PI / 2, style, r));
+      if (!pris.some(function (s) { return Math.abs(difAngle(a, s)) < 0.2; })) {
+        if (style === 'occident' && M.aObjet('maison') && r() < 0.6) { var mh = M.objetModele('maison'); mh.position.set(Math.cos(a) * (d + 0.8), 0, Math.sin(a) * (d + 0.8)); mh.rotation.y = -a - Math.PI / 2; mh.scale.setScalar(0.8); scene.add(mh); }
+        else scene.add(M.PROPS.maison(Math.cos(a) * d, Math.sin(a) * d, -a - Math.PI / 2, style, r));
+      }
       var d2 = V.rayon + 13 + r() * 6;
       scene.add(M.PROPS.maison(Math.cos(a + 0.12) * d2, Math.sin(a + 0.12) * d2, -a - Math.PI / 2, style, r));
     }
     scene.add(monument(L.religion, 0, -(V.rayon + 7), style));
     // Porte, avec les bannières du royaume
     var porte = new T.Group(); porte.position.set(0, 0, V.rayon + 3);
-    M.boite(2, 6, 2, 0xb3a68b, porte, -3.2, 3, 0); M.boite(2, 6, 2, 0xb3a68b, porte, 3.2, 3, 0); M.boite(8.4, 1.6, 2, 0xb3a68b, porte, 0, 6.6, 0);
+    if (M.aObjet('porte_ville')) { var pm = M.objetModele('porte_ville'); pm.rotation.y = Math.PI; porte.add(pm); }
+    else { M.boite(2, 6, 2, 0xb3a68b, porte, -3.2, 3, 0); M.boite(2, 6, 2, 0xb3a68b, porte, 3.2, 3, 0); M.boite(8.4, 1.6, 2, 0xb3a68b, porte, 0, 6.6, 0); }
     scene.add(porte);
     var tex = new T.CanvasTexture(M.banniere(L.faction)); tex.magFilter = T.NearestFilter; tex.minFilter = T.NearestFilter;
-    [-3.2, 3.2].forEach(function (x) { var b = new T.Mesh(new T.PlaneGeometry(1.5, 2.6), new T.MeshLambertMaterial({ map: tex, side: T.DoubleSide })); b.position.set(x, 4.2, V.rayon + 1.98); b.rotation.y = Math.PI; scene.add(b); });
+    [-3.2, 3.2].forEach(function (x) { var b = new T.Mesh(new T.PlaneGeometry(1.5, 2.6), new T.MeshLambertMaterial({ map: tex, side: T.DoubleSide })); b.position.set(x, 4.2, V.rayon + (M.aObjet('porte_ville') ? 1.0 : 1.98)); b.rotation.y = Math.PI; scene.add(b); });
     banniere3d(-5.2, V.rayon + 1.5, Math.PI, L.faction, scene); banniere3d(5.2, V.rayon + 1.5, Math.PI, L.faction, scene);
     scene.add(fontaine(0, 0)); V.obstacles.push({ x: 0, z: 0, r: 2.6 });
     if (style !== 'occident') for (i = 0; i < 4; i++) { a = i / 4 * Math.PI * 2 + 0.78; scene.add(M.PROPS.palmier(Math.cos(a) * 9, Math.sin(a) * 9, 0.7, r)); V.obstacles.push({ x: Math.cos(a) * 9, z: Math.sin(a) * 9, r: 0.4 }); }

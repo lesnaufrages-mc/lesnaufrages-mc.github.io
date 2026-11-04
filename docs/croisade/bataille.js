@@ -46,15 +46,18 @@
     this.armeId = opts.arme || def.arme || 'epee';
     this.A = FF.ARMES[this.armeId] || FF.ARMES.epee;
     var look = Object.assign({ peau: FF.PEAU[Math.floor(Math.random() * FF.PEAU.length)] }, def.look || {});
-    this.P = M.creerPerso(look, this.taille, { spectre: def.spectre });
+    var ch = opts.cheval || def.cheval;
+    var aCheval = !!(ch && B.montes);
+    // Modèle Blockbench de la troupe (à pied si elle ne peut pas monter ici)
+    var idMod = this.joueur || def.boss ? null : (aCheval ? def.id : M.modeleAPied(def.id));
+    this.P = M.creerPerso(look, this.taille, { spectre: def.spectre, modele: idMod });
     M.equiper(this.P, this.armeId);
     this.g = this.P.g;
     // À cheval (seulement dans les grandes batailles en terrain ouvert)
-    var ch = opts.cheval || def.cheval;
-    if (ch && B.montes) {
+    if (aCheval) {
       this.monte = true;
       this.cheval = ch;
-      this.H = M.creerCheval({ robe: ch.robe, crin: ch.crin, caparacon: ch.caparacon, croix: ch.croix });
+      this.H = (this.P.modele && M.chevalModele(this.P.modele)) || M.creerCheval({ robe: ch.robe, crin: ch.crin, caparacon: ch.caparacon, croix: ch.croix });
       this.H.g.scale.setScalar(this.taille);
       this.g = new T.Group();
       this.g.add(this.H.g); this.g.add(this.P.g);

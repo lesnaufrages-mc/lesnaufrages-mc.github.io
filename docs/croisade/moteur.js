@@ -312,6 +312,11 @@ var Moteur = (function () {
         boite(0.1, 1.05, 0.03, lame, g, 0, 0.75, 0, o);
         boite(0.06, 0.12, 0.03, lame, g, 0, 1.32, 0, o).rotation.z = Math.PI / 4;
       }
+    } else if (f === 'dague') {
+      boite(0.06, 0.18, 0.06, cuir, g, 0, 0.02, 0);
+      boite(0.22, 0.05, 0.07, 0x7f8c8d, g, 0, 0.13, 0);
+      boite(0.08, 0.46, 0.025, lame, g, 0, 0.4, 0, o);
+      boite(0.05, 0.08, 0.025, lame, g, 0, 0.66, 0, o).rotation.z = Math.PI / 4;
     } else if (f === 'masse') {
       boite(0.07, 0.8, 0.07, bois, g, 0, 0.25, 0);
       boite(0.22, 0.26, 0.22, lame, g, 0, 0.72, 0, o);
@@ -614,6 +619,7 @@ var Moteur = (function () {
       else if (nom === 'foule') { bruit(1.6, 420, 'bandpass', 0.05, 0.6); setTimeout(function () { bruit(1.2, 650, 'bandpass', 0.035, 0.8); }, 500); }
       else if (nom === 'cloche') { [0, 900].forEach(function (t) { setTimeout(function () { bip(392, 1.6, 'sine', 0.05); bip(784, 1.1, 'sine', 0.02); bip(1176, 0.7, 'sine', 0.012); }, t); }); }
       else if (nom === 'coq') { bip(700, 0.15, 'sawtooth', 0.02, 900); setTimeout(function () { bip(900, 0.5, 'sawtooth', 0.02, 650); }, 160); }
+      else if (nom === 'luth') { var nl = [392, 440, 494, 587, 659, 784]; [0, 220, 440].forEach(function (t) { setTimeout(function () { bip(nl[Math.floor(Math.random() * nl.length)], 0.6, 'triangle', 0.025); }, t); }); }
       else if (nom === 'mouton') { bip(330, 0.5, 'sawtooth', 0.018, 300); }
     } catch (e) {}
   };

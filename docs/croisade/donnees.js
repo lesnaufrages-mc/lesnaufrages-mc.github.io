@@ -279,7 +279,7 @@ var FF = (function () {
   // forme : modèle 3D ; deg : dégâts ; dur : durée d'un coup (s) ; portee (m) ; end : endurance par coup ;
   // arc : largeur du coup (degrés) ; recul : force du recul ; brise : traverse les gardes.
   var ARMES = {
-    epee: { nom: 'Épée de chevalier', type: 'historique', forme: 'epee', deg: 14, dur: 0.55, portee: 2.0, end: 12, arc: 70, recul: 1, prix: 0,
+    epee: { lame: true, nom: 'Épée de chevalier', type: 'historique', forme: 'epee', deg: 14, dur: 0.55, portee: 2.0, end: 12, arc: 70, recul: 1, prix: 0,
       origine: 'Europe, XIe siècle', desc: 'L\'arme du chevalier : équilibrée, rapide, fiable.', couleur: 0xc9ccd1 },
     masse: { nom: 'Masse d\'armes', type: 'historique', forme: 'masse', deg: 18, dur: 0.68, portee: 1.8, end: 16, arc: 60, recul: 1.6, brise: true, prix: 120,
       origine: 'Partout au Moyen Âge', desc: 'Écrase les armures et traverse les gardes.', couleur: 0x8a8f96 },
@@ -287,14 +287,21 @@ var FF = (function () {
       origine: 'Scandinavie, arme des Varègues', desc: 'Grande hache à deux mains : touche plusieurs ennemis à la fois.', couleur: 0x9aa1a8 },
     lance: { nom: 'Lance de fantassin', type: 'historique', forme: 'lance', deg: 15, dur: 0.6, portee: 3.1, end: 12, arc: 30, recul: 1.2, prix: 90,
       origine: 'Toute l\'Europe et l\'Orient', desc: 'Très longue portée en estoc : tient l\'ennemi à distance.', couleur: 0xb0b4b9 },
-    kilij: { nom: 'Kılıç (sabre turc)', type: 'historique', forme: 'sabre', deg: 13, dur: 0.42, portee: 2.0, end: 9, arc: 80, recul: 0.8, prix: 150,
+    kilij: { lame: true, nom: 'Kılıç (sabre turc)', type: 'historique', forme: 'sabre', deg: 13, dur: 0.42, portee: 2.0, end: 9, arc: 80, recul: 0.8, prix: 150,
       origine: 'Turcs seldjoukides', desc: 'Sabre courbé très rapide, l\'arme des cavaliers turcs.', couleur: 0xd5d8dc },
     fleau: { nom: 'Fléau d\'armes', type: 'historique', forme: 'fleau', deg: 20, dur: 0.75, portee: 2.1, end: 17, arc: 75, recul: 1.5, brise: true, prix: 200,
       origine: 'Europe centrale', desc: 'La boule contourne les boucliers.', couleur: 0x7f8c8d },
-    spathion: { nom: 'Spathion romain', type: 'historique', forme: 'epee', deg: 16, dur: 0.52, portee: 2.1, end: 11, arc: 70, recul: 1, prix: 220,
+    spathion: { lame: true, nom: 'Spathion romain', type: 'historique', forme: 'epee', deg: 16, dur: 0.52, portee: 2.1, end: 11, arc: 70, recul: 1, prix: 220,
       origine: 'Empire romain d\'Orient', desc: 'Longue épée des cavaliers byzantins, héritière de la spatha romaine.', couleur: 0xe5e8e8 },
-    ulfberht: { nom: 'Épée Ulfberht', type: 'historique', forme: 'epee', deg: 19, dur: 0.5, portee: 2.1, end: 11, arc: 72, recul: 1.1, prix: 320,
+    ulfberht: { lame: true, nom: 'Épée Ulfberht', type: 'historique', forme: 'epee', deg: 19, dur: 0.5, portee: 2.1, end: 11, arc: 72, recul: 1.1, prix: 320,
       origine: 'Rhénanie, IXe-XIe siècle', desc: 'Lame d\'acier rare marquée +VLFBERH+T. Les meilleures épées de leur temps.', couleur: 0xeef2f3 },
+
+    seax: { nom: 'Scramasaxe', type: 'historique', forme: 'dague', lame: true, deg: 10, dur: 0.34, portee: 1.5, end: 6, arc: 65, recul: 0.6, prix: 60,
+      origine: 'Francs et Saxons', desc: 'Long couteau de combat à un tranchant. Très rapide, mais court.', couleur: 0xc9ccd1 },
+    couteau: { nom: 'Couteau de chasse', type: 'historique', forme: 'dague', lame: true, deg: 9, dur: 0.3, portee: 1.4, end: 5, arc: 60, recul: 0.5, prix: 35,
+      origine: 'Partout', desc: 'Le couteau du chasseur et du voyageur. Le plus rapide de tous.', couleur: 0xb0b4b9 },
+    khanjar: { nom: 'Khanjar (poignard courbe)', type: 'historique', forme: 'dague', lame: true, deg: 11, dur: 0.32, portee: 1.5, end: 6, arc: 70, recul: 0.6, prix: 90,
+      origine: 'Orient', desc: 'Poignard courbe à double tranchant des guerriers d\'Orient.', couleur: 0xe5e8e8 },
 
     excalibur: { nom: 'Excalibur', type: 'legendaire', forme: 'epee', deg: 26, dur: 0.5, portee: 2.3, end: 10, arc: 75, recul: 1.3, couleur: 0x9fd8ff, lueur: 0x66ccff,
       origine: 'Légende du roi Arthur (Bretagne)', desc: 'L\'épée du roi Arthur, rendue à la Dame du Lac… puis cachée par les Forgerons de l\'Aube.',
@@ -369,6 +376,107 @@ var FF = (function () {
     cheval: { robe: 0xa04000, vit: 7, pv: 25 }, histo: 'Les archers à cheval seldjoukides tournent autour de l\'ennemi en tirant sans jamais s\'arrêter. C\'est ainsi qu\'ils encerclent les croisés à Dorylée.' });
   u('cavalier_fatimide', { nom: 'Cavalier fatimide', pv: 55, deg: 12, vit: 3.6, arme: 'lance', look: { tunique: 0xfdfefe, pantalon: 0x2e86c1, casque: 'turban', bouclier: 'rond', bc: 0x2e86c1 }, garde: 0.3, or: 13,
     cheval: { robe: 0xd5d8dc, caparacon: 0x2e86c1, vit: 6.4, pv: 30 } });
+  // Nouvelles troupes (corps d'armée de la fin du XIe siècle)
+  u('fantassin', { nom: 'Fantassin', pv: 42, deg: 9, vit: 3.4, arme: 'hache', look: { tunique: 0x7e5109, pantalon: 0x4d3b0f, casque: 'nasal', bouclier: 'rond', bc: 0x7e5109 }, prix: 18, garde: 0.2,
+    histo: 'L\'homme de pied de base : une hache ou une épée, un bouclier et un gambison matelassé.' });
+  u('vougier', { nom: 'Vougier', pv: 46, deg: 12, vit: 3.3, arme: 'lance', look: { tunique: 0x566573, pantalon: 0x34495e, casque: 'chapel' }, prix: 30, garde: 0.25,
+    histo: 'Armé d\'une arme d\'hast à large lame, il coupe les jarrets des chevaux et fait tomber les cavaliers (+50 % contre la cavalerie).' });
+  u('piquier', { nom: 'Lancier à longue pique', pv: 50, deg: 11, vit: 3.2, arme: 'lance', look: { tunique: 0x1f618d, pantalon: 0x1b2631, casque: 'nasal', bouclier: 'kite', bc: 0x1f618d }, prix: 28, garde: 0.55,
+    histo: 'En rang serré, ses longues piques arrêtent net les charges de cavalerie.' });
+  u('archer', { nom: 'Archer', pv: 34, deg: 8, vit: 3.6, arme: 'couteau', tir: { deg: 11, cad: 1.7, portee: 25 }, look: { tunique: 0x27ae60, pantalon: 0x4d3b0f, casque: 'capuche' }, prix: 22, garde: 0.05,
+    histo: 'Tireur à l\'arc : il tire vite et loin, mais craint le corps à corps.' });
+  u('homme_armes', { nom: 'Homme d\'armes', pv: 90, deg: 15, vit: 3.5, arme: 'epee', look: { tunique: 0x85929e, pantalon: 0x566573, casque: 'nasal', bouclier: 'kite', bc: 0x2c3e50, cape: 0x2c3e50 }, prix: 120, garde: 0.4,
+    cheval: { robe: 0x5d4037, vit: 6, pv: 40, charge: 1.1 }, histo: 'Combattant professionnel équipé comme un chevalier, sans être noble.' });
+  u('sergent_cheval', { nom: 'Sergent à cheval', pv: 65, deg: 12, vit: 3.6, arme: 'lance', look: { tunique: 0xecf0f1, croix: 0x2874a6, pantalon: 0x566573, casque: 'nasal', bouclier: 'kite', bc: 0x2874a6 }, prix: 75, garde: 0.3,
+    cheval: { robe: 0x8d6e63, vit: 6.2, pv: 30, charge: 1 }, histo: 'Cavalier issu de la bourgeoisie ou de la paysannerie aisée, plus légèrement équipé que le chevalier.' });
+  u('eclaireur', { nom: 'Cavalier éclaireur', pv: 42, deg: 9, vit: 3.8, arme: 'seax', tir: { deg: 9, cad: 2.2, portee: 16 }, look: { tunique: 0x6e2c00, pantalon: 0x3e2723, casque: 'capuche' }, prix: 50, garde: 0.1,
+    cheval: { robe: 0xa04000, vit: 7.2, pv: 22 }, histo: 'Cavalier léger qui lance des javelots, harcèle l\'ennemi et poursuit les fuyards.' });
+  u('sapeur', { nom: 'Sapeur-mineur', pv: 40, deg: 8, vit: 3.3, arme: 'hache', look: { tunique: 0x6d4c41, pantalon: 0x4e342e, casque: 'capuche' }, prix: 40, garde: 0.1, specialiste: 'sapeur',
+    histo: 'Il creuse des galeries sous les murailles. Ne combat pas : pendant un siège, chaque sapeur (3 au maximum) retire un défenseur de la première vague.' });
+  u('engigneur', { nom: 'Engigneur', pv: 40, deg: 7, vit: 3.3, arme: 'masse', look: { tunique: 0x34495e, pantalon: 0x1b2631, casque: 'chapel' }, prix: 60, garde: 0.1, specialiste: 'engigneur',
+    histo: 'Constructeur de mangonneaux et de tours de siège. Ne combat pas : pendant un siège, chaque engigneur (2 au maximum) affaiblit les défenseurs de 12 %.' });
+  // Compagnies de mercenaires (à louer en bloc dans les tavernes)
+
+  // ---------- Bannières des royaumes ----------
+  // Les vraies armoiries (blasons) apparaissent vers 1130-1150 : en 1096, beaucoup de ces emblèmes sont ceux que les royaumes
+  // adopteront un peu plus tard. La note dit ce qui est vraiment de l'époque et ce qui vient après.
+  // motif : croix, croix_pommee, sautoir, lys, lion, lions2, aigle, chateau, pals, fasces, damier, bandes, cles, trident, harpe, couronnes, tiraz, etoile, uni
+  var BANNIERES = {
+    latins: { fond: '#f4f1e8', motif: 'croix', c: '#c0392b', note: 'La croix rouge cousue sur l\'épaule : c\'est le vrai signe des croisés de 1096.' },
+    romains: { fond: '#6c3483', motif: 'croix', c: '#f4d03f', note: 'Croix d\'or sur pourpre, couleur réservée à l\'empereur. L\'aigle à deux têtes viendra bien plus tard (vers 1260).' },
+    hongrie: { fond: '#c0392b', motif: 'fasces', c: '#f4f1e8', note: 'Les bandes rouges et blanches des Árpád (attestées vers 1200).' },
+    venise: { fond: '#a93226', motif: 'lion', c: '#f4d03f', note: 'Le lion de saint Marc, patron de Venise depuis 828.' },
+    genes: { fond: '#f4f1e8', motif: 'croix', c: '#c0392b', note: 'La croix rouge de saint Georges sur fond blanc (XIIe siècle).' },
+    seldjoukides: { fond: '#1a5276', motif: 'aigle', c: '#f4d03f', note: 'L\'aigle bicéphale des sultans de Roum (on le voit sur leurs monuments au XIIIe siècle).' },
+    emirs: { fond: '#1c1c1c', motif: 'tiraz', c: '#d4ac0d', note: 'Le noir des Abbassides, dont ces émirs se disent les serviteurs, avec une bande d\'écriture dorée (tiraz).' },
+    fatimides: { fond: '#f4f1e8', motif: 'tiraz', c: '#1e8449', note: 'Le blanc est la couleur des califes fatimides du Caire.' },
+    armeniens: { fond: '#a04000', motif: 'croix', c: '#f4d03f', note: 'Croix d\'or des princes arméniens. Le lion de Cilicie viendra au XIIe siècle.' },
+    abbassides: { fond: '#111111', motif: 'tiraz', c: '#d4ac0d', note: 'Le drapeau noir des califes abbassides de Bagdad : c\'est historique depuis 750.' },
+    cid: { fond: '#943126', motif: 'croix', c: '#f4d03f', note: 'On ne connaît pas la bannière du Cid : ici, une simple croix d\'or.' },
+    irlande: { fond: '#1e8449', motif: 'harpe', c: '#f4d03f', note: 'La harpe d\'or, symbole de l\'Irlande (sur les armoiries à partir du XIIIe siècle).' },
+    legende: { fond: '#1c2833', motif: 'etoile', c: '#f4d03f', note: 'Un lieu de légende.' },
+    france: { fond: '#2e4a9e', motif: 'lys', c: '#f4d03f', note: 'Les lys d\'or (vers 1180). En 1096, le roi lève l\'oriflamme rouge de Saint-Denis.' },
+    empire: { fond: '#f4d03f', motif: 'aigle', c: '#1c1c1c', note: 'L\'aigle noir de l\'empereur, héritier de Rome et de Charlemagne.' },
+    flandre: { fond: '#f4d03f', motif: 'lion', c: '#1c1c1c', note: 'Le lion noir de Flandre (vers 1160, Philippe d\'Alsace).' },
+    normandie: { fond: '#c0392b', motif: 'lions2', c: '#f4d03f', note: 'Les léopards d\'or des ducs normands (fin du XIIe siècle).' },
+    toulouse: { fond: '#c0392b', motif: 'croix_pommee', c: '#f4d03f', note: 'La croix de Toulouse, d\'or sur rouge (fin du XIIe siècle).' },
+    angleterre: { fond: '#c0392b', motif: 'lions2', c: '#f4d03f', note: 'Les léopards d\'or, venus des ducs de Normandie (trois léopards en 1198).' },
+    ecosse: { fond: '#1f4e9e', motif: 'sautoir', c: '#f4f1e8', note: 'La croix de saint André, patron de l\'Écosse.' },
+    castille: { fond: '#c0392b', motif: 'chateau', c: '#f4d03f', note: 'Le château d\'or de Castille (vers 1170).' },
+    barcelone: { fond: '#f4d03f', motif: 'pals', c: '#c0392b', note: 'Les pals rouges et or des comtes de Barcelone (vers 1150).' },
+    almoravides: { fond: '#f4f1e8', motif: 'tiraz', c: '#7e5109', note: 'Les Almoravides combattent sous des bannières blanches couvertes d\'écritures.' },
+    saragosse: { fond: '#148f77', motif: 'tiraz', c: '#f4f1e8', note: 'Bannière des Banou Houd avec une bande d\'écriture.' },
+    papaute: { fond: '#c0392b', motif: 'cles', c: '#f4d03f', note: 'Les clés de saint Pierre (sur les armoiries au XIIIe siècle).' },
+    normands: { fond: '#f4f1e8', motif: 'bandes', c: '#c0392b', note: 'Les bandes attribuées aux Hauteville, la famille de Bohémond.' },
+    sicile: { fond: '#c0392b', motif: 'bandes', c: '#f4f1e8', note: 'Les Hauteville de Sicile (couleurs attribuées plus tard).' },
+    croatie: { fond: '#f4f1e8', motif: 'damier', c: '#c0392b', note: 'Le damier rouge et blanc (attesté plus tard, au XVe siècle).' },
+    boheme: { fond: '#c0392b', motif: 'lion', c: '#f4f1e8', note: 'Le lion d\'argent de Bohême (XIIIe siècle).' },
+    pologne: { fond: '#c0392b', motif: 'aigle', c: '#f4f1e8', note: 'L\'aigle blanc des Piasts (XIIIe siècle).' },
+    rus: { fond: '#1f4e9e', motif: 'trident', c: '#f4d03f', note: 'Le trident des princes de Kiev : il est déjà sur les pièces de Vladimir (vers 1000).' },
+    danemark: { fond: '#f4d03f', motif: 'lion', c: '#1f4e9e', note: 'Les lions bleus de Danemark (vers 1190).' },
+    norvege: { fond: '#c0392b', motif: 'lion', c: '#f4d03f', note: 'Le lion d\'or de Norvège (XIIIe siècle).' },
+    suede: { fond: '#1f4e9e', motif: 'couronnes', c: '#f4d03f', note: 'Les trois couronnes (XIVe siècle).' },
+    pise: { fond: '#c0392b', motif: 'croix_pommee', c: '#f4f1e8', note: 'La croix blanche de Pise.' },
+    zirides: { fond: '#76448a', motif: 'tiraz', c: '#f4d03f', note: 'Bannière des émirs de Mahdia avec une bande d\'écriture.' },
+    mossoul: { fond: '#111111', motif: 'tiraz', c: '#d4ac0d', note: 'Kerbogha sert le sultan seldjoukide et le calife abbasside : le noir est sa couleur.' },
+    prusses: { fond: '#7d6608', motif: 'uni', c: '#4e342e', note: 'Pas de bannière connue : les Prusses n\'ont ni roi ni écriture.' },
+    coumans: { fond: '#b9770e', motif: 'uni', c: '#4e342e', note: 'Les nomades coumans portent des queues de cheval sur leurs lances, pas de bannières.' }
+  };
+
+  var COMPAGNIES = [
+    { id: 'flamands', nom: 'Les piquiers flamands', troupes: { piquier: 4, arbaletrier: 2 }, prix: 170, desc: 'Des Flamands rudes et disciplinés, venus chercher fortune en Orient.' },
+    { id: 'normands', nom: 'La compagnie normande', troupes: { normand: 2, fantassin: 3 }, prix: 220, desc: 'Des Normands d\'Italie du Sud, aguerris contre les Romains et les Sarrasins.' },
+    { id: 'catalans', nom: 'Les almogavres catalans', troupes: { fantassin: 4, eclaireur: 1 }, prix: 150, desc: 'Montagnards des Pyrénées qui vivent de razzias : rapides et sans pitié.' },
+    { id: 'petchenegues', nom: 'La horde petchénègue', troupes: { petchenegue: 3, eclaireur: 2 }, prix: 200, desc: 'Cavaliers des steppes qui servent le plus offrant.' },
+    { id: 'archers', nom: 'Les archers gallois', troupes: { archer: 5 }, prix: 120, desc: 'Archers des collines, déjà redoutés par les Normands d\'Angleterre.' },
+    { id: 'genois', nom: 'Les arbalétriers de Gênes', troupes: { genois: 3, vougier: 2 }, prix: 210, desc: 'Les meilleurs tireurs de la Méditerranée, avec leurs gardes.' }
+  ];
+  // Armures (armurier), bijoux (orfèvre), remèdes (apothicaire), bottes (cordonnier), manteaux (fourreur)
+  var ARMURES = {
+    gambison: { nom: 'Gambison matelassé', prix: 60, pv: 15, desc: 'Veste épaisse de toile et de laine. Légère et bon marché.' },
+    broigne: { nom: 'Broigne de cuir à anneaux', prix: 140, pv: 28, desc: 'Cuir épais renforcé d\'anneaux de fer cousus.' },
+    haubert: { nom: 'Haubert de mailles', prix: 240, pv: 40, desc: 'Longue cotte de mailles jusqu\'aux genoux : la protection du chevalier de 1096.' },
+    klibanion: { nom: 'Klibanion (cuirasse lamellaire)', prix: 300, pv: 48, casque: 'rond', desc: 'Cuirasse de lamelles de fer des cavaliers romains.' },
+    haubert_heaume: { nom: 'Haubert et heaume', prix: 380, pv: 58, casque: 'heaume', desc: 'Le haubert avec un grand heaume fermé. Le plus solide en 1096.' }
+  };
+  var BIJOUX = {
+    anneau: { nom: 'Anneau sigillaire en or', prix: 150, icone: '💍', desc: 'Ton propre sceau : on te respecte davantage. +5 renommée.' },
+    coupe: { nom: 'Coupe d\'argent ciselée', prix: 120, icone: '🏆', desc: 'Un cadeau digne d\'un prince : +10 de relation avec le royaume de la ville.' },
+    broche: { nom: 'Broche émaillée', prix: 90, icone: '📿', desc: 'Un bijou à offrir : +1 d\'affection avec ta compagne de route.' }
+  };
+  var REMEDES = {
+    onguent: { nom: 'Onguent de guerre', prix: 15, icone: '🧴', desc: '+20 PV à la prochaine bataille.' },
+    remede: { nom: 'Remède pour les blessés', prix: 30, icone: '⚗️', desc: 'À la prochaine bataille, deux fois moins de soldats perdus.' },
+    epices: { nom: 'Épices (au prix de l\'apothicaire)', prix: 40, icone: '🌶️', desc: 'Une mesure d\'épices pour faire du commerce.' }
+  };
+  var BOTTES = {
+    bottes: { nom: 'Bottes de cuir', prix: 45, vit: 0.06, desc: 'Tu cours 6 % plus vite à pied.' },
+    bottes_fines: { nom: 'Bottes fines de Cordoue', prix: 110, vit: 0.12, desc: 'Le cuir de Cordoue, le meilleur d\'Europe : 12 % plus vite à pied.' }
+  };
+  var MANTEAUX = {
+    manteau: { nom: 'Manteau fourré', prix: 70, pv: 8, couleur: 0x6d4c41, desc: '+8 PV et une cape de fourrure.' },
+    pelisse: { nom: 'Pelisse de zibeline', prix: 160, pv: 12, couleur: 0x3e2723, desc: 'La fourrure des princes de la Rus : +12 PV.' }
+  };
   // Grades : volontaire > milicien > sergent / skutatos > chevalier monté / cataphracte > chef (avec l'expérience)
   u('banneret', { nom: 'Chevalier banneret (chef)', pv: 140, deg: 21, vit: 3.6, arme: 'epee', look: { tunique: 0xf1c40f, croix: 0xc0392b, pantalon: 0x85929e, casque: 'heaume', bouclier: 'kite', bc: 0xf1c40f, cape: 0xc0392b }, prix: 260, garde: 0.5, faction: 'latins', chef: true,
     cheval: { robe: 0x1c1c1c, caparacon: 0xf1c40f, croix: 0xc0392b, vit: 6.2, pv: 60, charge: 1.3 },
@@ -978,7 +1086,7 @@ var FF = (function () {
     damas: 'Sarraf (changeur)', caire: 'Sarraf (changeur)', pise: 'Banquier pisan', paris: 'Changeur du Grand-Pont', londres: 'Changeur de Londres', cologne: 'Changeur de Cologne', kiev: 'Changeur de Kiev', palerme: 'Changeur de Palerme' };
 
   return {
-    CHEVAUX: CHEVAUX,
+    CHEVAUX: CHEVAUX, ARMURES: ARMURES, BIJOUX: BIJOUX, REMEDES: REMEDES, BOTTES: BOTTES, MANTEAUX: MANTEAUX, COMPAGNIES: COMPAGNIES, BANNIERES: BANNIERES,
     proj: proj, FACTIONS: FACTIONS, RELIGIONS: RELIGIONS, LIEUX: LIEUX, ROUTES: ROUTES, ARMES: ARMES, UNITES: U, PEAU: PEAU,
     NAVIRES: NAVIRES, PERSOS: PERSOS, COMBATS: COMBATS, RENCONTRES: RENCONTRES, HISTOIRE: HISTOIRE, LEGENDES: LEGENDES,
     COMPAGNONS: COMPAGNONS, HEROS: HEROS, CAPITALES: CAPITALES, GUERRES: GUERRES, RIVAUX: RIVAUX, TALENTS: TALENTS, COURS: COURS, RECRUES: RECRUES, MARCH: MARCH, COMMERCE: COMMERCE, BANQUES: BANQUES

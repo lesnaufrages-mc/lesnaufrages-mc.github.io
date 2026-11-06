@@ -7,6 +7,13 @@
   var PERSOS = root.PERSONNAGES || require('./personnages.js');
 
   var MAX_UNITES = 8;
+
+  // Extensions (ex. l'Édition Couronne, couronne.js) : elles ajoutent leurs règles à ces moments du jeu.
+  // ext('revenu', etat, f) additionne ce que chaque extension renvoie (0 si rien).
+  var EXT = [];
+  function ext(nom, etat, a, b) {
+    return EXT.reduce(function (s, x) { var v = x[nom] ? x[nom](etat, a, b) : 0; return s + (+v || 0); }, 0);
+  }
   var CHAMP = { l: 360, h: 520 };
 
   // ---------- Unités ----------
@@ -205,7 +212,7 @@
   function epoque(id) { return HISTOIRE.EPOQUES.filter(function (e) { return e.id === id; })[0]; }
 
   // ---------- Partie ----------
-  function nouvellePartie(epoqueId, factionId, graine) {
+  function nouvellePartie(epoqueId, factionId, graine, opts) {
     graine = graine || (Date.now() % 1e9);
     var E = epoque(epoqueId), alea = hasard(graine);
     var factions = E.factions.map(function (f) {
@@ -255,6 +262,8 @@
     initDiplo(etat, alea);
     creerCour(etat, alea);
     assurerConseil(etat);
+    if (opts && opts.couronne) etat.couronne = true;
+    EXT.forEach(function (x) { if (x.partie) x.partie(etat, alea); });
     etat.provinces.forEach(function (p, i) { p.ordre = cibleOrdre(etat, i); });
     return etat;
   }
@@ -281,7 +290,7 @@
     var e = etat.provinces.reduce(function (s, p) {
       return s + (p.proprio === f ? p.armee.reduce(function (t, u) { return t + entretienUnite(u.t); }, 0) + (p.flotte || []).reduce(function (t, n) { return t + entretienNavire(n.t); }, 0) : 0);
     }, 0);
-    return f === etat.joueur ? Math.round(e * (1 - 0.03 * bonusConseil(etat, 'marechal'))) : e;
+    return Math.round(e * Math.max(0.3, 1 - (f === etat.joueur ? 0.03 * bonusConseil(etat, 'marechal') : 0) + ext('entretien', etat, f)));
   }
   function estCapitale(etat, i) { var f = etat.provinces[i].proprio; return f >= 0 && etat.factions[f].capitale === i; }
   // Ce que chaque cause ajoute ou retire à l'ordre public d'une province (affiché au joueur).
@@ -305,6 +314,7 @@
       var lx = luxes(etat, f).length;
       if (lx) d.push(['💎 Produits de luxe (' + lx + ')', 2 * Math.min(4, lx)]);
     }
+    EXT.forEach(function (x) { if (x.ordre) x.ordre(etat, i, d); });
     return d;
   }
   function cibleOrdre(etat, i) {
@@ -599,7 +609,7 @@
           F.conj = null;
         }
         // Mort du souverain
-        if (alea() < probaMort(an - F.roi.ne, F.roi.fragile)) {
+        if (alea() < probaMort(an - F.roi.ne, F.roi.fragile) * Math.max(0.2, 1 + ext('mortRoi', etat, f))) {
           etat.annee = an; // pour l'âge affiché
           var msgs = succession(etat, f, alea);
           etat.annee = apres;
@@ -902,7 +912,7 @@
   var QUETES = HISTOIRE.QUETES || [];
   function quetes(etat, f) {
     var F = etat.factions[f], faites = etat.quetes || {};
-    return QUETES.filter(function (q) { return q.pour.indexOf(F.id) >= 0; }).map(function (q) {
+    return QUETES.filter(function (q) { return q.pour.indexOf(F.id) >= 0 && (!q.couronne || etat.couronne); }).map(function (q) {
       var manque = q.provinces.filter(function (id) { return etat.provinces[INDEX[id]].proprio !== f; }).map(function (id) { return INDEX[id]; });
       return { q: q, tenues: q.provinces.length - manque.length, total: q.provinces.length, manque: manque, faite: faites[q.id] != null ? faites[q.id] : null };
     });
@@ -941,7 +951,7 @@
 
   function revenu(etat, f) {
     var r = etat.provinces.reduce(function (s, p) { return s + (p.proprio === f ? revenuProvince(p) : 0); }, 0);
-    return f === etat.joueur ? Math.round(r * (1 + 0.02 * bonusConseil(etat, 'intendant'))) : r;
+    return Math.round(r * Math.max(0.3, 1 + (f === etat.joueur ? 0.02 * bonusConseil(etat, 'intendant') : 0) + ext('revenu', etat, f)));
   }
   function nbProvinces(etat, f) {
     return etat.provinces.filter(function (p) { return p.proprio === f; }).length;
@@ -1246,6 +1256,7 @@
       c.agit = 25;
       c.ordre = Math.min(c.ordre == null ? 40 : c.ordre, 40);
       c.impots = 1;
+      EXT.forEach(function (x) { if (x.conquete) x.conquete(etat, att.vers, ancien, att.camp); });
       log(etat, '⚔️ ' + nomF(etat, att.camp) + ' prend ' + PROV[att.vers].nom + ' à ' + nomF(etat, ancien) + '.');
       if (ancien >= 0 && nbProvinces(etat, ancien) === 0) log(etat, '💀 ' + nomF(etat, ancien) + ' a disparu !');
       verifierFin(etat);
@@ -1702,6 +1713,7 @@
     var defenses = tourIA(etat);
     etat.provinces.forEach(function (p) { p.armee.forEach(function (u) { u.bouge = false; }); (p.flotte || []).forEach(function (n) { n.bouge = false; }); });
     tourQuetes(etat);
+    EXT.forEach(function (x) { if (x.tour) x.tour(etat, aleaT, avant); });
     verifierFin(etat);
     return defenses;
   }
@@ -1728,7 +1740,10 @@
     valeurPour: valeurPour, salaires: salaires, choisirEvenement: choisirEvenement, assurerConseil: assurerConseil, estAuConseil: estAuConseil,
     membresLibres: membresLibres, membre: membre, verifMariage: verifMariage, chanceMariage: chanceMariage, PERSOS: PERSOS,
     relation: relation, diplomatie: diplomatie, proposer: proposer, repondre: repondre, humeur: humeur, NOM_REL: NOM_REL,
-    assurerDiplo: assurerDiplo, changerAttitude: changerAttitude, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log
+    assurerDiplo: assurerDiplo, changerAttitude: changerAttitude, finDuTour: finDuTour, tourIA: tourIA, verifierFin: verifierFin, log: log,
+    // Pour les extensions (couronne.js).
+    etendre: function (x) { EXT.push(x); }, ext: ext, INDEX: INDEX, aleaPartie: aleaPartie, succession: succession, changerRelation: changerRelation,
+    creerUnite: creerUnite, meilleuresRecrues: meilleuresRecrues, nomF: nomF, rompreCommerce: rompreCommerce, creerNoble: creerNoble
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = M;
   else root.Moteur = M;

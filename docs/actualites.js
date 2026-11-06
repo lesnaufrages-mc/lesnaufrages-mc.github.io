@@ -8,6 +8,59 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-11-02",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouveau jeu : Ferrum et Fides, la démo 3D sur la première croisade",
+    texte: "1096 : joue un Latin parti de Bouillon ou un Romain de Constantinople, et traverse la vraie carte de l'Europe jusqu'à Jérusalem. Combats en 3D où tu choisis la direction de tes coups, troupes et mercenaires historiques, batailles navales avec feu grégeois, villes à visiter, cours et intrigues, romance et choix qui changent l'histoire. Et les armes des légendes : Excalibur, Durandal, Mjöllnir, Kusanagi… C'est une démo : dis-nous ce que tu en penses sur le Discord !",
+    lien: "croisade/",
+    bouton: "Jouer à la démo"
+  },
+  {
+    date: "2026-11-01",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouvelle vidéo : le top 5 des plus grands conquérants de l'histoire",
+    texte: "Attila, Jules César, Napoléon, Alexandre le Grand et Gengis Khan : cinq destins qui ont redessiné la carte du monde. Découvre leur histoire, l'étendue de leurs empires sur un globe animé et leurs plus grandes batailles reconstituées en 3D, d'Alésia à Austerlitz. Qui mérite selon toi la première place ? Donne ton avis en commentaire sur YouTube ou sur notre Discord.",
+    video: "videos/top5-conquerants.mp4",
+    image: "videos/top5-conquerants.jpg",
+    lien: "strategie/",
+    bouton: "Mène tes propres batailles dans Imperium of Wars"
+  },
+  {
+    date: "2026-10-30",
+    categorie: "site",
+    epingle: true,
+    titre: "CLUTCH passe à 10 questions par jour !",
+    texte: "Chaque jour, 10 rounds pour tout le monde : 1 question du jour puis 9 questions du facile au difficile, avec 2 minutes chrono et jusqu'à 1000 points par round. Nouveaux jeux : R6, Overwatch, Call of Duty, Apex, Brawl Stars… Partage ton score (8/10 ?) et enchaîne ensuite les parties libres.",
+    video: "videos/clutch-10-rounds-trailer.mp4",
+    image: "videos/clutch-10-rounds-trailer.jpg",
+    lien: "esport/",
+    bouton: "Jouer à CLUTCH"
+  },
+  {
+    date: "2026-10-30",
+    categorie: "appli",
+    epingle: true,
+    titre: "Mot Mystère : des indices plus simples et 3 niveaux",
+    texte: "Choisis ton niveau (Mousse, Matelot ou Capitaine) et ouvre tes indices : une phrase, une lettre, une 2e lettre, ou 6 lettres en moins sur le clavier. Chaque mot trouvé débloque une page du Journal du naufragé. Et en plus, 30 parties libres par jour.",
+    video: "videos/mot-mystere-indices-trailer.mp4",
+    image: "videos/mot-mystere-indices-trailer.jpg",
+    lien: "jouer/",
+    bouton: "Jouer à Mot Mystère"
+  },
+  {
+    date: "2026-10-28",
+    categorie: "site",
+    epingle: true,
+    titre: "Nouveau jeu : CLUTCH, le mot du jour esport !",
+    texte: "Une question esport par jour, la même pour tout le monde : LoL, CS2, Valorant, Dota 2, Fortnite, de la scène française à la Corée. La réponse est le mot à trouver, en 6 essais. Regarde le trailer, puis viens prouver que tu connais la scène.",
+    video: "videos/clutch-trailer.mp4",
+    image: "videos/clutch-trailer.jpg",
+    lien: "esport/",
+    bouton: "Jouer à CLUTCH"
+  },
+  {
     date: "2026-10-26",
     categorie: "site",
     epingle: true,

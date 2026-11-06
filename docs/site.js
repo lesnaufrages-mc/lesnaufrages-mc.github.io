@@ -27,6 +27,40 @@ var SITE = {
   }
   function nombre(n) { return Number(n).toLocaleString('fr-FR'); }
 
+  // 2. Liens « Gérer mes cookies » : rouvrent le message de consentement de Google
+  // (publié depuis AdSense > Confidentialité et messages). Si ce message n'est pas
+  // chargé (bloqueur de pub, message pas encore publié), on va sur la page Cookies.
+  window.googlefc = window.googlefc || {};
+  window.googlefc.callbackQueue = window.googlefc.callbackQueue || [];
+  document.addEventListener('click', function (e) {
+    var lien = e.target.closest && e.target.closest('[data-cookies]');
+    if (!lien) return;
+    e.preventDefault();
+    var ouvert = false;
+    window.googlefc.callbackQueue.push(function () {
+      if (typeof window.googlefc.showRevocationMessage === 'function') { ouvert = true; window.googlefc.showRevocationMessage(); }
+    });
+    setTimeout(function () {
+      if (ouvert) return;
+      if (lien.href) location.href = lien.href.split('#')[0] + '#gerer';
+      else $('[data-cookies-info]').forEach(function (el) { el.hidden = false; });
+    }, 800);
+  });
+
+  // 3. Page Cookies : effacer tout ce que le site a enregistré sur cet appareil.
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('[data-effacer]')) return;
+    if (!confirm('Effacer toutes les données du site sur cet appareil ? Tu perds tes parties en cours et ta série, et tu seras déconnecté du forum.')) return;
+    try { localStorage.clear(); sessionStorage.clear(); } catch (err) {}
+    document.cookie.split(';').forEach(function (c) {
+      var nom = c.split('=')[0].trim();
+      if (nom) document.cookie = nom + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    });
+    if (window.caches) caches.keys().then(function (cles) { cles.forEach(function (k) { caches.delete(k); }); });
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(function (r) { r.forEach(function (x) { x.unregister(); }); });
+    $('[data-effacer-ok]').forEach(function (el) { el.hidden = false; });
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     $('[data-year]').forEach(function (el) { el.textContent = new Date().getFullYear(); });
 

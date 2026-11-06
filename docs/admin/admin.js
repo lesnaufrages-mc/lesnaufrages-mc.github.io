@@ -5,6 +5,7 @@
   var esc = C.esc;
   var onglet = 'signalements';
   var PROFIL = 'profil:profils!auteur(*)';
+  var JEUX = { 'mot-mystere': '🔤 Mot Mystère', clutch: '🎮 CLUTCH', imperium: '⚔️ Imperium', ferrum: '✠ Ferrum et Fides' };
   var CATS = { site: '🌐 Site', appli: '📱 Appli', discord: '💬 Discord', minecraft: '⛏️ Minecraft', bot: '🤖 Bot' };
 
   function verifie(r) { if (r.error) throw r.error; return r; }
@@ -80,11 +81,31 @@
   function membres() {
     var q = C.sb.from('profils').select('*').order('cree_le', { ascending: false }).limit(100);
     if (recherche) q = q.ilike('pseudo', '%' + recherche.replace(/[%_\\]/g, '\\$&') + '%');
+    // Qui a l'Édition Couronne (si la table premium existe : supabase/couronne.sql).
+    var couronne = null;
+    // Parties sauvegardées en ligne (si la table existe : supabase/amis-parties.sql).
+    var parties = null;
     q.then(verifie).then(function (r) {
+      var ids = r.data.map(function (p) { return p.id; });
+      if (!ids.length) return r;
+      return Promise.all([
+        C.sb.from('premium').select('id, source').in('id', ids).then(function (x) {
+          if (!x.error) { couronne = {}; x.data.forEach(function (c) { couronne[c.id] = c.source; }); }
+        }, function () {}),
+        C.sb.from('parties').select('joueur, jeu, maj, reset_le').in('joueur', ids).then(function (x) {
+          if (x.error) return;
+          parties = {};
+          x.data.forEach(function (l) { (parties[l.joueur] = parties[l.joueur] || []).push(l); });
+        }, function () {})
+      ]).then(function () { return r; });
+    }).then(function (r) {
       panneau('<form class="search" data-recherche><input name="q" placeholder="Chercher un pseudo…" value="' + esc(recherche) + '"><button class="btn btn-ghost btn-sm">Chercher</button></form>' +
         '<p class="small muted"><b>Modo / Responsable</b> : suppriment les messages, épinglent et verrouillent les sujets. <b>Admin / Fondateur</b> : tout, y compris les membres, les grades et les actus. ' +
         '<b>Helper, Builder, Dev, Animateur</b> : badge staff (mêmes droits qu\'un membre sur le site). Tu ne peux gérer que les grades inférieurs au tien.</p>' +
-        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Grade</th><th>Statut</th></tr></thead><tbody>' +
+        (parties ? '<p class="small muted"><b>🎮 Parties</b> : la progression des joueurs connectés dans Mot Mystère, CLUTCH et Imperium of Wars. ' +
+          '« Remettre à zéro » efface la partie et les stats du jeu choisi (sur tous ses appareils, dès qu\'il rouvre le jeu). Impossible d\'annuler.</p>' : '') +
+        (couronne ? '<p class="small muted"><b>⚜️ Couronne</b> : l\'Édition Couronne d\'Imperium of Wars. Elle s\'active toute seule après un paiement ; ici tu peux l\'offrir ou la retirer à la main (cadeau, paiement par un autre moyen, remboursement).</p>' : '') +
+        '<div class="card table"><table><thead><tr><th>Pseudo</th><th>Inscrit</th><th>Grade</th><th>Statut</th>' + (parties ? '<th>🎮 Parties</th>' : '') + (couronne ? '<th>⚜️ Couronne</th>' : '') + '</tr></thead><tbody>' +
         r.data.map(function (p) {
           var moi = p.id === C.user.id;
           var monRang = C.rang(), fondateur = C.profil.role === 'fondateur';
@@ -97,9 +118,21 @@
               return '<option value="' + g.id + '"' + (p.role === g.id ? ' selected' : '') + '>' + g.nom + '</option>';
             }).join('') + '</select></td>' +
             '<td>' + (!gerable ? '—' : '<button type="button" class="btn btn-sm ' + (p.banni ? 'btn-ghost' : 'btn-danger') + '" data-ban="' + !p.banni + '">' +
-              (p.banni ? 'Débannir' : 'Bannir') + '</button>' + (p.banni ? ' <span class="role ban">Banni</span>' : '')) + '</td></tr>';
+              (p.banni ? 'Débannir' : 'Bannir') + '</button>' + (p.banni ? ' <span class="role ban">Banni</span>' : '')) + '</td>' +
+            (parties ? '<td>' + cellParties(parties[p.id] || [], moi || gerable) + '</td>' : '') +
+            (couronne ? '<td>' + (couronne[p.id] ? '<span class="small">✔ ' + (couronne[p.id] === 'admin' ? 'offerte' : 'achetée') + '</span> <button type="button" class="btn btn-sm btn-ghost" data-couronne="non">Retirer</button>' :
+              '<button type="button" class="btn btn-sm btn-ghost" data-couronne="oui">Offrir</button>') + '</td>' : '') + '</tr>';
         }).join('') + '</tbody></table></div>');
     }).catch(function (x) { panneau('<p class="err">' + esc(C.erreur(x)) + '</p>'); });
+  }
+
+  function cellParties(liste, gerable) {
+    var jeux = liste.filter(function (l) { return !l.reset_le || l.maj > l.reset_le; });
+    var txt = jeux.length ? jeux.map(function (l) { return '<span class="small" title="Dernière sauvegarde ' + esc(C.quand(l.maj)) + '">' + JEUX[l.jeu] + '</span>'; }).join('<br>')
+      : '<span class="small muted">Aucune</span>';
+    if (!gerable) return txt;
+    return txt + '<select class="reset-sel" data-reset aria-label="Remettre à zéro les parties"><option value="">🔄 Remettre à zéro…</option>' +
+      '<option value="tous">Tous les jeux</option>' + Object.keys(JEUX).map(function (j) { return '<option value="' + j + '">' + JEUX[j] + '</option>'; }).join('') + '</select>';
   }
 
   /* ---------- Actualités ---------- */
@@ -146,6 +179,13 @@
       if (ban && !confirm('Bannir ' + pseudo + ' ? Il pourra lire le forum mais plus écrire.')) return;
       return C.sb.from('profils').update({ banni: ban }).eq('id', b.closest('tr').getAttribute('data-membre')).then(verifie).then(affiche).catch(oups);
     }
+    if (b.hasAttribute('data-couronne')) {
+      var donner = b.getAttribute('data-couronne') === 'oui', idM = b.closest('tr').getAttribute('data-membre');
+      var nomM = b.closest('tr').querySelector('b').textContent;
+      if (!confirm((donner ? 'Offrir' : 'Retirer') + ' l\'Édition Couronne ' + 'à ' + nomM + ' ?')) return;
+      return (donner ? C.sb.from('premium').insert({ id: idM, source: 'admin' }) : C.sb.from('premium').delete().eq('id', idM))
+        .then(verifie).then(affiche).catch(oups);
+    }
     if (b.hasAttribute('data-suppr-actu')) {
       if (!confirm('Supprimer cette actualité du site ?')) return;
       return C.sb.from('actualites').delete().eq('id', Number(b.getAttribute('data-suppr-actu'))).then(verifie).then(affiche).catch(oups);
@@ -156,6 +196,15 @@
     }
   });
   box.addEventListener('change', function (e) {
+    if (e.target.hasAttribute('data-reset')) {
+      var jeu = e.target.value, ligne = e.target.closest('tr'), nom = ligne.querySelector('b').textContent;
+      if (!jeu) return;
+      var quoi = jeu === 'tous' ? 'TOUTES les parties (Mot Mystère, CLUTCH et Imperium)' : 'la partie ' + JEUX[jeu].replace(/^\S+ /, '');
+      if (!confirm('Remettre à zéro ' + quoi + ' de ' + nom + ' ?\nSa progression et ses stats seront effacées. Impossible d\'annuler.')) { e.target.value = ''; return; }
+      return C.sb.rpc('reinitialiser_parties', { p_joueur: ligne.getAttribute('data-membre'), p_jeu: jeu === 'tous' ? null : jeu })
+        .then(verifie).then(function () { alert('C\'est fait ✅ La partie de ' + nom + ' repartira de zéro la prochaine fois qu\'il ouvrira le jeu.'); affiche(); })
+        .catch(function (x) { oups(x); affiche(); });
+    }
     if (!e.target.hasAttribute('data-role')) return;
     var tr = e.target.closest('tr');
     C.sb.from('profils').update({ role: e.target.value }).eq('id', tr.getAttribute('data-membre')).then(verifie).then(affiche)

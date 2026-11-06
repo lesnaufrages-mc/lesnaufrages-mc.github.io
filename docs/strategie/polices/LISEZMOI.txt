@@ -1,0 +1,3 @@
+Cinzel - Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel)
+Police distribuée sous la licence SIL Open Font License 1.1 : https://openfontlicense.org
+Fichiers repris tels quels de Google Fonts et hébergés ici pour ne pas envoyer l'adresse IP des joueurs à Google.

@@ -1,7 +1,7 @@
 # Mot Mystère
 
 Jeu de mots gratuit en français : un mot de 5 lettres par jour, le même pour tout le monde,
-6 essais. À la fin, on partage sa grille d'emojis (🟩🟨⬛) sans spoiler le mot. C'est ce
+6 essais. À la fin, on partage sa grille d'emojis (🟩🟨🟦) sans spoiler le mot. C'est ce
 partage qui a rendu Wordle viral (des millions de joueurs en quelques semaines, sans pub payée).
 
 ## Pourquoi cette idée (et pas une autre)
@@ -40,6 +40,11 @@ Tests de la logique du jeu : `npm test`
 - Statistiques et série de jours (🔥) sauvegardées sur le téléphone
 - Bouton « Partager mon score » (WhatsApp, Insta, SMS…)
 - Bouton « Rejouer (partie bonus) » derrière une vraie pub récompensée AdMob (simulée dans Expo Go)
+- **Journal du naufragé** (ce qui nous démarque) : chaque mot du jour est un mot d'une histoire suivie,
+  le trouver débloque la page du jour (`src/journal.js`, saison 1 = 30 pages, jours 1 à 30). Page ratée ou
+  manquée : on la « repêche » avec une pub récompensée (gratuit sur le web). Après la page 30, le jeu reprend
+  `src/words.js` : pour la saison 2, ajoute les pages à la suite dans `PAGES`.
+- **Bouteille à la mer** : un indice sur le mot, qui coûte un essai (🍾 dans la grille partagée)
 - Consentement RGPD au démarrage, icône de l'appli, politique de confidentialité, config de build `eas.json`
 
 ## Pour gagner de l'argent (prochaines étapes)
@@ -57,7 +62,8 @@ Tests de la logique du jeu : `npm test`
   est dans `docs/site.js` (`GOATCOUNTER`). Les visites se consultent sur https://lesnaufrages.goatcounter.com.
 - **Si tu refais `expo export -p web`** vers `docs/jouer/`, remets la ligne `<script src="/site.js" defer></script>`
   dans `docs/jouer/index.html` pour continuer à compter les visites du jeu., ainsi que les lignes du bouton Installer
-  (`manifest`, `theme-color`, `apple-touch-icon` et `<script src="/jouer/installer.js" defer></script>`).
+  (`manifest`, `theme-color`, `apple-touch-icon` et `<script src="/jouer/installer.js" defer></script>`), et les 3 lignes de la sauvegarde en ligne
+  (`/supabase-config.js`, supabase-js et `<script src="/sauvegarde.js" data-jeu="mot-mystere"></script>`, avant `site.js`).
 - **Pubs du site (Google AdSense)** : le code AdSense est déjà dans le `<head>` de `index.html`, `actualites.html`
   et `confidentialite.html`, et `docs/ads.txt` est servi sur https://lesnaufrages-mc.github.io/ads.txt.
   Ce qu'il reste à faire sur https://adsense.google.com (avec le même compte Google que AdMob) :

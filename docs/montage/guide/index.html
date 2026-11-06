@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide de Naufragés Studio – Mode d'emploi et tutoriels</title>
+<meta name="description" content="Le guide complet de Naufragés Studio, le logiciel de montage vidéo gratuit : interface, timeline, coupe, transitions, textes, sous-titres automatiques, son, export MP4, tutoriels pas à pas pour YouTube et les Shorts, raccourcis clavier et dépannage.">
+<meta name="theme-color" content="#0f0f10">
+<link rel="icon" href="../../icon.png">
+<meta property="og:title" content="Guide de Naufragés Studio – Mode d'emploi et tutoriels">
+<meta property="og:description" content="Tout pour monter tes vidéos YouTube et tes Shorts avec Naufragés Studio, pas à pas.">
+<meta property="og:image" content="https://lesnaufrages-mc.github.io/montage/img/studio-montage.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../style.css">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
+<meta name="google-adsense-account" content="ca-pub-7922547142050402">
+<style>
+.guide{display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;padding:40px 20px 80px}
+.sommaire{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 100px);overflow:auto;font-size:15px;border-right:1px solid var(--line);padding-right:16px}
+.sommaire b{display:block;margin:0 0 8px;color:var(--sand);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.sommaire ol{margin:0;padding-left:28px}
+.sommaire li{margin:5px 0}
+.sommaire a{color:var(--muted);text-decoration:none}
+.sommaire a:hover{color:var(--txt)}
+.doc{min-width:0;max-width:820px}
+.doc h1{margin:0 0 12px}
+.doc h2{margin:56px 0 12px;padding-top:12px;border-top:1px solid var(--line);font-size:30px;scroll-margin-top:80px}
+.doc h3{margin:28px 0 8px;font-size:20px;scroll-margin-top:80px}
+.doc p,.doc li{line-height:1.65}
+.doc li{margin:4px 0}
+.doc img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);margin:18px 0 6px}
+.doc figure{margin:0 0 18px}
+.doc figcaption{color:var(--muted);font-size:14px}
+.doc kbd{display:inline-block;min-width:22px;padding:1px 7px;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;background:var(--card);font:600 13px/1.6 ui-monospace,Consolas,monospace;text-align:center;white-space:nowrap}
+.doc code{font-size:.92em}
+.doc table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+.doc th,.doc td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.doc th{color:var(--sand);font-weight:700}
+.encadre{background:var(--card);border:1px solid var(--line);border-left:4px solid #7c5cff;border-radius:8px;padding:12px 16px;margin:16px 0}
+.encadre.attention{border-left-color:#ff5c8a}
+.encadre p{margin:0}
+.etapes-num{counter-reset:n;list-style:none;padding:0}
+.etapes-num>li{counter-increment:n;position:relative;padding:4px 0 4px 44px;margin:10px 0}
+.etapes-num>li:before{content:counter(n);position:absolute;left:0;top:4px;width:30px;height:30px;border-radius:50%;background:#7c5cff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}
+.zones div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.zones b{display:block;margin-bottom:4px}
+.retour{display:inline-block;margin-top:8px}
+@media (max-width:900px){
+  .guide{grid-template-columns:1fr;gap:10px}
+  .guide{padding:24px 16px 60px}
+  .sommaire{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);padding:0 0 14px}
+  .doc table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../../"><img src="../../icon.png" alt="">MOT MYSTÈRE</a>
+    <div class="links">
+      <a href="../">Télécharger Naufragés Studio</a>
+      <a href="./" class="on">Guide</a>
+      <a href="../../actualites.html">Actualités</a>
+      <a href="../../forum/">Forum</a>
+      <a class="btn btn-play" href="../../jouer/">Jouer</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap guide">
+<aside class="sommaire" aria-label="Sommaire">
+  <b>Sommaire</b>
+  <ol>
+    <li><a href="#installer">Installer le logiciel</a></li>
+    <li><a href="#interface">Découvrir l'interface</a></li>
+    <li><a href="#projets">Les projets</a></li>
+    <li><a href="#importer">Importer des médias</a></li>
+    <li><a href="#timeline">La timeline</a></li>
+    <li><a href="#monter">Couper et assembler</a></li>
+    <li><a href="#transitions">Fondus et transitions</a></li>
+    <li><a href="#textes">Textes et titres</a></li>
+    <li><a href="#soustitres">Sous-titres automatiques</a></li>
+    <li><a href="#image">Cadrage, mouvement, couleurs</a></li>
+    <li><a href="#son">Le son</a></li>
+    <li><a href="#exporter">Exporter la vidéo</a></li>
+    <li><a href="#tuto-youtube">Tuto : une vidéo YouTube</a></li>
+    <li><a href="#tuto-short">Tuto : un Short vertical</a></li>
+    <li><a href="#raccourcis">Raccourcis clavier</a></li>
+    <li><a href="#depannage">Questions et dépannage</a></li>
+  </ol>
+</aside>
+
+<main class="doc">
+<span class="eyebrow">Mode d'emploi</span>
+<h1>Le guide de Naufragés Studio</h1>
+<p class="lead">Tout ce qu'il faut savoir pour monter tes vidéos YouTube, tes Shorts et tes TikTok, des premiers pas jusqu'à l'export. Si tu as déjà utilisé Premiere Pro ou Vegas Pro, tu retrouveras vite tes repères.</p>
+
+<!-- 1 -->
+<h2 id="installer">1. Installer le logiciel</h2>
+<p>Naufragés Studio est gratuit. Il se télécharge sur la <a href="../">page de téléchargement</a> et fonctionne ensuite sans internet.</p>
+<table>
+  <tr><th>Système</th><th>Fichier</th><th>Installation</th></tr>
+  <tr><td>Windows 10 et 11 (64 bits)</td><td><code>NaufragesStudio-installation.exe</code></td><td>Ouvre le fichier et suis les étapes. Un raccourci est créé sur le bureau et dans le menu Démarrer. Une version sans installation existe aussi (<code>NaufragesStudio-portable.zip</code>) : décompresse-la et lance <code>NaufragesStudio.exe</code>.</td></tr>
+  <tr><td>Mac (Intel et Apple M1 à M4, macOS 12 ou plus récent)</td><td><code>NaufragesStudio-mac.zip</code></td><td>Double-clique pour décompresser, puis glisse l'app dans <b>Applications</b>.</td></tr>
+  <tr><td>Linux (64 bits)</td><td><code>NaufragesStudio-linux.AppImage</code></td><td>Rends le fichier exécutable (clic droit &gt; Propriétés &gt; Autoriser l'exécution), puis double-clique dessus.</td></tr>
+</table>
+<div class="encadre attention"><p><b>Message de sécurité au premier lancement.</b> Le logiciel n'a pas encore de certificat payant, donc le système demande une confirmation la première fois. Sous Windows, si « Windows a protégé votre ordinateur » s'affiche, clique sur <b>Informations complémentaires</b> puis sur <b>Exécuter quand même</b>. Sur Mac, fais un <b>clic droit sur l'app &gt; Ouvrir</b>, puis confirme avec <b>Ouvrir</b> (ou va dans Réglages système &gt; Confidentialité et sécurité &gt; Ouvrir quand même).</p></div>
+<p>Au tout premier lancement, une fenêtre de bienvenue résume les cinq étapes d'un montage. Tu peux la rouvrir à tout moment avec le bouton <b>❓ Aide</b> ou la touche <kbd>F1</kbd>. La touche <kbd>F11</kbd> passe le logiciel en plein écran.</p>
+
+<!-- 2 -->
+<h2 id="interface">2. Découvrir l'interface</h2>
+<figure><img src="../img/studio-montage.jpg" width="1600" height="900" alt="L'écran principal de Naufragés Studio avec ses cinq zones"><figcaption>L'écran principal : un titre et un bandeau au-dessus d'une vidéo, des sous-titres, une voix off et une musique.</figcaption></figure>
+<p>L'écran est divisé en cinq zones, comme dans les logiciels professionnels :</p>
+<div class="zones">
+  <div><b>1. La barre du haut</b>Projets, Importer, Annuler ↶ et Refaire ↷, le format de la vidéo, l'Aide et le bouton <b>Exporter la vidéo</b>. À droite, l'état de l'enregistrement automatique.</div>
+  <div><b>2. La bibliothèque (à gauche)</b>Quatre onglets : <b>Médias</b> (tes fichiers importés), <b>Textes</b> (les modèles de titres), <b>Effets</b> (transitions, mouvements, couleurs) et <b>Sous-titres</b>.</div>
+  <div><b>3. Le moniteur (au centre)</b>L'aperçu de la vidéo à l'endroit de la tête de lecture, avec les boutons de lecture. Le compteur indique heures : minutes : secondes : images.</div>
+  <div><b>4. L'inspecteur (à droite)</b>Tous les réglages du clip sélectionné. Quand aucun clip n'est sélectionné, il affiche les réglages du projet.</div>
+  <div><b>5. La timeline (en bas)</b>La ligne du temps où tu assembles ton montage, avec les outils au-dessus et les pistes en dessous.</div>
+</div>
+
+<!-- 3 -->
+<h2 id="projets">3. Les projets</h2>
+<p>Un projet contient ton montage et les médias que tu y as importés. Il est <b>enregistré automatiquement</b> à chaque modification : l'indication « ✓ Enregistré sur cet ordinateur » apparaît en haut à droite. Il n'y a donc pas de bouton Enregistrer, et tu retrouves ton dernier projet en rouvrant le logiciel.</p>
+<figure><img src="../img/studio-projets.jpg" width="1600" height="900" alt="La fenêtre Mes projets avec la liste des projets et la création d'un nouveau projet" loading="lazy"><figcaption>La fenêtre « Mes projets ».</figcaption></figure>
+<h3>Créer, ouvrir, renommer, supprimer</h3>
+<ul>
+  <li>Clique sur <b>📁 Projets</b>. La liste montre tous tes projets, du plus récent au plus ancien.</li>
+  <li><b>Nouveau projet</b> : écris son nom, choisis son format, puis clique sur <b>Créer le projet</b>.</li>
+  <li><b>Ouvrir</b> charge un projet. <b>✎</b> le renomme (valide avec <kbd>Entrée</kbd>). <b>🗑</b> le supprime avec les copies de ses médias. Tes fichiers d'origine sur l'ordinateur ne sont jamais touchés.</li>
+</ul>
+<h3>Le format de la vidéo</h3>
+<table>
+  <tr><th>Format</th><th>Taille</th><th>Pour quoi faire</th></tr>
+  <tr><td>16:9 YouTube</td><td>1920 × 1080</td><td>Les vidéos YouTube classiques</td></tr>
+  <tr><td>9:16 Shorts / TikTok</td><td>1080 × 1920</td><td>YouTube Shorts, TikTok, Reels Instagram</td></tr>
+  <tr><td>1:1 Carré</td><td>1080 × 1080</td><td>Publications carrées (Instagram, Facebook)</td></tr>
+  <tr><td>4:5 Instagram</td><td>1080 × 1350</td><td>Publications verticales Instagram</td></tr>
+  <tr><td>16:9 léger</td><td>1280 × 720</td><td>Une vidéo plus légère, plus rapide à exporter</td></tr>
+</table>
+<p>Tu peux changer de format à tout moment avec la liste de la barre du haut : le montage est gardé tel quel. Quand aucun clip n'est sélectionné, l'inspecteur permet aussi de changer le nom du projet, la <b>couleur du fond</b> (visible là où il n'y a aucune image) et le nombre d'<b>images par seconde</b> (24, 25, 30 ou 60 ; 30 est conseillé pour YouTube).</p>
+
+<!-- 4 -->
+<h2 id="importer">4. Importer des médias</h2>
+<p>Trois façons d'importer tes fichiers :</p>
+<ul>
+  <li>le bouton <b>➕ Importer</b> (ou <kbd>Ctrl</kbd> + <kbd>I</kbd>), qui permet d'en choisir plusieurs à la fois ;</li>
+  <li>glisser des fichiers depuis l'Explorateur Windows (ou le Finder) n'importe où dans la fenêtre ;</li>
+  <li>glisser des fichiers directement sur une piste de la timeline : ils sont importés et placés à cet endroit, les uns à la suite des autres.</li>
+</ul>
+<table>
+  <tr><th>Type</th><th>Formats acceptés</th></tr>
+  <tr><td>Vidéo</td><td>MP4, WebM, MOV, MKV, M4V, OGV (le MP4 en H.264 est le plus sûr)</td></tr>
+  <tr><td>Image</td><td>PNG, JPG, GIF, WebP, BMP, SVG, AVIF</td></tr>
+  <tr><td>Son</td><td>MP3, WAV, OGG, M4A, AAC, FLAC, Opus</td></tr>
+</table>
+<p>Chaque média apparaît dans l'onglet <b>Médias</b> avec une vignette et sa durée. Le logiciel en garde une copie dans le projet : tu peux ensuite déplacer ou renommer le fichier d'origine sans rien casser.</p>
+<ul>
+  <li>Le bouton <b>+</b> d'un média (ou un double-clic dessus) l'ajoute <b>au bout du montage</b> : sur la piste V1 pour une vidéo ou une image, sur la piste A1 pour un son.</li>
+  <li>Le bouton <b>✕</b> retire le média de la bibliothèque. S'il est utilisé dans la timeline, le logiciel demande confirmation, car ses clips seront supprimés aussi.</li>
+  <li><b>🎨 Ajouter un fond de couleur</b> crée un aplat de couleur de 3 secondes au bout de la piste V1, pratique pour un écran titre.</li>
+</ul>
+<div class="encadre"><p>Une image ajoutée dure <b>5 secondes</b> par défaut. Tire son bord droit pour l'allonger autant que tu veux.</p></div>
+
+<!-- 5 -->
+<h2 id="timeline">5. La timeline</h2>
+<h3>Les pistes</h3>
+<p>Les pistes <b>vidéo</b> (V1, V2, V3…) sont en haut et les pistes <b>audio</b> (A1, A2…) en bas. Comme dans Premiere Pro, <b>une piste vidéo plus haute passe devant</b> les pistes du dessous : un texte sur V2 s'affiche par-dessus la vidéo de V1. Les textes et les fonds de couleur se placent sur les pistes vidéo.</p>
+<ul>
+  <li><b>+ Piste V</b> ajoute une piste vidéo tout en haut, <b>+ Piste A</b> une piste audio tout en bas.</li>
+  <li>À gauche de chaque piste : <b>👁</b> cache ou montre une piste vidéo, <b>🔈</b> coupe ou remet le son de la piste, <b>✕</b> supprime la piste et ses clips. Il reste toujours au moins une piste vidéo et une piste audio.</li>
+</ul>
+<h3>Se déplacer dans le temps</h3>
+<ul>
+  <li>La <b>tête de lecture</b> (la ligne rose) indique l'image affichée dans le moniteur. Clique ou glisse dans la règle graduée pour la déplacer ; elle s'aimante au début et à la fin des clips.</li>
+  <li>Un clic dans une zone vide d'une piste désélectionne le clip et y place la tête de lecture.</li>
+  <li><kbd>Espace</kbd> lance ou arrête la lecture. <kbd>←</kbd> et <kbd>→</kbd> avancent image par image, <kbd>Maj</kbd> + <kbd>←</kbd> / <kbd>→</kbd> d'une seconde. <kbd>Origine</kbd> et <kbd>Fin</kbd> vont au début et à la fin.</li>
+</ul>
+<h3>Zoom, aimant et repères</h3>
+<ul>
+  <li><b>Zoom</b> : le curseur, les boutons <b>−</b> et <b>+</b>, les touches <kbd>-</kbd> et <kbd>+</kbd>, ou <kbd>Ctrl</kbd> + molette sur la timeline. <b>↔ Tout voir</b> (touche <kbd>\</kbd>) affiche tout le montage d'un coup.</li>
+  <li><b>🧲 Aimant</b> (activé par défaut) : quand tu déplaces ou raccourcis un clip, il se colle au début et à la fin des autres clips, à la tête de lecture et aux repères. Une ligne jaune en pointillé montre le point d'accroche.</li>
+  <li><b>🚩 Repère</b> (touche <kbd>M</kbd>) pose un triangle jaune dans la règle, par exemple sur un temps fort de la musique. Clique dessus pour y aller, double-clique pour l'enlever.</li>
+</ul>
+
+<!-- 6 -->
+<h2 id="monter">6. Couper et assembler</h2>
+<h3>Sélectionner et déplacer</h3>
+<ul>
+  <li>Clique sur un clip pour le sélectionner : il s'entoure de blanc et ses réglages s'affichent dans l'inspecteur. <kbd>Échap</kbd> désélectionne.</li>
+  <li>Glisse-le pour le déplacer dans le temps. Glisse-le vers le haut ou le bas pour le changer de piste (une vidéo, une image ou un texte va sur une piste vidéo, un son sur une piste audio).</li>
+  <li>Tire son <b>bord gauche</b> ou son <b>bord droit</b> pour le raccourcir ou le rallonger. Une vidéo ou un son ne peut pas dépasser la longueur du fichier d'origine.</li>
+</ul>
+<h3>Couper</h3>
+<ul>
+  <li><b>⫿ Couper</b> (touche <kbd>S</kbd> ou <kbd>Ctrl</kbd> + <kbd>K</kbd>) coupe le clip sélectionné à la tête de lecture. Si aucun clip n'est sélectionné, tous les clips sous la tête de lecture sont coupés.</li>
+  <li><b>✂ Lame</b> (touche <kbd>C</kbd>) : chaque clic sur un clip le coupe à cet endroit, comme l'outil Cutter de Premiere. Reviens à l'outil <b>↖ Sélection</b> avec la touche <kbd>V</kbd>.</li>
+</ul>
+<h3>Supprimer, dupliquer, copier</h3>
+<table>
+  <tr><th>Action</th><th>Bouton ou touche</th><th>Effet</th></tr>
+  <tr><td>Supprimer</td><td><kbd>Suppr</kbd></td><td>Enlève le clip et laisse un vide à sa place.</td></tr>
+  <tr><td>Supprimer + trou</td><td><kbd>Maj</kbd> + <kbd>Suppr</kbd></td><td>Enlève le clip et recule les clips suivants de la même piste pour boucher le vide.</td></tr>
+  <tr><td>Dupliquer</td><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td><td>Place une copie juste après le clip et décale la suite de la piste.</td></tr>
+  <tr><td>Copier / Couper / Coller</td><td><kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>Colle le clip à la tête de lecture, sur sa piste d'origine.</td></tr>
+  <tr><td>Annuler / Refaire</td><td><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Jusqu'à 150 actions en arrière.</td></tr>
+</table>
+
+<!-- 7 -->
+<h2 id="transitions">7. Fondus et transitions</h2>
+<h3>Le fondu enchaîné, comme dans Vegas</h3>
+<p>Fais <b>chevaucher</b> deux clips sur la même piste : la zone commune se hachure et le second clip apparaît en fondu par-dessus le premier. Le son passe aussi en douceur de l'un à l'autre. Plus le chevauchement est long, plus le fondu est lent.</p>
+<h3>Les fondus d'entrée et de sortie</h3>
+<p>Survole un clip : deux petits ronds blancs apparaissent en haut, à chaque coin. Tire celui de gauche vers la droite pour un <b>fondu d'entrée</b>, celui de droite vers la gauche pour un <b>fondu de sortie</b>. Un triangle sombre montre la durée du fondu. Sur un son, le volume monte et descend progressivement.</p>
+<h3>Les transitions</h3>
+<p>Sélectionne un clip, puis choisis une transition dans l'onglet <b>Effets</b> ou dans la rubrique <b>Transitions</b> de l'inspecteur, où tu règles aussi sa durée en secondes.</p>
+<table>
+  <tr><th>Transition</th><th>Effet</th></tr>
+  <tr><td>Fondu</td><td>L'image apparaît ou disparaît en transparence.</td></tr>
+  <tr><td>Fondu au noir / Flash blanc</td><td>Tout l'écran passe par le noir ou par le blanc.</td></tr>
+  <tr><td>Glissement ← → ↑ ↓</td><td>L'image entre ou sort en glissant dans la direction choisie.</td></tr>
+  <tr><td>Zoom</td><td>L'image grossit en apparaissant, ou s'agrandit en disparaissant.</td></tr>
+  <tr><td>Volet</td><td>L'image se dévoile de gauche à droite, ou se cache vers la gauche en sortie.</td></tr>
+  <tr><td>Flou</td><td>L'image passe du flou au net.</td></tr>
+  <tr><td>Pop (rebond)</td><td>L'image surgit avec un petit rebond, idéal pour les titres.</td></tr>
+  <tr><td>Machine à écrire</td><td>Les lettres d'un texte s'écrivent une à une (entrée des textes seulement).</td></tr>
+</table>
+
+<!-- 8 -->
+<h2 id="textes">8. Textes et titres</h2>
+<figure><img src="../img/studio-textes.jpg" width="1600" height="900" alt="L'onglet Textes et les réglages d'un titre dans l'inspecteur" loading="lazy"><figcaption>Les modèles de textes à gauche, les réglages du titre sélectionné à droite.</figcaption></figure>
+<p>Ouvre l'onglet <b>Textes</b> et clique sur un modèle : il se place à la tête de lecture pour 4 secondes, sur la première piste vidéo libre (une nouvelle piste est créée au besoin). Le texte est sélectionné dans l'inspecteur : tape directement le tien.</p>
+<p>Les dix modèles : Grand titre, Titre YouTube choc, Sous-titre classique, Sous-titre Shorts, Bandeau (nom, lieu), Date historique, Gaming néon, Rétro pixel, Élégant et Abonne-toi !</p>
+<h3>Les réglages du texte</h3>
+<ul>
+  <li><b>Police</b> (13 au choix, dont Cinzel pour l'histoire, Orbitron pour le gaming, Impact pour les titres choc), <b>Taille</b>, <b>Couleur</b>, <b>Gras</b> et <b>MAJUSCULES</b>.</li>
+  <li><b>Alignement</b> et <b>Largeur max</b> : au-delà de cette largeur, le texte passe à la ligne tout seul. Un retour à la ligne dans la zone de texte force une nouvelle ligne.</li>
+  <li><b>Interligne</b>, <b>Contour</b> (couleur et épaisseur), <b>Ombre</b>, et <b>Fond derrière</b> (couleur et opacité) pour un bandeau lisible sur n'importe quelle image.</li>
+</ul>
+<div class="encadre"><p><b>Placer un texte à la souris</b> : dans le moniteur, le clip sélectionné est entouré d'un cadre. Glisse l'intérieur du cadre pour le déplacer (il s'aimante au centre de l'écran) et le carré du coin pour l'agrandir. Cela marche aussi pour les vidéos et les images.</p></div>
+
+<!-- 9 -->
+<h2 id="soustitres">9. Sous-titres automatiques</h2>
+<p>Cette fonction crée les sous-titres d'une voix off à partir de son texte, par exemple le script que tu as donné à ElevenLabs.</p>
+<ol class="etapes-num">
+  <li>Place la voix off dans la timeline et clique dessus pour la sélectionner.</li>
+  <li>Ouvre l'onglet <b>Sous-titres</b> et colle le texte exact de la voix off.</li>
+  <li>Choisis le nombre de <b>mots par sous-titre</b> (6 par défaut ; 3 ou 4 donnent un rythme plus dynamique pour les Shorts) et le <b>style</b>.</li>
+  <li>Clique sur <b>💬 Créer les sous-titres</b>. Une nouvelle piste est ajoutée tout en haut avec un clip de texte par sous-titre.</li>
+</ol>
+<p>Le logiciel coupe le texte aux fins de phrases, puis répartit les sous-titres sur les moments où la voix parle (il repère les silences sur la forme d'onde). Si aucun clip n'est sélectionné, il prend le premier son de la timeline.</p>
+<div class="encadre"><p><b>Vérifie toujours le résultat</b> : le calage est fait d'après les silences et la longueur des phrases, pas par reconnaissance de la parole. Écoute la vidéo, puis corrige un sous-titre en cliquant dessus (texte, début, durée) ou en tirant ses bords.</p></div>
+
+<!-- 10 -->
+<h2 id="image">10. Cadrage, mouvement et couleurs</h2>
+<figure><img src="../img/studio-effets.jpg" width="1600" height="900" alt="Le zoom avant lent et les réglages de couleurs appliqués à un portrait" loading="lazy"><figcaption>Un zoom avant lent sur un tableau, avec les réglages Mouvement et Couleurs ouverts.</figcaption></figure>
+<h3>Disposition</h3>
+<ul>
+  <li><b>⤢ Remplir l'écran</b> agrandit l'image pour couvrir tout l'écran, quitte à couper les bords. <b>⤡ Tout voir</b> montre l'image en entier, avec des bandes si son format est différent.</li>
+  <li><b>Position X / Y</b>, <b>Taille</b>, <b>Rotation</b> et <b>Opacité</b> se règlent avec des curseurs. <b>⟲ Recentrer</b> remet tout à zéro.</li>
+  <li>Un double-clic sur un curseur le remet à sa valeur de départ.</li>
+</ul>
+<h3>Mouvement</h3>
+<p>Le <b>zoom avant lent</b>, le <b>zoom arrière lent</b> et les <b>panoramiques</b> (← → ↑ ↓) font bouger doucement une photo pendant toute sa durée. C'est l'effet Ken Burns des documentaires : parfait pour les tableaux et les cartes.</p>
+<h3>Couleurs</h3>
+<p>Dix looks en un clic : Cinéma, Noir et blanc, Sépia, Vintage, Chaud, Éclatant, Sombre, Délavé, Rêve, et Aucun pour revenir à l'original. Tu peux ensuite affiner la <b>luminosité</b>, le <b>contraste</b>, la <b>saturation</b>, le <b>noir et blanc</b>, le <b>sépia</b>, la <b>teinte</b> et le <b>flou</b>.</p>
+
+<!-- 11 -->
+<h2 id="son">11. Le son</h2>
+<ul>
+  <li>La <b>forme d'onde</b> s'affiche sur les sons et sur les vidéos qui en ont : les pics montrent les passages forts, les creux les silences.</li>
+  <li><b>Volume</b> : de 0 à 200 % dans la rubrique Son de l'inspecteur. Pour une musique sous une voix off, 20 à 30 % est un bon point de départ. <b>🔇 Couper le son</b> met le clip à zéro.</li>
+  <li><b>🔊 Détacher le son</b> place le son d'une vidéo sur une piste audio libre et coupe celui de la vidéo : tu peux alors le couper, le déplacer ou le régler séparément.</li>
+  <li>Le bouton <b>🔈</b> d'une piste coupe tout le son de cette piste, sans toucher aux clips.</li>
+  <li><b>Vitesse</b> (rubrique Temps et vitesse) : de ×0,25 à ×4 pour les vidéos et les sons. Le clip devient plus long au ralenti et plus court en accéléré, et le son devient plus grave ou plus aigu.</li>
+</ul>
+
+<!-- 12 -->
+<h2 id="exporter">12. Exporter la vidéo</h2>
+<figure><img src="../img/studio-export.jpg" width="1600" height="900" alt="La fenêtre d'export avec la barre de progression" loading="lazy"><figcaption>La fenêtre d'export pendant la fabrication de la vidéo.</figcaption></figure>
+<p>Clique sur <b>⬇ Exporter la vidéo</b> (ou <kbd>Ctrl</kbd> + <kbd>E</kbd>) et choisis :</p>
+<table>
+  <tr><th>Réglage</th><th>Choix</th></tr>
+  <tr><td>Nom du fichier</td><td>Par défaut, le nom du projet.</td></tr>
+  <tr><td>Résolution</td><td><b>Taille du projet</b> (par exemple 1920 × 1080), <b>Plus légère</b> (1280 × 720 pour un projet 1080p) ou <b>Petite</b> (la moitié).</td></tr>
+  <tr><td>Qualité</td><td><b>Normale</b> (conseillée pour YouTube), <b>Haute</b> (fichier plus gros) ou <b>Légère</b> (pour partager vite).</td></tr>
+  <tr><td>Méthode</td><td><b>Précise, image par image</b> (conseillée) : chaque image est calculée exactement. <b>En temps réel</b> : le montage est joué et enregistré, toujours à la taille du projet ; à utiliser seulement si la première méthode échoue.</td></tr>
+</table>
+<p>La barre de progression indique le temps restant ; garde le logiciel ouvert jusqu'au bout. Le bouton <b>Annuler l'export</b> arrête tout. À la fin, le logiciel te propose d'enregistrer le fichier dans ton dossier <b>Vidéos</b>, puis l'affiche dans l'Explorateur (le Finder sur Mac). La vidéo est au format <b>MP4</b> (image H.264), prête à envoyer sur YouTube, TikTok ou Instagram.</p>
+<div class="encadre"><p>L'export précis prend en général entre une et quelques fois la durée de la vidéo, selon la puissance de l'ordinateur. Pour aller plus vite, choisis la résolution <b>Plus légère</b>.</p></div>
+
+<!-- 13 -->
+<h2 id="tuto-youtube">13. Tutoriel : une vidéo YouTube avec voix off</h2>
+<p>Objectif : une vidéo d'histoire en 16:9 avec une voix off, des images, une musique de fond, un titre et des sous-titres.</p>
+<ol class="etapes-num">
+  <li><b>Crée le projet</b> : 📁 Projets &gt; nom de la vidéo &gt; format <b>16:9 YouTube</b> &gt; Créer le projet.</li>
+  <li><b>Importe tout d'un coup</b> : la voix off (par exemple le MP3 d'ElevenLabs), tes vidéos, tes images et ta musique.</li>
+  <li><b>Pose la voix off</b> : clique sur le <b>+</b> de la voix off. Elle se place au début de la piste A1. C'est elle qui donne le rythme de toute la vidéo.</li>
+  <li><b>Ajoute les images</b> : clique sur le <b>+</b> de chaque vidéo et image dans l'ordre de l'histoire. Elles se mettent bout à bout sur V1. Tire les bords pour les caler sur ce que dit la voix (place des <b>repères</b> avec <kbd>M</kbd> aux moments clés pour t'aider).</li>
+  <li><b>Fais vivre les photos</b> : sélectionne chaque image et choisis un <b>zoom avant lent</b> ou un <b>panoramique</b> dans l'onglet Effets.</li>
+  <li><b>Soigne les passages</b> : fais chevaucher les clips d'une demi-seconde pour des fondus enchaînés, ou ajoute une transition.</li>
+  <li><b>Ajoute la musique</b> : glisse-la sur la piste A2. Mets son volume entre 20 et 30 %, puis tire ses ronds blancs pour un fondu d'entrée et de sortie de 2 à 3 secondes.</li>
+  <li><b>Ajoute un titre</b> : place la tête de lecture au début, onglet Textes &gt; <b>Titre YouTube choc</b>, puis tape ton titre. Ajoute un <b>Bandeau</b> pour présenter un personnage ou un lieu.</li>
+  <li><b>Crée les sous-titres</b> : sélectionne la voix off, colle son texte dans l'onglet Sous-titres, choisis le style <b>Sous-titre classique</b> et clique sur Créer les sous-titres. Relis-les en lecture.</li>
+  <li><b>Exporte</b> : Exporter la vidéo &gt; Taille du projet &gt; Qualité normale &gt; Précise. Envoie ensuite le MP4 sur YouTube.</li>
+</ol>
+
+<!-- 14 -->
+<h2 id="tuto-short">14. Tutoriel : un Short vertical</h2>
+<figure><img src="../img/studio-shorts.jpg" width="1600" height="900" alt="Un Short vertical en 9:16 avec ses sous-titres" loading="lazy"><figcaption>Le même montage passé en 9:16, avec des sous-titres façon Shorts.</figcaption></figure>
+<ol class="etapes-num">
+  <li><b>Choisis le format 9:16</b> : crée un projet <b>9:16 Shorts / TikTok</b>, ou change le format d'un montage existant dans la barre du haut.</li>
+  <li><b>Remplis l'écran</b> : sélectionne chaque vidéo ou image horizontale et clique sur <b>⤢ Remplir l'écran</b> dans l'inspecteur. Glisse-la dans le moniteur pour choisir la partie visible.</li>
+  <li><b>Reste court</b> : un Short peut durer jusqu'à 3 minutes, mais les plus regardés tiennent souvent en moins d'une minute. Coupe avec <kbd>S</kbd> et enlève les passages lents avec <kbd>Maj</kbd> + <kbd>Suppr</kbd>.</li>
+  <li><b>Des sous-titres bien visibles</b> : onglet Sous-titres, <b>3 ou 4 mots</b> par sous-titre et le style <b>Sous-titre Shorts</b> (gros texte en majuscules avec contour).</li>
+  <li><b>Accroche dès la première seconde</b> : un texte <b>Titre YouTube choc</b> avec l'entrée <b>Pop (rebond)</b>.</li>
+  <li><b>Exporte</b> en taille du projet (1080 × 1920) et publie le fichier sur YouTube Shorts, TikTok ou Instagram Reels.</li>
+</ol>
+
+<!-- 15 -->
+<h2 id="raccourcis">15. Raccourcis clavier</h2>
+<p>Sur Mac, remplace <kbd>Ctrl</kbd> par <kbd>⌘ Cmd</kbd>.</p>
+<table>
+  <tr><th>Touche</th><th>Action</th></tr>
+  <tr><td><kbd>Espace</kbd></td><td>Lecture / pause</td></tr>
+  <tr><td><kbd>J</kbd> / <kbd>K</kbd> / <kbd>L</kbd></td><td>Reculer d'une seconde / pause / avancer d'une seconde</td></tr>
+  <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Image précédente / suivante</td></tr>
+  <tr><td><kbd>Maj</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Reculer / avancer d'une seconde</td></tr>
+  <tr><td><kbd>Origine</kbd> / <kbd>Fin</kbd></td><td>Aller au début / à la fin du montage</td></tr>
+  <tr><td><kbd>S</kbd> ou <kbd>Ctrl</kbd> + <kbd>K</kbd></td><td>Couper à la tête de lecture</td></tr>
+  <tr><td><kbd>V</kbd> / <kbd>C</kbd></td><td>Outil Sélection / outil Lame</td></tr>
+  <tr><td><kbd>Suppr</kbd> / <kbd>Maj</kbd> + <kbd>Suppr</kbd></td><td>Supprimer / supprimer et boucher le trou</td></tr>
+  <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Annuler / refaire</td></tr>
+  <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>Copier / couper / coller un clip</td></tr>
+  <tr><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td><td>Dupliquer le clip</td></tr>
+  <tr><td><kbd>M</kbd></td><td>Ajouter un repère</td></tr>
+  <tr><td><kbd>+</kbd> / <kbd>-</kbd> / <kbd>\</kbd></td><td>Zoomer / dézoomer / voir tout le montage</td></tr>
+  <tr><td><kbd>Ctrl</kbd> + molette</td><td>Zoomer sur la timeline à l'endroit de la souris</td></tr>
+  <tr><td><kbd>Ctrl</kbd> + <kbd>I</kbd> / <kbd>Ctrl</kbd> + <kbd>E</kbd></td><td>Importer / exporter</td></tr>
+  <tr><td><kbd>Échap</kbd></td><td>Désélectionner, fermer une fenêtre</td></tr>
+  <tr><td><kbd>F1</kbd> / <kbd>F11</kbd></td><td>Aide / plein écran</td></tr>
+</table>
+
+<!-- 16 -->
+<h2 id="depannage">16. Questions et dépannage</h2>
+<h3>Une vidéo ne s'importe pas</h3>
+<p>Son format n'est pas lisible par le logiciel (c'est parfois le cas des fichiers MOV de téléphone en HEVC ou des MKV). Convertis-la en <b>MP4 (H.264)</b> avec le logiciel gratuit HandBrake, puis importe-la à nouveau.</p>
+<h3>Où sont enregistrés mes projets ?</h3>
+<p>Dans le dossier du logiciel sur ton ordinateur : <code>%APPDATA%\Naufrages Studio</code> sous Windows, <code>~/Library/Application Support/Naufrages Studio</code> sur Mac et <code>~/.config/Naufrages Studio</code> sous Linux. Ils ne sont envoyés sur aucun serveur. Désinstaller le logiciel ne les efface pas, mais supprimer ce dossier, si.</p>
+<h3>J'ai fait une erreur</h3>
+<p><kbd>Ctrl</kbd> + <kbd>Z</kbd> annule les dernières actions, une par une. <kbd>Ctrl</kbd> + <kbd>Y</kbd> les refait.</p>
+<h3>L'export échoue ou est très lent</h3>
+<p>Choisis la résolution <b>Plus légère</b>, ferme les autres programmes lourds, puis réessaie. Si l'export précis échoue encore, utilise la méthode <b>En temps réel</b>.</p>
+<h3>La lecture saccade dans le moniteur</h3>
+<p>L'aperçu calcule l'image en direct : avec beaucoup de pistes ou de très grosses vidéos, un ordinateur modeste peut ralentir. La vidéo exportée, elle, est toujours fluide, car chaque image est calculée sans se presser.</p>
+<h3>Le logiciel est-il vraiment gratuit ?</h3>
+<p>Oui, sans publicité dans le logiciel, sans filigrane sur tes vidéos et sans compte à créer.</p>
+<h3>Une autre question, une idée ?</h3>
+<p>Viens en parler sur le <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord des Naufragés</a> : les prochaines versions se construisent avec vos retours.</p>
+<p><a class="btn btn-ghost retour" href="../">⬇ Retour à la page de téléchargement</a></p>
+</main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="../../"><img src="../../icon.png" alt="">MOT MYSTÈRE</a>
+    <div class="flinks">
+      <a href="../">Naufragés Studio</a>
+      <a href="../../actualites.html">Actualités</a>
+      <a href="../../forum/">Forum</a>
+      <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
+      <a href="../../conditions.html">Conditions d'utilisation</a>
+      <a href="../../confidentialite.html">Confidentialité</a>
+      <a href="../../cookies.html">Cookies</a>
+      <a href="../../cookies.html" data-cookies>Gérer mes cookies</a>
+    </div>
+    <span>© <span data-year>2026</span> Les Naufragés · Mot Mystère</span>
+  </div>
+</footer>
+
+<script src="../../site.js"></script>
+</body>
+</html>

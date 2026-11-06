@@ -1,8 +1,8 @@
 {
   "name": "naufrages-studio",
   "productName": "Naufrages Studio",
-  "version": "1.0.0",
-  "description": "Naufragés Studio : logiciel de montage vidéo gratuit pour Windows.",
+  "version": "1.1.0",
+  "description": "Naufragés Studio : logiciel de montage vidéo gratuit pour Windows, Mac et Linux.",
   "author": "Les Naufragés",
   "license": "UNLICENSED",
   "private": true,
@@ -10,7 +10,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win --x64 --publish never",
-    "build:linux": "electron-builder --linux --x64 --publish never"
+    "build:linux": "electron-builder --linux AppImage --x64 --publish never",
+    "build:mac": "electron-builder --mac --universal --publish never"
   },
   "devDependencies": {
     "electron": "44.6.0",
@@ -60,19 +61,35 @@
     "linux": {
       "target": [
         {
-          "target": "dir",
+          "target": "AppImage",
           "arch": [
             "x64"
           ]
         }
       ],
       "icon": "build/icon.png",
-      "category": "AudioVideo"
+      "category": "AudioVideo",
+      "artifactName": "NaufragesStudio-linux.${ext}",
+      "synopsis": "Logiciel de montage vidéo"
     },
     "electronLanguages": [
       "fr",
       "en-US"
-    ]
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.video",
+      "artifactName": "NaufragesStudio-mac.${ext}",
+      "identity": null
+    }
   },
   "repository": "https://github.com/lesnaufrages-mc/lesnaufrages-mc.github.io"
 }

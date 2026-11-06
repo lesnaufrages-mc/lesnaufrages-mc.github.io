@@ -1,10 +1,10 @@
-# Construit Naufragés Studio (logiciel de montage vidéo) pour Windows.
+# Construit Naufragés Studio (logiciel de montage vidéo) pour Windows, Mac et Linux.
 # Sur une pull request : construit seulement (fichiers dans « Artifacts » en bas du lancement).
-# Sur main (ou à la main : Actions > « Naufragés Studio (Windows) » > Run workflow) :
-# construit puis publie la version dans « Releases ». Le bouton « Télécharger » du site
-# (/montage/) prend toujours la dernière version publiée.
+# Sur main (ou à la main : Actions > « Naufragés Studio » > Run workflow) :
+# construit puis publie la version dans « Releases ». Les boutons « Télécharger » du site
+# (/montage/) prennent toujours la dernière version publiée.
 # Nouvelle version : monter "version" dans studio/package.json.
-name: Naufragés Studio (Windows)
+name: Naufragés Studio
 
 on:
   workflow_dispatch:
@@ -18,8 +18,27 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  construire:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            nom: windows
+            commande: npm run build
+            fichiers: |
+              studio/dist/NaufragesStudio-installation.exe
+              studio/dist/NaufragesStudio-portable.zip
+          - os: macos-latest
+            nom: mac
+            commande: npm run build:mac
+            fichiers: studio/dist/NaufragesStudio-mac.zip
+          - os: ubuntu-latest
+            nom: linux
+            commande: npm run build:linux
+            fichiers: studio/dist/NaufragesStudio-linux.AppImage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: studio
@@ -31,31 +50,39 @@ jobs:
           cache: npm
           cache-dependency-path: studio/package-lock.json
       - run: npm ci
-      - run: npm run build
-      - name: Version
-        id: v
-        shell: bash
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - run: ${{ matrix.commande }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
         with:
-          name: NaufragesStudio-windows
-          path: |
-            studio/dist/NaufragesStudio-installation.exe
-            studio/dist/NaufragesStudio-portable.zip
+          name: NaufragesStudio-${{ matrix.nom }}
+          path: ${{ matrix.fichiers }}
           retention-days: 30
-      - name: Publier la version
-        if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@v2
+
+  publier:
+    # Publie même si un des systèmes a échoué, pour ne pas bloquer les autres.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    needs: construire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version
+        id: v
+        run: echo "version=$(node -p "require('./studio/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          path: sortie
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: studio-v${{ steps.v.outputs.version }}
           name: Naufragés Studio ${{ steps.v.outputs.version }}
           make_latest: true
           overwrite_files: true
           body: |
-            Naufragés Studio, logiciel de montage vidéo gratuit pour Windows 10 et 11.
-            - **NaufragesStudio-installation.exe** : installe le logiciel avec un raccourci sur le bureau (conseillé).
-            - **NaufragesStudio-portable.zip** : sans installation, décompresse puis lance NaufragesStudio.exe.
-            Si Windows affiche « Windows a protégé votre ordinateur » : Informations complémentaires > Exécuter quand même.
-          files: |
-            studio/dist/NaufragesStudio-installation.exe
-            studio/dist/NaufragesStudio-portable.zip
+            Naufragés Studio, logiciel de montage vidéo gratuit.
+            - **Windows 10 et 11 (64 bits)** : NaufragesStudio-installation.exe (conseillé, raccourci sur le bureau) ou NaufragesStudio-portable.zip (sans installation).
+              Si Windows affiche « Windows a protégé votre ordinateur » : Informations complémentaires > Exécuter quand même.
+            - **Mac (Intel et Apple M1/M2/M3/M4, macOS 12 ou plus récent)** : NaufragesStudio-mac.zip. Double-clic pour le décompresser, glisse l'app dans Applications, puis la première fois : clic droit > Ouvrir > Ouvrir.
+            - **Linux (64 bits)** : NaufragesStudio-linux.AppImage. Clic droit > Propriétés > « Autoriser l'exécution », puis double-clic.
+          files: sortie/*

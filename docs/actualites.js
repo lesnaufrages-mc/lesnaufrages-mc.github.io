@@ -12,7 +12,7 @@ var ACTUALITES = [
     categorie: "site",
     epingle: true,
     titre: "Nouveau : Naufragés Studio, un logiciel de montage vidéo gratuit",
-    texte: "Un vrai logiciel à installer sur ton PC Windows pour monter tes vidéos YouTube et tes Shorts. Comme dans Premiere Pro ou Vegas Pro : timeline avec plusieurs pistes, outil Lame, fondus enchaînés en faisant chevaucher deux clips, textes tout prêts, transitions, zoom lent sur les photos, couleurs, ralenti, sous-titres calés sur ta voix off et export en MP4 (16:9, 9:16, carré). Gratuit, et tes fichiers restent sur ton ordinateur. Dis-nous ce que tu en penses sur le Discord !",
+    texte: "Un vrai logiciel à installer sur ton ordinateur (Windows 10 et 11, Mac et Linux) pour monter tes vidéos YouTube et tes Shorts. Comme dans Premiere Pro ou Vegas Pro : timeline avec plusieurs pistes, outil Lame, fondus enchaînés en faisant chevaucher deux clips, textes tout prêts, transitions, zoom lent sur les photos, couleurs, ralenti, sous-titres calés sur ta voix off et export en MP4 (16:9, 9:16, carré). Gratuit, et tes fichiers restent sur ton ordinateur. Dis-nous ce que tu en penses sur le Discord !",
     image: "montage/img/studio-montage.jpg",
     lien: "montage/",
     bouton: "Télécharger Naufragés Studio"

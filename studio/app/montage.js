@@ -1,4 +1,4 @@
-/* Naufragés Studio : logiciel de montage vidéo dans le navigateur.
+/* Naufragés Studio : logiciel de montage vidéo (Windows, Mac, Linux).
    Inspiré de Premiere Pro (pistes V1/V2/A1, outil Lame, moniteur avec poignées, options d'effet),
    Vegas Pro (fondu enchaîné en faisant chevaucher deux clips, poignées de fondu dans les coins),
    DaVinci Resolve (inspecteur, aimant) et CapCut (modèles de textes, sous-titres, formats Shorts).
@@ -281,7 +281,7 @@ async function importer(fichiers, placer) {
     $('#etat').textContent = 'Import de ' + f.name + '…';
     try { await analyser(m); }
     catch (e) {
-      toast('« ' + f.name + ' » ne peut pas être lu par ton navigateur. Pour les vidéos, le MP4 (H.264) marche partout.', 6000);
+      toast('« ' + f.name + ' » ne peut pas être lu par le logiciel. Pour les vidéos, le MP4 (H.264) marche partout : convertis-la avec HandBrake (gratuit).', 6000);
       continue;
     }
     MEDIA.set(m.id, m); ajoutes.push(m);
@@ -535,6 +535,7 @@ function elementApercu(c) {
   const m = MEDIA.get(c.media); if (!m) return null;
   const el = document.createElement(m.type === 'audio' ? 'audio' : 'video');
   el.preload = 'auto'; el.playsInline = true; el.src = m.url;
+  el.preservesPitch = false; // comme à l'export : ralenti = son plus grave, accéléré = plus aigu
   if (!actx) el.muted = true;
   el.addEventListener('seeked', () => { if (!lecture) demanderRendu(); });
   el.addEventListener('loadeddata', () => { el.currentTime = clamp(tSource(c, T), 0, m.duree); demanderRendu(); });
@@ -1245,10 +1246,10 @@ function ouvrirExport() {
     'MediaRecorder' in window ? h('option', { value: 'direct' }, 'En temps réel (le montage est joué)') : null);
   const nom = h('input', { type: 'text', value: (P.nom || 'montage').replace(/[\\/:*?"<>|]/g, '') });
   const barre = h('div', { class: 'barre-prog', hidden: true }, h('i'));
-  const info = h('p', { class: 'astuce' }, 'Durée : ' + tc(duree()) + '. Ne change pas d\'onglet pendant l\'export, garde la fenêtre ouverte.');
+  const info = h('p', { class: 'astuce' }, 'Durée : ' + tc(duree()) + '. Garde le logiciel ouvert pendant l\'export.');
   const go = h('button', { class: 'go' }, '⬇ Exporter en MP4');
   const stop = h('button', { hidden: true }, 'Annuler l\'export');
-  if (!webcodecs) info.append(h('br'), 'Ton navigateur ne gère pas l\'export précis : utilise Chrome ou Edge pour un vrai MP4.');
+  if (!webcodecs) info.append(h('br'), 'Ton ordinateur ne gère pas l\'export précis : utilise la méthode en temps réel.');
   go.onclick = async () => {
     const opt = { k: parseFloat(res.value), q: parseFloat(qual.value), fps: P.fps, nom: nom.value || 'montage' };
     opt.W = pair(P.w * opt.k); opt.H = pair(P.h * opt.k);
@@ -1271,7 +1272,7 @@ function ouvrirExport() {
       fenetre(h('h2', null, '✅ Ta vidéo est prête !'),
         h('p', null, 'Taille du fichier : ' + (blob.size / 1048576).toFixed(1) + ' Mo · ' + opt.W + '×' + opt.H + ' · ' + tc(duree())),
         a,
-        ext === 'webm' ? h('p', { class: 'astuce' }, 'Ton navigateur a fait un fichier WebM : YouTube l\'accepte aussi. Pour un MP4, utilise Chrome ou Edge.') : h('p', { class: 'astuce' }, 'Le fichier se trouve ensuite dans ton dossier Téléchargements. Tu peux l\'envoyer directement sur YouTube.'),
+        ext === 'webm' ? h('p', { class: 'astuce' }, 'Le fichier est au format WebM : YouTube l\'accepte aussi.') : h('p', { class: 'astuce' }, 'Le fichier se trouve ensuite dans ton dossier Téléchargements. Tu peux l\'envoyer directement sur YouTube.'),
         h('video', { src: url, controls: '', style: 'width:100%;max-height:300px;margin-top:10px;background:#000;border-radius:8px' }));
       a.click();
     } catch (e) {
@@ -1500,7 +1501,7 @@ async function fenetreProjets() {
       fenetreProjets();
     } }, '🗑')));
   fenetre(h('h2', null, '📁 Mes projets'),
-    h('p', { class: 'astuce' }, 'Tes projets sont enregistrés automatiquement dans ce navigateur, sur cet ordinateur. Rien n\'est envoyé sur internet.'),
+    h('p', { class: 'astuce' }, 'Tes projets sont enregistrés automatiquement sur cet ordinateur. Rien n\'est envoyé sur internet.'),
     h('div', { class: 'projets' }, ...lignes),
     h('h2', { style: 'margin-top:18px' }, 'Nouveau projet'),
     nom, formats, h('div', { class: 'actions' }, creer));
@@ -1530,7 +1531,8 @@ function aide(bienvenue) {
       h('li', null, h('b', null, 'Ajoute des textes'), ' (onglet Textes), des ', h('b', null, 'transitions'), ' et des couleurs (onglet Effets) et des ', h('b', null, 'sous-titres'), ' calés sur ta voix off.'),
       h('li', null, h('b', null, 'Exporte'), ' en MP4 et envoie ta vidéo sur YouTube.')),
     h('p', { class: 'astuce' }, 'Fondu enchaîné : fais chevaucher deux clips sur la même piste. Fondu d\'entrée / sortie : tire les petits ronds blancs en haut du clip. Dans l\'aperçu, déplace et agrandis le clip choisi avec la souris.'),
-    h('p', { class: 'astuce' }, 'Ton travail est enregistré tout seul dans ce navigateur, sur ton ordinateur. Rien n\'est envoyé sur internet. Utilise Chrome ou Edge pour le meilleur résultat.'),
+    h('p', { class: 'astuce' }, 'Ton travail est enregistré tout seul sur ton ordinateur. Rien n\'est envoyé sur internet.'),
+    h('p', null, h('a', { href: 'https://lesnaufrages-mc.github.io/montage/guide/', target: '_blank', style: 'color:#ff5c8a;font-weight:700' }, '📖 Ouvrir le guide complet et les tutos (site des Naufragés)')),
     h('h2', { style: 'margin-top:14px' }, '⌨ Raccourcis'),
     h('table', null, ...raccourcis.map(([k, d]) => h('tr', null, h('td', null, k), h('td', null, d)))),
     h('div', { class: 'actions' }, h('button', { class: 'go', onclick: () => { $('#fenetre').hidden = true; } }, bienvenue ? 'C\'est parti !' : 'Fermer')));
@@ -1648,7 +1650,7 @@ async function demarrer() {
   if (ok && !id) { const tous = (await DB.tous('projets')) || []; const r = tous.sort((a, b) => b.modifie - a.modifie)[0]; id = r && r.id; }
   const premiere = !id;
   await ouvrirProjet(id);
-  if (!ok) toast('⚠ Ton navigateur bloque l\'enregistrement (navigation privée ?) : ton montage sera perdu en fermant la page.', 7000);
+  if (!ok) toast('⚠ L\'enregistrement automatique ne marche pas : ton montage sera perdu en fermant le logiciel.', 7000);
   if (premiere) aide(true);
   window.STUDIO = { get P() { return P; }, MEDIA, importer, allerA, rendu, exporterMP4, duree }; // pour les tests
 }

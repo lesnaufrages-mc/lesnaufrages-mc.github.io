@@ -79,7 +79,7 @@
     "mac": {
       "target": [
         {
-          "target": "dmg",
+          "target": "zip",
           "arch": [
             "universal"
           ]
@@ -89,9 +89,6 @@
       "category": "public.app-category.video",
       "artifactName": "NaufragesStudio-mac.${ext}",
       "identity": null
-    },
-    "dmg": {
-      "title": "Naufragés Studio"
     }
   },
   "repository": "https://github.com/lesnaufrages-mc/lesnaufrages-mc.github.io"

@@ -32,12 +32,13 @@ jobs:
           - os: macos-latest
             nom: mac
             commande: npm run build:mac
-            fichiers: studio/dist/NaufragesStudio-mac.dmg
+            fichiers: studio/dist/NaufragesStudio-mac.zip
           - os: ubuntu-latest
             nom: linux
             commande: npm run build:linux
             fichiers: studio/dist/NaufragesStudio-linux.AppImage
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: studio
@@ -59,7 +60,8 @@ jobs:
           retention-days: 30
 
   publier:
-    if: github.event_name != 'pull_request'
+    # Publie même si un des systèmes a échoué, pour ne pas bloquer les autres.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
     needs: construire
     runs-on: ubuntu-latest
     steps:
@@ -81,6 +83,6 @@ jobs:
             Naufragés Studio, logiciel de montage vidéo gratuit.
             - **Windows 10 et 11 (64 bits)** : NaufragesStudio-installation.exe (conseillé, raccourci sur le bureau) ou NaufragesStudio-portable.zip (sans installation).
               Si Windows affiche « Windows a protégé votre ordinateur » : Informations complémentaires > Exécuter quand même.
-            - **Mac (Intel et Apple M1/M2/M3/M4, macOS 12 ou plus récent)** : NaufragesStudio-mac.dmg. Glisse l'app dans Applications, puis la première fois : clic droit > Ouvrir > Ouvrir.
+            - **Mac (Intel et Apple M1/M2/M3/M4, macOS 12 ou plus récent)** : NaufragesStudio-mac.zip. Double-clic pour le décompresser, glisse l'app dans Applications, puis la première fois : clic droit > Ouvrir > Ouvrir.
             - **Linux (64 bits)** : NaufragesStudio-linux.AppImage. Clic droit > Propriétés > « Autoriser l'exécution », puis double-clic.
           files: sortie/*

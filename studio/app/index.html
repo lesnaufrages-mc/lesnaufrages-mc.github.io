@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naufragés Studio</title>
+<meta name="description" content="Naufragés Studio : un logiciel de montage vidéo gratuit dans ton navigateur, inspiré de Premiere Pro et Vegas Pro. Timeline multipistes, coupe, textes, transitions, sous-titres, audio et export MP4 (16:9, Shorts 9:16).">
+<meta name="theme-color" content="#101014">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="montage.css?v=1">
+</head>
+<body>
+
+<header class="barre">
+  <a class="logo" href="https://lesnaufrages-mc.github.io/" target="_blank" title="Site des Naufragés"><img src="logo.svg" alt="">Naufragés <b>Studio</b></a>
+  <nav class="menus">
+    <button data-act="projets" title="Ouvrir, créer ou supprimer un projet">📁 Projets</button>
+    <button data-act="importer" title="Ajouter des vidéos, images, sons (Ctrl+I)">➕ Importer</button>
+    <button data-act="annuler" title="Annuler (Ctrl+Z)">↶</button>
+    <button data-act="refaire" title="Refaire (Ctrl+Y)">↷</button>
+    <label class="format" title="Format de la vidéo">
+      <select id="format">
+        <option value="1920x1080">16:9 YouTube (1920×1080)</option>
+        <option value="1080x1920">9:16 Shorts / TikTok (1080×1920)</option>
+        <option value="1080x1080">1:1 Carré (1080×1080)</option>
+        <option value="1080x1350">4:5 Instagram (1080×1350)</option>
+        <option value="1280x720">16:9 léger (1280×720)</option>
+      </select>
+    </label>
+    <button data-act="aide" title="Raccourcis et mode d'emploi (F1)">❓ Aide</button>
+  </nav>
+  <span id="etat" class="etat"></span>
+  <button class="exporter" data-act="exporter">⬇ Exporter la vidéo</button>
+</header>
+
+<main class="atelier">
+  <!-- Panneau de gauche : bibliothèque -->
+  <section class="panneau biblio">
+    <div class="onglets" role="tablist">
+      <button class="on" data-onglet="medias">Médias</button>
+      <button data-onglet="textes">Textes</button>
+      <button data-onglet="effets">Effets</button>
+      <button data-onglet="soustitres">Sous-titres</button>
+    </div>
+    <div class="contenu" data-page="medias">
+      <div id="depot" class="depot">
+        <p><b>Glisse tes fichiers ici</b><br>vidéos, images, musiques, voix off</p>
+        <button data-act="importer">Choisir des fichiers</button>
+      </div>
+      <div id="medias" class="medias"></div>
+      <button class="petit" data-act="couleur">🎨 Ajouter un fond de couleur</button>
+    </div>
+    <div class="contenu" data-page="textes" hidden>
+      <p class="astuce">Clique sur un modèle : il se place sous la tête de lecture. Tu modifies ensuite le texte à droite.</p>
+      <div id="modeles-textes" class="modeles"></div>
+    </div>
+    <div class="contenu" data-page="effets" hidden>
+      <p class="astuce">Sélectionne un clip dans la timeline puis clique sur un effet.</p>
+      <h4>Transitions d'entrée</h4><div id="liste-tin" class="puces"></div>
+      <h4>Transitions de sortie</h4><div id="liste-tout" class="puces"></div>
+      <h4>Mouvement (photos)</h4><div id="liste-anim" class="puces"></div>
+      <h4>Couleurs</h4><div id="liste-looks" class="puces"></div>
+      <p class="astuce">Fondu enchaîné : fais <b>chevaucher</b> deux clips sur la même piste, comme dans Vegas. Le passage se fait tout seul.</p>
+    </div>
+    <div class="contenu" data-page="soustitres" hidden>
+      <p class="astuce">Colle le texte de ta voix off (par exemple ElevenLabs). Sélectionne le clip de la voix dans la timeline, puis clique : les sous-titres se calent sur les moments où la voix parle.</p>
+      <textarea id="st-texte" rows="9" placeholder="Colle ici le texte de ta voix off…"></textarea>
+      <label class="ligne">Mots par sous-titre <input id="st-mots" type="number" min="1" max="20" value="6"></label>
+      <label class="ligne">Style
+        <select id="st-style"></select>
+      </label>
+      <button class="plein" data-act="soustitres">💬 Créer les sous-titres</button>
+    </div>
+  </section>
+
+  <!-- Moniteur -->
+  <section class="panneau moniteur">
+    <div class="ecran" id="ecran">
+      <canvas id="apercu" width="1920" height="1080"></canvas>
+      <div id="poignees" class="poignees" hidden></div>
+    </div>
+    <div class="transport">
+      <span id="tc" class="tc">00:00:00.00</span>
+      <div class="boutons">
+        <button data-act="debut" title="Début (Origine)">⏮</button>
+        <button data-act="imgprec" title="Image précédente (←)">◀︎</button>
+        <button data-act="lecture" id="btn-lecture" class="gros" title="Lecture / pause (Espace)">▶</button>
+        <button data-act="imgsuiv" title="Image suivante (→)">▶︎</button>
+        <button data-act="fin" title="Fin (Fin)">⏭</button>
+      </div>
+      <span id="duree" class="tc muet">00:00:00.00</span>
+    </div>
+  </section>
+
+  <!-- Inspecteur -->
+  <section class="panneau inspecteur">
+    <h3 id="insp-titre">Inspecteur</h3>
+    <div id="insp" class="insp"><p class="astuce">Clique sur un clip de la timeline pour régler sa position, sa taille, ses couleurs, son volume, sa vitesse et ses transitions.</p></div>
+  </section>
+
+  <!-- Timeline -->
+  <section class="panneau timeline">
+    <div class="outils">
+      <div class="groupe">
+        <button class="outil on" data-outil="selection" title="Outil Sélection (V)">↖ Sélection</button>
+        <button class="outil" data-outil="lame" title="Outil Lame : clique sur un clip pour le couper (C)">✂ Lame</button>
+      </div>
+      <div class="groupe">
+        <button data-act="couper" title="Couper à la tête de lecture (S)">⫿ Couper</button>
+        <button data-act="supprimer" title="Supprimer (Suppr)">🗑 Supprimer</button>
+        <button data-act="supprtrou" title="Supprimer et boucher le trou (Maj+Suppr)">⇤ Supprimer + trou</button>
+        <button data-act="dupliquer" title="Dupliquer (Ctrl+D)">⧉ Dupliquer</button>
+        <button data-act="detacher" title="Mettre le son d'une vidéo sur une piste audio">🔊 Détacher le son</button>
+        <button data-act="marqueur" title="Ajouter un repère (M)">🚩 Repère</button>
+      </div>
+      <div class="groupe">
+        <button id="btn-aimant" class="on" data-act="aimant" title="Aimant : les clips se collent entre eux">🧲 Aimant</button>
+        <button data-act="pistev" title="Ajouter une piste vidéo">+ Piste V</button>
+        <button data-act="pistea" title="Ajouter une piste audio">+ Piste A</button>
+        <button data-act="dezoom" title="Dézoomer (-)">−</button>
+        <input id="zoom" type="range" min="2" max="400" value="60" title="Zoom de la timeline">
+        <button data-act="zoom" title="Zoomer (+)">+</button>
+        <button data-act="ajuster" title="Voir tout le montage">↔ Tout voir</button>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="entetes" id="entetes"><div class="coin"></div></div>
+      <div class="defile" id="defile">
+        <div class="regle" id="regle"></div>
+        <div class="pistes" id="pistes"></div>
+        <div class="tete" id="tete"><span></span></div>
+        <div class="aimant-ligne" id="aimant-ligne" hidden></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<input id="fichiers" type="file" multiple accept="video/*,image/*,audio/*" hidden>
+
+<!-- Fenêtres -->
+<div id="fenetre" class="fenetre" hidden>
+  <div class="boite">
+    <button class="fermer" data-act="fermer" title="Fermer">✕</button>
+    <div id="fenetre-corps"></div>
+  </div>
+</div>
+
+<div id="mobile" class="mobile" hidden>
+  <p>📱 Naufragés Studio est fait pour un ordinateur (écran large, souris, clavier). Tu peux quand même l'essayer ici.</p>
+  <button data-act="mobileok">Continuer</button>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="vendor/mp4-muxer.js"></script>
+<script src="montage.js?v=1"></script>
+</body>
+</html>

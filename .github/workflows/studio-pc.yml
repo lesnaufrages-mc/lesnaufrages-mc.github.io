@@ -1,0 +1,61 @@
+# Construit Naufragés Studio (logiciel de montage vidéo) pour Windows.
+# Sur une pull request : construit seulement (fichiers dans « Artifacts » en bas du lancement).
+# Sur main (ou à la main : Actions > « Naufragés Studio (Windows) » > Run workflow) :
+# construit puis publie la version dans « Releases ». Le bouton « Télécharger » du site
+# (/montage/) prend toujours la dernière version publiée.
+# Nouvelle version : monter "version" dans studio/package.json.
+name: Naufragés Studio (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['studio/**', '.github/workflows/studio-pc.yml']
+  pull_request:
+    paths: ['studio/**', '.github/workflows/studio-pc.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Version
+        id: v
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NaufragesStudio-windows
+          path: |
+            studio/dist/NaufragesStudio-installation.exe
+            studio/dist/NaufragesStudio-portable.zip
+          retention-days: 30
+      - name: Publier la version
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: studio-v${{ steps.v.outputs.version }}
+          name: Naufragés Studio ${{ steps.v.outputs.version }}
+          make_latest: true
+          overwrite_files: true
+          body: |
+            Naufragés Studio, logiciel de montage vidéo gratuit pour Windows 10 et 11.
+            - **NaufragesStudio-installation.exe** : installe le logiciel avec un raccourci sur le bureau (conseillé).
+            - **NaufragesStudio-portable.zip** : sans installation, décompresse puis lance NaufragesStudio.exe.
+            Si Windows affiche « Windows a protégé votre ordinateur » : Informations complémentaires > Exécuter quand même.
+          files: |
+            studio/dist/NaufragesStudio-installation.exe
+            studio/dist/NaufragesStudio-portable.zip

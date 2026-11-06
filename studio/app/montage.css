@@ -1,13 +1,13 @@
 /* Naufragés Studio : logiciel de montage vidéo (interface sombre façon Premiere / Vegas / Resolve) */
-@font-face{font-family:Bricolage;font-weight:400;font-display:swap;src:url(../fonts/bricolage-grotesque-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:Bricolage;font-weight:700;font-display:swap;src:url(../fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:Cinzel;font-weight:700;font-display:swap;src:url(../fonts/cinzel-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:Cinzel;font-weight:900;font-display:swap;src:url(../fonts/cinzel-latin-900-normal.woff2) format("woff2")}
-@font-face{font-family:Orbitron;font-weight:900;font-display:swap;src:url(../fonts/orbitron-latin-900-normal.woff2) format("woff2")}
-@font-face{font-family:Rajdhani;font-weight:700;font-display:swap;src:url(../fonts/rajdhani-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:Cormorant;font-weight:600;font-display:swap;src:url(../fonts/cormorant-garamond-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:Pixelify;font-weight:600;font-display:swap;src:url(../fonts/pixelify-sans-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:Atkinson;font-weight:700;font-display:swap;src:url(../fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:Bricolage;font-weight:400;font-display:swap;src:url(fonts/bricolage-grotesque-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Bricolage;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:Cinzel;font-weight:700;font-display:swap;src:url(fonts/cinzel-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:Cinzel;font-weight:900;font-display:swap;src:url(fonts/cinzel-latin-900-normal.woff2) format("woff2")}
+@font-face{font-family:Orbitron;font-weight:900;font-display:swap;src:url(fonts/orbitron-latin-900-normal.woff2) format("woff2")}
+@font-face{font-family:Rajdhani;font-weight:700;font-display:swap;src:url(fonts/rajdhani-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:Cormorant;font-weight:600;font-display:swap;src:url(fonts/cormorant-garamond-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Pixelify;font-weight:600;font-display:swap;src:url(fonts/pixelify-sans-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Atkinson;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
 
 :root{
   --fond:#0c0c10;--p1:#16161d;--p2:#1d1d26;--p3:#262632;--ligne:#2f2f3d;

@@ -1,0 +1,78 @@
+{
+  "name": "naufrages-studio",
+  "productName": "Naufrages Studio",
+  "version": "1.0.0",
+  "description": "Naufragés Studio : logiciel de montage vidéo gratuit pour Windows.",
+  "author": "Les Naufragés",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64 --publish never",
+    "build:linux": "electron-builder --linux --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.6.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "io.github.lesnaufrages.studio",
+    "productName": "Naufrages Studio",
+    "executableName": "NaufragesStudio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "NaufragesStudio-portable.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Naufragés Studio",
+      "artifactName": "NaufragesStudio-installation.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "AudioVideo"
+    },
+    "electronLanguages": [
+      "fr",
+      "en-US"
+    ]
+  },
+  "repository": "https://github.com/lesnaufrages-mc/lesnaufrages-mc.github.io"
+}

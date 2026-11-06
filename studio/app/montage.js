@@ -2,7 +2,7 @@
    Inspiré de Premiere Pro (pistes V1/V2/A1, outil Lame, moniteur avec poignées, options d'effet),
    Vegas Pro (fondu enchaîné en faisant chevaucher deux clips, poignées de fondu dans les coins),
    DaVinci Resolve (inspecteur, aimant) et CapCut (modèles de textes, sous-titres, formats Shorts).
-   Tout reste sur l'ordinateur de l'utilisateur : rien n'est envoyé sur internet.
+   Programme Windows (Electron, dossier studio/). Tout reste sur l'ordinateur : rien n'est envoyé sur internet.
    Projets et médias : IndexedDB « naufrages-studio ». Dernier projet ouvert : localStorage « studio-dernier ».
    Export MP4 : WebCodecs (H.264 + AAC) + mp4-muxer (vendor/), sinon enregistrement en temps réel. */
 (function () {
@@ -836,7 +836,7 @@ function initTimeline() {
     const pts = pointsAimant(c.id);
     const md = dureeMedia(c), fps = P.fps;
     let bouge = false;
-    pistesEl.setPointerCapture(e.pointerId);
+    try { pistesEl.setPointerCapture(e.pointerId); } catch (er) { /* pointeur déjà relâché */ }
     const mv = ev => {
       const dt = (ev.clientX - o.x) / pxs;
       if (!bouge && Math.abs(ev.clientX - o.x) < 3) return;
@@ -1484,7 +1484,14 @@ async function fenetreProjets() {
   const lignes = liste.map(p => h('div', { class: 'projet' + (P && p.id === P.id ? ' actuel' : '') },
     h('div', { class: 'nom' }, p.nom, h('small', null, (FORMATS[p.w + 'x' + p.h] || p.w + '×' + p.h) + ' · ' + p.clips.length + ' clip(s) · modifié le ' + new Date(p.modifie).toLocaleString('fr-BE'))),
     h('button', { onclick: async () => { $('#fenetre').hidden = true; await ouvrirProjet(p.id); } }, 'Ouvrir'),
-    h('button', { onclick: async () => { const n = prompt('Nouveau nom du projet :', p.nom); if (!n) return; p.nom = n; await DB.mettre('projets', p); if (P.id === p.id) P.nom = n; fenetreProjets(); } }, '✎'),
+    h('button', { title: 'Renommer', onclick: ev => {
+      const zone = ev.target.closest('.projet').querySelector('.nom');
+      const i = h('input', { type: 'text', value: p.nom });
+      const valider = async () => { const n = i.value.trim(); if (n) { p.nom = n; await DB.mettre('projets', p); if (P.id === p.id) P.nom = n; } fenetreProjets(); };
+      i.addEventListener('keydown', e => { if (e.key === 'Enter') valider(); if (e.key === 'Escape') fenetreProjets(); });
+      i.addEventListener('blur', valider);
+      zone.replaceChildren(i); i.focus(); i.select();
+    } }, '✎'),
     h('button', { title: 'Supprimer', onclick: async () => {
       if (!confirm('Supprimer le projet « ' + p.nom + ' » et ses médias importés ? (Tes fichiers sur l\'ordinateur ne sont pas touchés.)')) return;
       const ms = (await DB.mediasDe(p.id)) || []; for (const m of ms) await DB.effacer('medias', m.id);

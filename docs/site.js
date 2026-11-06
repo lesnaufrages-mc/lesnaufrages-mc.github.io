@@ -146,7 +146,7 @@ var SITE = {
           ? '<video class="post-video" controls playsinline preload="none"' +
             (a.image && /^[\w\/.-]+\.(jpe?g|png|webp)$/i.test(a.image) ? ' poster="' + esc(a.image) + '"' : '') +
             '><source src="' + esc(a.video) + '" type="video/' + (/webm$/i.test(a.video) ? 'webm' : 'mp4') + '"></video>'
-          : '';
+          : (a.image && /^[\w\/.-]+\.(jpe?g|png|webp)$/i.test(a.image) ? '<img class="post-video" src="' + esc(a.image) + '" alt="" loading="lazy">' : '');
         return '<article class="post' + (a.epingle ? ' pin' : '') + '">' +
           '<div class="meta"><span class="tag ' + c + '">' + ICONES[c] + ' ' + NOMS[c] + '</span>' +
           '<time datetime="' + esc(a.date) + '">' + dateFr(a.date) + '</time>' +

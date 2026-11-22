@@ -99,6 +99,9 @@ def build(name,rows,slots,gold=(),bar=True,bcol=('navy','navy2'),extra=None,seed
     for s in slots: slot(im,*pos(s),gold.get(s,'tile') if isinstance(gold,dict) else ('gold' if s in gold else 'tile'))
     # player inventory
     iy=17+18*rows+13
+    # étiquette parchemin derrière le texte « Inventaire » (label vanilla à y = 20+18*rows)
+    ly=20+18*rows
+    parchment(im,5,ly-2,66,ly+8,seed+2)
     d.rectangle([5,iy-2,W-6,iy+3*18+4+18+1],outline=C['seam'])
     for r_ in range(3):
         for c in range(9): slot(im,7+18*c,iy+r_*18)

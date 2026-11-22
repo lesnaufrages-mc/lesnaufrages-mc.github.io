@@ -1,0 +1,62 @@
+{
+ "providers": [
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/metiers.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ueb01"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/metiers_top.png",
+   "ascent": 13,
+   "height": 204,
+   "chars": [
+    "\ueb02"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/faction.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ueb03"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/faction_relations.png",
+   "ascent": 13,
+   "height": 186,
+   "chars": [
+    "\ueb04"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/menu.png",
+   "ascent": 13,
+   "height": 204,
+   "chars": [
+    "\ueb05"
+   ]
+  },
+  {
+   "type": "space",
+   "advances": {
+    "\uf801": -1,
+    "\uf802": -2,
+    "\uf804": -4,
+    "\uf808": -8,
+    "\uf810": -16,
+    "\uf820": -32,
+    "\uf840": -64,
+    "\uf880": -128
+   }
+  }
+ ]
+}

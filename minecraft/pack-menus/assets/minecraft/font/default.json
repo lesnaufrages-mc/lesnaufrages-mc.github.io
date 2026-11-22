@@ -46,6 +46,24 @@
    ]
   },
   {
+   "type": "bitmap",
+   "file": "naufrages:gui/faction_membres.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ueb06"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "naufrages:gui/faction_top.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ueb07"
+   ]
+  },
+  {
    "type": "space",
    "advances": {
     "\uf801": -1,

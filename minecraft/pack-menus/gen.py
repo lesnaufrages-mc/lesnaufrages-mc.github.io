@@ -116,13 +116,15 @@ def top_extra(im):
 menus['metiers_top']=(5, [4,13,21,23]+r(28,34)+[40,44], {4:'gold',13:'or',21:'argent',23:'bronze'}, ('red','red2'))
 menus['faction']=(6, [4]+r(10,16)+r(19,25)+r(29,33)+[45,49,53], [4], ('navy','navy2'))
 menus['faction_relations']=(4, [10,11,12,13,15,16,22,31], [], ('navy','navy2'))
+menus['faction_membres']=(6, [4]+r(10,16)+r(19,25)+r(28,34)+r(37,43)+[45,47,49,51,53], [4], ('navy','navy2'))
+menus['faction_top']=(6, [4,13,21,23]+r(28,34)+r(37,43)+[45,49,53], {4:'gold',13:'or',21:'argent',23:'bronze'}, ('red','red2'))
 menus['menu']=(5, [4]+r(10,16)+r(20,25)+[30,31,32,40], [4], ('navy','navy2'))
 heights={}
 for i,(n,v) in enumerate(menus.items()):
     rows,sl,gd,bc=v[:4]; ex=v[4] if len(v)>4 else None
     heights[n]=build(n,rows,sl,gd,True,bc,ex,seed=11+i)
 # font
-chars={'metiers':'','metiers_top':'','faction':'','faction_relations':'','menu':''}
+chars={'metiers':'','metiers_top':'','faction':'','faction_relations':'','menu':'','faction_membres':'','faction_top':''}
 prov=[{"type":"bitmap","file":f"naufrages:gui/{n}.png","ascent":13,"height":heights[n],"chars":[chars[n]]} for n in chars]
 prov.append({"type":"space","advances":{"":-1,"":-2,"":-4,"":-8,"":-16,"":-32,"":-64,"":-128}})
 os.makedirs('assets/minecraft/font',exist_ok=True)

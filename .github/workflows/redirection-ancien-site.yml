@@ -1,0 +1,37 @@
+# Ancienne adresse lesnaufrages-mc.github.io : renvoie chaque page vers https://lesnaufrages.net.
+# Le vrai site est publié sur Cloudflare Pages ; docs/ reste la source du site dans ce dépôt.
+# À faire UNE fois sur GitHub : Settings > Pages > Build and deployment > Source = « GitHub Actions ».
+name: Redirection vers lesnaufrages.net
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'scripts/redirection-ancien-site.cjs', '.github/workflows/redirection-ancien-site.yml']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/redirection-ancien-site.cjs redirection
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: redirection
+      - id: deploiement
+        uses: actions/deploy-pages@v4

@@ -104,7 +104,7 @@
 <table>
   <tr><th>Système</th><th>Fichier</th><th>Installation</th></tr>
   <tr><td>Windows 10 et 11 (64 bits)</td><td><code>NaufragesStudio-installation.exe</code></td><td>Ouvre le fichier et suis les étapes. Un raccourci est créé sur le bureau et dans le menu Démarrer. Une version sans installation existe aussi (<code>NaufragesStudio-portable.zip</code>) : décompresse-la et lance <code>NaufragesStudio.exe</code>.</td></tr>
-  <tr><td>Mac (Intel et Apple M1 à M4, macOS 12 ou plus récent)</td><td><code>NaufragesStudio-mac.zip</code></td><td>Double-clique pour décompresser, puis glisse l'app dans <b>Applications</b>.</td></tr>
+  <tr><td>Mac (Intel et Apple M1 à M4, macOS 12 ou plus récent)</td><td><code>NaufragesStudio-mac.zip</code></td><td>Double-clique pour décompresser, puis glisse l'app dans <b>Applications</b>. Sur les puces M, le Mac peut proposer d'installer Rosetta : accepte.</td></tr>
   <tr><td>Linux (64 bits)</td><td><code>NaufragesStudio-linux.AppImage</code></td><td>Rends le fichier exécutable (clic droit &gt; Propriétés &gt; Autoriser l'exécution), puis double-clique dessus.</td></tr>
 </table>
 <div class="encadre attention"><p><b>Message de sécurité au premier lancement.</b> Le logiciel n'a pas encore de certificat payant, donc le système demande une confirmation la première fois. Sous Windows, si « Windows a protégé votre ordinateur » s'affiche, clique sur <b>Informations complémentaires</b> puis sur <b>Exécuter quand même</b>. Sur Mac, fais un <b>clic droit sur l'app &gt; Ouvrir</b>, puis confirme avec <b>Ouvrir</b> (ou va dans Réglages système &gt; Confidentialité et sécurité &gt; Ouvrir quand même).</p></div>
@@ -356,6 +356,10 @@
 <p>Choisis la résolution <b>Plus légère</b>, ferme les autres programmes lourds, puis réessaie. Si l'export précis échoue encore, utilise la méthode <b>En temps réel</b>.</p>
 <h3>La lecture saccade dans le moniteur</h3>
 <p>L'aperçu calcule l'image en direct : avec beaucoup de pistes ou de très grosses vidéos, un ordinateur modeste peut ralentir. La vidéo exportée, elle, est toujours fluide, car chaque image est calculée sans se presser.</p>
+<h3>Sur Mac : « NaufragesStudio est endommagé »</h3>
+<p>Ce message vient de la protection du Mac pour les apps sans certificat payant, l'app n'est pas abîmée. Glisse d'abord l'app dans <b>Applications</b>, ouvre le <b>Terminal</b> (Applications &gt; Utilitaires) et tape :</p>
+<p><code>xattr -cr "/Applications/NaufragesStudio.app"</code></p>
+<p>Appuie sur Entrée, puis ouvre l'app normalement.</p>
 <h3>Le logiciel est-il vraiment gratuit ?</h3>
 <p>Oui, sans publicité dans le logiciel, sans filigrane sur tes vidéos et sans compte à créer.</p>
 <h3>Une autre question, une idée ?</h3>

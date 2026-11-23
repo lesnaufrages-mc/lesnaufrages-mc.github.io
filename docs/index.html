@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mot Mystère – Jeu du mot du jour gratuit en français | Les Naufragés</title>
-<meta name="description" content="Mot Mystère : le jeu du mot du jour gratuit, en français et sans inscription. Un mot de 5 lettres par jour, 6 essais, et chaque mot trouvé débloque une page du journal d'un naufragé. L'alternative française à Wordle.">
+<title>Les Naufragés – Jeux gratuits, Mot Mystère et serveur Minecraft</title>
+<meta name="description" content="Les Naufragés, petit studio indépendant : des jeux gratuits dans le navigateur (Mot Mystère, le mot du jour en français, CLUTCH, Imperium of Wars) et un serveur Minecraft semi-factions Java et Bedrock avec son Discord.">
 <link rel="canonical" href="https://lesnaufrages.net/">
 <meta name="theme-color" content="#0f0f10">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Mot Mystère – Le mot du jour et le journal du naufragé">
-<meta property="og:description" content="Un mot de 5 lettres par jour, le même pour tout le monde. Tu le trouves en combien ?">
+<meta property="og:title" content="Les Naufragés – Jeux gratuits et serveur Minecraft">
+<meta property="og:description" content="Des jeux gratuits dans le navigateur, dont Mot Mystère, et un serveur Minecraft semi-factions avec son Discord.">
 <meta property="og:image" content="https://lesnaufrages.net/img/partage.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="cubes.css?v=1">
 <link rel="stylesheet" href="serveur-mc.css?v=2">
-<link rel="stylesheet" href="accueil.css?v=1">
+<link rel="stylesheet" href="accueil.css?v=2">
 <!-- Google AdSense (pubs du site). ID éditeur = le même que AdMob. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
 <meta name="google-adsense-account" content="ca-pub-7922547142050402">
@@ -36,26 +36,27 @@
 ]}
 </script>
 </head>
-<body>
+<body class="page-accueil">
 
 <nav class="top">
   <div class="wrap">
-    <a class="brand" href="#"><img src="icon.png" alt="">MOT MYSTÈRE</a>
+    <a class="brand" href="#"><img src="icon.png" alt="">LES NAUFRAGÉS</a>
     <div class="links">
-      <a href="jouer/">Mot du jour</a>
-      <a href="amis/">Entre amis</a>
+      <a href="#creations">Nos jeux</a>
+      <a href="#communaute">Minecraft</a>
       <details class="menu-crea">
-        <summary><span class="txt-pc">Nos autres créations</span><span class="txt-mob">Menu</span></summary>
+        <summary><span class="txt-pc">Toutes nos créations</span><span class="txt-mob">Menu</span></summary>
         <div class="menu-liste">
-          <span class="menu-titre">Nos autres créations</span>
+          <span class="menu-titre">Nos créations</span>
+          <a href="jouer/"><b>🟩 Mot Mystère</b><small>Le mot du jour en français</small></a>
+          <a href="#serveur"><b>⛏️ Serveur Minecraft</b><small>Java et Bedrock</small></a>
           <a href="esport/"><b>🎮 CLUTCH</b><small>Le quiz esport du jour</small></a>
           <a href="strategie/"><b>⚔️ Imperium of Wars</b><small>Stratégie et batailles en 3D</small></a>
           <a href="croisade/"><b>✠ Ferrum et Fides</b><small>Démo 3D au temps des croisades</small></a>
           <a href="montage/"><b>🎬 Naufragés Studio</b><small>Logiciel de montage vidéo gratuit</small></a>
-          <a href="#serveur"><b>⛏️ Serveur Minecraft</b><small>Java et Bedrock</small></a>
           <a href="presse/"><b>📦 Presse et créateurs</b><small>Kit média à télécharger</small></a>
           <span class="menu-mob">
-            <a href="amis/"><b>Jouer entre amis</b></a>
+            <a href="amis/"><b>Mot Mystère entre amis</b></a>
             <a href="actualites.html"><b>Actualités</b></a>
             <a href="forum/"><b>Forum</b></a>
             <a href="staff/"><b>Staff</b></a>
@@ -66,125 +67,53 @@
       <a href="actualites.html">Actualités</a>
       <a href="forum/">Forum</a>
       <a href="staff/">Staff</a>
-      <a class="btn btn-play" href="jouer/">Jouer</a>
+      <a class="btn btn-discord btn-nav" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
     </div>
   </div>
 </nav>
 
-<header class="hero">
+<header class="hero hero-studio">
   <div class="wrap">
     <div>
-      <span class="pill"><span class="dot"></span>Un nouveau mot chaque nuit à minuit</span>
-      <h1>Trouve le <span>mot mystère</span> en 6 essais.</h1>
-      <p class="lead">Un mot de 5 lettres par jour, le même pour tout le monde. Chaque mot trouvé débloque une page du journal d'un naufragé : une histoire à suivre, un chapitre par jour.</p>
+      <span class="pill"><span class="dot"></span>Studio indépendant · Jeux gratuits · Minecraft</span>
+      <h1>Des jeux gratuits et un <span>serveur Minecraft</span>.</h1>
+      <p class="lead"><b>Les Naufragés</b>, c'est un petit studio indépendant et sa communauté. On crée des jeux à jouer gratuitement dans le navigateur, et on fait vivre un serveur Minecraft et un Discord.</p>
       <div class="cta">
-        <a class="btn btn-play" href="jouer/">Jouer au mot du jour</a>
-        <a class="btn btn-ghost" href="amis/">Défier des amis</a>
-      </div>
-      <p class="note">Gratuit, sans inscription, dans ton navigateur. <a href="jouer/#installer">Tu peux aussi l'installer sur ton téléphone.</a></p>
-      <p class="intro-studio">Mot Mystère est fait par <b>Les Naufragés</b>, un petit studio indépendant : des jeux gratuits, un serveur Minecraft, un Discord et des outils pour les créateurs. <a href="#creations">Voir toutes nos créations</a></p>
-    </div>
-    <div aria-hidden="true">
-      <div class="phone">
-        <h3>MOT MYSTÈRE</h3>
-        <p class="sub">Journal du naufragé · page 12</p>
-        <div class="board">
-          <div class="row"><div class="tile x" style="animation-delay:.2s">C</div><div class="tile g" style="animation-delay:.35s">A</div><div class="tile x" style="animation-delay:.5s">R</div><div class="tile x" style="animation-delay:.65s">T</div><div class="tile x" style="animation-delay:.8s">E</div></div>
-          <div class="row"><div class="tile y" style="animation-delay:1.2s">N</div><div class="tile g" style="animation-delay:1.35s">A</div><div class="tile x" style="animation-delay:1.5s">G</div><div class="tile x" style="animation-delay:1.65s">E</div><div class="tile y" style="animation-delay:1.8s">S</div></div>
-          <div class="row"><div class="tile g" style="animation-delay:2.2s">S</div><div class="tile g" style="animation-delay:2.35s">A</div><div class="tile g" style="animation-delay:2.5s">V</div><div class="tile g" style="animation-delay:2.65s">O</div><div class="tile g" style="animation-delay:2.8s">N</div></div>
-          <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-          <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-          <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-        </div>
-        <p class="won">Trouvé en 3/6 !</p>
+        <a class="btn btn-play" href="#creations">Voir nos jeux</a>
+        <a class="btn btn-ghost" href="#communaute">Jouer sur le serveur Minecraft</a>
       </div>
     </div>
+    <aside class="mc-rapide" aria-label="Rejoindre le serveur Minecraft">
+      <span class="c-badge">Minecraft · Semi-Factions</span>
+      <h2>Rejoins le serveur</h2>
+      <p class="mc-etat" data-mc-etat="naufragesmc.mine.fun"><span class="pt"></span><span>Vérification de l'état…</span></p>
+      <div class="mc-ligne">
+        <span class="lbl">Adresse · Java et Bedrock</span>
+        <code>naufragesmc.mine.fun</code>
+        <small>Java : version 1.21.11 conseillée. Bedrock : port <b>30603</b>.</small>
+        <button type="button" class="mc-copier" data-copier="naufragesmc.mine.fun">Copier l'adresse</button>
+      </div>
+      <div class="mc-rapide-liens">
+        <a class="btn btn-discord" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Rejoindre le Discord</a>
+        <a class="lien-sobre" href="#serveur">Comment se connecter ?</a>
+      </div>
+    </aside>
   </div>
   <picture><source media="(max-width:600px)" srcset="img/ile-3d-mobile.webp"><img class="horizon vox" src="img/ile-3d.webp" width="2400" height="800" alt="L'île des Naufragés en cubes : palmier, coffre, feu de camp et épave sous la lune"></picture>
-  <div class="horizon-sea" aria-hidden="true"></div>
 </header>
 
-<section id="journal" class="journal-teaser">
-  <div class="wrap">
-    <div class="carnet">
-      <div class="carnet-tete">
-        <span class="eyebrow">Le journal du naufragé · Saison 1</span>
-        <h2>Chaque mot trouvé, c'est une page de l'histoire.</h2>
-        <p class="lead">Un avion s'écrase, un survivant se réveille sur une île. Trouve le mot du jour pour lire la page suivante de son journal : 30 pages, une par jour.</p>
-      </div>
-      <figure class="page">
-        <figcaption>Page 1 · Le réveil</figcaption>
-        <blockquote>« Je me réveille sur le sable, la tête contre le tronc d'un arbre. Autour de moi, la mer à perte de vue. Comment suis-je arrivé ici ? »</blockquote>
-        <p class="flou" aria-hidden="true">Au bout de la plage, quelque chose brille entre les vagues. Je m'approche doucement, le cœur battant, et je comprends enfin ce qui m'est arrivé cette nuit-là…</p>
-        <div class="page-cta"><a class="btn btn-play" href="jouer/">Trouver le mot pour lire la suite</a><small>Tu arrives en cours de route ? Les pages des jours manqués se repêchent gratuitement dans le journal du jeu.</small></div>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<section id="comment-jouer">
-  <div class="wrap grid2">
-    <div>
-      <span class="eyebrow">Comment jouer</span>
-      <h2>Simple à comprendre, dur à lâcher.</h2>
-      <p class="lead">Tape un mot de 5 lettres. Les couleurs te disent si tu chauffes. Tu as 6 essais pour trouver le mot du jour.</p>
-      <div class="legend">
-        <div><span class="tile g">A</span><span><b>Vert</b> : bonne lettre, bonne place.</span></div>
-        <div><span class="tile y">N</span><span><b>Jaune</b> : la lettre est dans le mot, mais ailleurs.</span></div>
-        <div><span class="tile x">R</span><span><b>Bleu</b> : la lettre est tombée à la mer, elle n'est pas dans le mot.</span></div>
-      </div>
-    </div>
-    <div class="steps">
-      <div class="card step"><h3>Propose un mot</h3><p>N'importe quel mot de 5 lettres pour commencer. Astuce : choisis-en un avec plusieurs voyelles.</p></div>
-      <div class="card step"><h3>Lis les couleurs</h3><p>Garde les lettres vertes, déplace les jaunes, oublie les bleues. Bloqué ? Ouvre la bouteille à la mer : un indice, contre un essai.</p></div>
-      <div class="card step"><h3>Partage ta grille</h3><p>Une fois le mot trouvé, partage ton résultat en carrés de couleur, sans révéler le mot. 🟩🟨🟦</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="fonctionnalites" class="alt">
+<section id="creations" class="serre">
   <div class="wrap">
     <div class="head-split">
       <div>
-        <span class="eyebrow">Fonctionnalités</span>
-        <h2>Deux minutes par jour, pas plus.</h2>
+        <span class="eyebrow">Nos créations</span>
+        <h2>Choisis ton île.</h2>
       </div>
-      <p class="lead">Une partie le matin, une comparaison avec les copains le soir. C'est tout le principe.</p>
-    </div>
-    <ul class="ledger">
-      <li><img class="px" src="img/ico/calendrier.svg" alt=""><div><h3>Le journal du naufragé</h3><p>Chaque mot du jour est un mot de l'histoire. Trouve-le et lis la page suivante : 30 pages pour la saison 1.</p></div></li>
-      <li><img class="px" src="img/ico/bouteille.svg" alt=""><div><h3>La bouteille à la mer</h3><p>Un indice sur le mot quand tu sèches. Il te coûte un essai, et ta grille partagée le montre.</p></div></li>
-      <li><img class="px" src="img/ico/flamme.svg" alt=""><div><h3>Séries et statistiques</h3><p>Suis ta série de victoires, ton taux de réussite et ton record.</p></div></li>
-      <li><img class="px" src="img/ico/lettres.svg" alt=""><div><h3>Partage sans spoiler</h3><p>Ta grille en carrés de couleur, prête à coller sur WhatsApp, Discord ou X.</p></div></li>
-      <li><img class="px" src="img/ico/film.svg" alt=""><div><h3>Parties bonus</h3><p>Pas assez ? Débloque une partie en plus en regardant une courte vidéo.</p></div></li>
-      <li><img class="px" src="img/ico/lettres.svg" alt=""><div><h3>En français</h3><p>Des mots du quotidien, sans accents à taper, pensés pour les francophones.</p></div></li>
-      <li><img class="px" src="img/ico/cadenas.svg" alt=""><div><h3>Ta vie privée respectée</h3><p>Pas de compte, pas de cookie. Tes stats restent sur ton appareil. <a href="confidentialite.html">En savoir plus</a></p></div></li>
-    </ul>
-  </div>
-</section>
-
-<section>
-  <div class="wrap center">
-    <span class="eyebrow">Applications mobiles</span>
-    <h2>Bientôt dans ta poche.</h2>
-    <p class="lead">Mot Mystère arrive sur Android et iPhone. En attendant, la version web marche déjà très bien sur téléphone : ajoute-la à ton écran d'accueil !</p>
-    <div class="stores">
-      <div class="store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 1.8c-.3.3-.5.8-.5 1.4v17.6c0 .6.2 1.1.5 1.4l.1.1 9.9-9.9v-.2L3.7 1.7l-.1.1zM17 15.6l-3.3-3.3v-.2L17 8.8l.1.1 3.9 2.2c1.1.6 1.1 1.7 0 2.3l-3.9 2.2H17zM17.1 15.5 13.7 12 3.6 22.2c.4.4 1 .4 1.7.1l11.8-6.8M17.1 8.5 5.3 1.7c-.7-.4-1.3-.3-1.7.1L13.7 12l3.4-3.5z"/></svg><div><small>Bientôt sur</small><b>Google Play</b></div></div>
-      <div class="store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg><div><small>Bientôt sur</small><b>App Store</b></div></div>
-    </div>
-  </div>
-</section>
-
-<section id="creations">
-  <div class="wrap">
-    <div class="center" style="margin-bottom:36px">
-      <span class="eyebrow">Les Naufragés</span>
-      <h2>Un studio, plusieurs îles.</h2>
-      <p class="lead">Les Naufragés, c'est un petit studio indépendant et une communauté. On crée des jeux gratuits dans le navigateur, on fait vivre un serveur Minecraft et un Discord, et on partage nos outils avec les créateurs.</p>
+      <p class="lead">Tout est gratuit et se lance dans le navigateur, sans rien installer (sauf Minecraft et le logiciel de montage).</p>
     </div>
     <div class="crea-grille">
-      <a class="card crea" href="jouer/"><span class="crea-ico">🟩</span><h3>Mot Mystère</h3><p>Le mot du jour et le journal du naufragé. Notre jeu principal.</p></a>
-      <a class="card crea" href="amis/"><span class="crea-ico">👥</span><h3>Entre amis</h3><p>Un salon, un code, et le premier qui trouve le mot gagne.</p></a>
+      <a class="card crea crea-star" href="jouer/"><span class="crea-ico">🟩</span><h3>Mot Mystère</h3><p>Le mot du jour en français, et une histoire à suivre. Notre jeu principal.</p></a>
+      <a class="card crea crea-star" href="#communaute"><span class="crea-ico">⛏️</span><h3>Serveur Minecraft</h3><p>Semi-factions sur Java et Bedrock : claims, guerres, économie et métiers.</p></a>
       <a class="card crea" href="esport/"><span class="crea-ico">🎮</span><h3>CLUTCH</h3><p>Le quiz esport du jour : 10 rounds, du facile au difficile.</p></a>
       <a class="card crea" href="strategie/"><span class="crea-ico">⚔️</span><h3>Imperium of Wars</h3><p>Stratégie historique : diplomatie, dynasties et batailles en 3D.</p></a>
       <a class="card crea" href="croisade/"><span class="crea-ico">✠</span><h3>Ferrum et Fides</h3><p>Démo 3D au temps des croisades, en préparation pour Steam.</p></a>
@@ -193,13 +122,34 @@
   </div>
 </section>
 
-<section id="communaute" class="alt">
-  <div class="wrap">
-    <div class="center" style="margin-bottom:40px">
-      <span class="eyebrow">Communauté</span>
-      <h2>Rejoins Les Naufragés.</h2>
-      <p class="lead">Notre Discord, c'est aussi un serveur Minecraft semi-factions et une communauté active.</p>
+<section id="comment-jouer" class="alt serre">
+  <div class="wrap mm-bloc">
+    <div>
+      <span class="eyebrow" id="journal">Mot Mystère</span>
+      <h2>Trouve le mot du jour en 6 essais.</h2>
+      <p class="lead">Un mot de 5 lettres par jour, le même pour tout le monde. Chaque mot trouvé débloque une page du journal d'un naufragé : une histoire à suivre, une page par jour.</p>
+      <div class="legend">
+        <div><span class="tile g">A</span><span><b>Vert</b> : bonne lettre, bonne place.</span></div>
+        <div><span class="tile y">N</span><span><b>Jaune</b> : la lettre est dans le mot, mais ailleurs.</span></div>
+        <div><span class="tile x">R</span><span><b>Bleu</b> : la lettre n'est pas dans le mot.</span></div>
+      </div>
+      <p class="mm-plus">Gratuit, sans compte, en français. Un indice si tu sèches, ta série et tes stats, une grille à partager sans spoiler. <a href="jouer/#installer">Installable sur ton téléphone</a>, les applis Android et iPhone arrivent bientôt.</p>
+      <div class="cta">
+        <a class="btn btn-play" href="jouer/">Jouer au mot du jour</a>
+        <a class="btn btn-ghost" href="amis/">Défier des amis</a>
+      </div>
     </div>
+    <figure class="page">
+      <figcaption>Journal du naufragé · Page 1</figcaption>
+      <blockquote>« Je me réveille sur le sable, la tête contre le tronc d'un arbre. Autour de moi, la mer à perte de vue. Comment suis-je arrivé ici ? »</blockquote>
+      <p class="flou" aria-hidden="true">Au bout de la plage, quelque chose brille entre les vagues. Je m'approche doucement, le cœur battant…</p>
+      <div class="page-cta"><small>Trouve le mot du jour pour lire la suite. Les pages manquées se repêchent gratuitement.</small></div>
+    </figure>
+  </div>
+</section>
+
+<section id="communaute" class="serre">
+  <div class="wrap">
     <div class="community">
       <div class="c-head">
         <div>
@@ -207,7 +157,6 @@
           <h2>Les Naufragés Community</h2>
           <p>On a tous échoué sur la même île. Depuis, on construit, on commerce et on se fait la guerre.</p>
         </div>
-        <img class="horizon vox" src="img/ile-3d.webp" width="2400" height="800" alt="" loading="lazy">
       </div>
       <div class="c-body">
         <div class="grid3">
@@ -251,7 +200,7 @@
   </div>
 </section>
 
-<section id="bot">
+<section id="bot" class="serre">
   <div class="wrap grid2">
     <div>
       <span class="eyebrow">Naufragés Bot</span>
@@ -273,7 +222,7 @@
   </div>
 </section>
 
-<section id="actualites" class="alt">
+<section id="actualites" class="alt serre">
   <div class="wrap center">
     <span class="eyebrow" id="direct">En direct</span>
     <h2>Les Naufragés en chiffres.</h2>
@@ -285,7 +234,7 @@
       <div class="live-card" hidden><div class="lbl"><span class="dot"></span> En ligne</div><b data-live="enligne"></b><span>sur le Discord</span></div>
     </div>
 
-    <span class="eyebrow" style="margin-top:72px">Actualités</span>
+    <span class="eyebrow" style="margin-top:48px">Actualités</span>
     <h2>Quoi de neuf ?</h2>
     <p class="lead">Le jeu, le serveur Minecraft, le Discord et le bot : toutes les nouveautés au même endroit.</p>
     <div class="news" data-news="3"></div>
@@ -293,7 +242,7 @@
   </div>
 </section>
 
-<section id="faq">
+<section id="faq" class="serre">
   <div class="wrap center">
     <span class="eyebrow">FAQ</span>
     <h2>Questions fréquentes</h2>
@@ -311,15 +260,15 @@
   </div>
 </section>
 
-<section>
+<section class="serre">
   <div class="wrap">
     <div class="final">
       <div>
-        <h2>Prêt pour le mot du jour ?</h2>
-        <p class="lead">Il ne te faut que 2 minutes. Et peut-être 6 essais.</p>
+        <h2>On t'attend sur l'île.</h2>
+        <p class="lead">Un mot du jour en 2 minutes, ou une soirée sur le serveur Minecraft.</p>
       </div>
       <div class="cta">
-        <a class="btn btn-play" href="jouer/">Jouer maintenant</a>
+        <a class="btn btn-play" href="jouer/">Jouer au mot du jour</a>
         <a class="btn btn-discord" href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
         <a class="btn btn-x" href="https://x.com/NaufrageeC" target="_blank" rel="noopener"><svg class="ico-x" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> Suivre @NaufrageeC</a>
       </div>
@@ -329,9 +278,10 @@
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="#"><img src="icon.png" alt="">MOT MYSTÈRE</a>
+    <a class="brand" href="#"><img src="icon.png" alt="">LES NAUFRAGÉS</a>
     <div class="flinks">
-      <a href="jouer/">Jouer</a>
+      <a href="jouer/">Mot Mystère</a>
+      <a href="#serveur">Serveur Minecraft</a>
       <a href="esport/">CLUTCH (esport)</a>
       <a href="strategie/">Imperium of Wars</a>
       <a href="croisade/">Ferrum et Fides</a>
@@ -351,14 +301,14 @@
       <a href="cookies.html">Cookies</a>
       <a href="cookies.html" data-cookies>Gérer mes cookies</a>
     </div>
-    <span>© <span data-year>2026</span> Les Naufragés · Mot Mystère</span>
+    <span>© <span data-year>2026</span> Les Naufragés</span>
   </div>
 </footer>
 
 <script src="actualites.js?v=2"></script>
 <script src="supabase-config.js"></script>
 <script src="site.js?v=2"></script>
-<script src="serveur-mc.js?v=1"></script>
-<script src="accueil.js?v=1"></script>
+<script src="serveur-mc.js?v=2"></script>
+<script src="accueil.js?v=2"></script>
 </body>
 </html>

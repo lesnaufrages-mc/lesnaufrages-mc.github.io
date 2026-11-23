@@ -1,4 +1,4 @@
-/* Accueil (2026-11-15) : menu « Nos autres créations », extrait du journal, créations, chiffres. Chargé après cubes.css. */
+/* Accueil (2026-11-15, revu le 2026-11-23) : en haut, qui on est + Minecraft tout de suite ; Mot Mystère en un seul bloc ; espaces resserrés. Chargé après cubes.css. */
 
 /* Menu déroulant des autres créations (et menu complet sur mobile) */
 .menu-crea{position:relative;overflow:visible;border:0;margin:0;background:none}
@@ -23,15 +23,12 @@
   .menu-liste{position:fixed;left:12px;right:12px;top:72px;width:auto;max-height:calc(100vh - 90px);overflow:auto}
 }
 
-/* Phrase d'intro du studio dans le haut de page */
-.intro-studio{color:var(--muted);font-size:15px;max-width:560px;margin:18px 0 0;padding:12px 14px;background:var(--card);box-shadow:inset 4px 0 0 var(--sand)}
-.intro-studio b{color:var(--txt)}
-@media(max-width:860px){.intro-studio{margin:18px auto 0;text-align:left}}
-
-/* Extrait du journal du naufragé */
-.journal-teaser{padding-top:40px}
-.carnet{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
-@media(max-width:860px){.carnet{grid-template-columns:1fr}}
+/* Bloc Mot Mystère (comment jouer + extrait du journal) */
+.mm-bloc{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+@media(max-width:860px){.mm-bloc{grid-template-columns:1fr;gap:28px}}
+.mm-bloc .legend{margin:18px 0}
+.mm-plus{color:var(--muted);font-size:15px;margin:0 0 18px}
+.mm-bloc .cta{justify-content:flex-start}
 .page{margin:0;background:#efe3c4;color:#3a2a14;padding:26px 26px 22px;transform:rotate(-.6deg);
   box-shadow:inset 0 3px 0 rgba(255,255,255,.5),3px 3px 0 var(--sand2),6px 6px 0 var(--side-sand),9px 9px 0 #5e4622;
   background-image:repeating-linear-gradient(transparent 0 31px,rgba(58,42,20,.12) 31px 32px)}
@@ -60,3 +57,51 @@
 .mc-copier{min-height:44px;padding:10px 16px;font-size:14px}
 @media(max-width:600px){.mc-copier{width:100%}.cta .btn{min-height:48px}}
 @media(max-width:480px){.top .wrap{gap:10px}.links{gap:8px}.brand{font-size:16px}.brand img{width:30px;height:30px}.menu-crea summary{padding:6px 10px}}
+
+/* Espaces resserrés entre les sections de l'accueil */
+.page-accueil section.serre{padding:60px 0}
+@media(max-width:600px){.page-accueil section.serre{padding:40px 0}}
+.page-accueil .head-split{margin-bottom:24px}
+
+/* Haut de page : qui on est + carte « Rejoins le serveur » */
+.hero-studio{padding-top:48px}
+.hero-studio .wrap{grid-template-columns:1.15fr .85fr;gap:40px;padding-bottom:8px}
+.hero-studio h1{font-size:clamp(36px,5.6vw,62px);letter-spacing:-1.5px;margin:14px 0}
+.hero-studio .lead{font-size:19px;max-width:560px}
+.hero-studio .lead b{color:var(--txt)}
+.hero-studio .horizon.vox{margin-top:-60px}
+.mc-rapide{background:var(--card);padding:22px;text-align:left;position:relative;z-index:1;
+  box-shadow:inset 0 3px 0 var(--hi),3px 3px 0 var(--side),6px 6px 0 var(--side),0 18px 40px rgba(0,0,0,.35)}
+.mc-rapide h2{font-size:28px;margin:10px 0 6px}
+.mc-rapide .mc-etat{margin-bottom:12px}
+.mc-rapide-liens{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:14px}
+.lien-sobre{color:var(--muted);font-size:14px}
+.btn-nav{padding:8px 14px;min-height:0}
+@media(max-width:860px){
+  .hero-studio{padding-top:32px}
+  .hero-studio .wrap{grid-template-columns:1fr;gap:28px}
+  .hero-studio .lead{margin:0 auto}
+  .mc-rapide{max-width:480px;margin:0 auto;width:100%}
+  .hero-studio .horizon.vox{margin-top:-20px}
+}
+
+/* Créations : Mot Mystère et Minecraft mis en avant */
+.crea-star{box-shadow:inset 0 3px 0 var(--hi),inset 4px 0 0 var(--sand),3px 3px 0 var(--side),6px 6px 0 var(--side)}
+
+/* Île du haut moins haute sur PC (moins de vide avant les créations) */
+@media(min-width:601px){.hero-studio .horizon.vox{aspect-ratio:4/1;object-position:center 75%}}
+
+/* Mobile : cartes plus compactes pour raccourcir la page */
+@media(max-width:600px){
+  .page-accueil .crea-grille{gap:10px}
+  .page-accueil .crea{padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center}
+  .page-accueil .crea-ico{font-size:22px;margin:0;grid-row:span 2}
+  .page-accueil .crea h3{font-size:18px;margin:0}
+  .page-accueil .crea p{font-size:14px;grid-column:2}
+  .page-accueil .community .grid3{grid-template-columns:1fr 1fr;gap:10px}
+  .page-accueil .community .grid3 .card{padding:12px}
+  .page-accueil .community .grid3 .ico{width:34px;height:34px;margin-bottom:6px}
+  .page-accueil .community .grid3 h3{font-size:15px;margin-bottom:2px}
+  .page-accueil .community .grid3 p{font-size:13px;margin:0}
+  .page-accueil .c-cta .btn{width:100%;justify-content:center}
+}

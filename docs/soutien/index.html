@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soutenir le serveur – Grades Soutien | Les Naufragés</title>
+<meta name="description" content="Soutiens le serveur Minecraft des Naufragés avec un grade Soutien : préfixe, couleurs, monture et particules. Uniquement cosmétique, aucun avantage en jeu.">
+<link rel="canonical" href="https://lesnaufrages.net/soutien/">
+<meta name="theme-color" content="#0f0f10">
+<link rel="icon" href="../icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Soutenir Les Naufragés – Grades Soutien">
+<meta property="og:description" content="Matelot, Corsaire ou Amiral : des grades cosmétiques qui gardent le serveur Minecraft en ligne.">
+<meta property="og:image" content="https://lesnaufrages.net/img/partage.jpg">
+<meta property="og:url" content="https://lesnaufrages.net/soutien/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../cubes.css?v=1">
+<style>
+.page-head{padding:64px 0 24px}
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;align-items:stretch}
+@media(max-width:900px){.grades{grid-template-columns:1fr;max-width:520px;margin-left:auto;margin-right:auto}}
+.grade{padding:24px 22px;display:flex;flex-direction:column;gap:10px;position:relative}
+.grade h3{font-size:22px;margin:0}
+.grade .prix{font-size:32px;font-weight:800;color:var(--txt);line-height:1}
+.grade .prix small{font-size:14px;font-weight:400;color:var(--muted)}
+.grade ul{margin:4px 0 0;padding-left:20px;color:var(--muted);flex:1}
+.grade li{margin:4px 0}
+.grade li b{color:var(--txt)}
+.grade .btn{text-align:center;margin-top:8px}
+.grade .btn[aria-disabled="true"]{opacity:.55;pointer-events:none}
+.grade .tag{position:absolute;top:-11px;right:16px;background:var(--sand);color:#1a1205;font-size:12px;font-weight:800;padding:3px 10px;letter-spacing:.04em}
+.g-matelot h3{color:#5fd4ff}.g-corsaire h3{color:#f0b13a}.g-amiral h3{color:#e07bff}
+.regle{max-width:760px;margin:28px auto 0;padding:18px 22px}
+.regle p{color:var(--muted);margin:6px 0 0}
+.objectif{max-width:760px;margin:0 auto;padding:22px}
+.objectif p{color:var(--muted)}
+.barre{height:14px;background:var(--field);margin-top:12px;overflow:hidden}
+.barre span{display:block;height:100%;background:var(--sand);width:0}
+.etapes{max-width:760px;margin:0 auto;display:grid;gap:14px}
+.etapes .card{padding:18px 22px}
+.etapes p,.etapes li{color:var(--muted)}
+.etapes b{color:var(--txt)}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../icon.png" alt="">MOT MYSTÈRE</a>
+    <div class="links">
+      <a href="../#creations">Nos créations</a>
+      <a href="../#serveur">Serveur Minecraft</a>
+      <a href="../actualites.html">Actualités</a>
+      <a href="./" class="on">Soutenir</a>
+      <a class="btn btn-play" href="../jouer/">Jouer</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap center">
+    <span class="eyebrow">Serveur Minecraft</span>
+    <h1>Soutiens le serveur des Naufragés.</h1>
+    <p class="lead">Le serveur coûte de l'argent chaque mois (hébergement, plugins, domaine). Un grade Soutien nous aide à le garder en ligne et à continuer de construire. En échange, tu gagnes de quoi te faire remarquer… et rien de plus.</p>
+  </div>
+</header>
+
+<section style="padding-top:8px">
+  <div class="wrap">
+    <div class="grades">
+      <div class="card grade g-matelot">
+        <h3>Matelot</h3>
+        <div class="prix">4,99 € <small>une fois, à vie</small></div>
+        <ul>
+          <li>Préfixe <b>[Matelot]</b> dans le chat et la liste des joueurs</li>
+          <li>Écrire en <b>couleur</b> dans le chat</li>
+          <li>Monture <b>Jument blanche du Matelot</b> (/monture)</li>
+          <li><b>Particules</b> cosmétiques (/pp)</li>
+          <li>/hat : porter un bloc sur la tête</li>
+          <li>Rôle sur le <b>Discord</b> et salon des soutiens</li>
+          <li>Ton nom sur le <b>mur des soutiens</b> au spawn</li>
+        </ul>
+        <a class="btn btn-ghost" data-grade="MATELOT" href="#" aria-disabled="true">Bientôt</a>
+      </div>
+      <div class="card grade g-corsaire">
+        <span class="tag">CONSEILLÉ</span>
+        <h3>Corsaire</h3>
+        <div class="prix">9,99 € <small>une fois, à vie</small></div>
+        <ul>
+          <li><b>Tout le grade Matelot</b></li>
+          <li>Préfixe <b>[Corsaire]</b></li>
+          <li><b>Pseudo en couleur</b> (/nick)</li>
+          <li>Monture <b>Palomino du Corsaire</b></li>
+          <li>Plus de styles de particules</li>
+        </ul>
+        <a class="btn btn-play" data-grade="CORSAIRE" href="#" aria-disabled="true">Bientôt</a>
+      </div>
+      <div class="card grade g-amiral">
+        <h3>Amiral</h3>
+        <div class="prix">19,99 € <small>une fois, à vie</small></div>
+        <ul>
+          <li><b>Tout le grade Corsaire</b></li>
+          <li>Préfixe <b>[Amiral]</b></li>
+          <li>Gras et italique dans le chat et le pseudo</li>
+          <li>Monture <b>fantôme de l'Amiral</b></li>
+          <li>Toutes les particules</li>
+          <li>Merci public en jeu et sur le Discord</li>
+        </ul>
+        <a class="btn btn-ghost" data-grade="AMIRAL" href="#" aria-disabled="true">Bientôt</a>
+      </div>
+    </div>
+
+    <div class="card regle">
+      <h3>Aucun avantage en jeu, promis.</h3>
+      <p>Les grades Soutien sont <b>purement cosmétiques</b>, comme l'exigent les règles commerciales de Mojang. Les montures des grades vont exactement aussi vite que le cheval de ferme gratuit. Les machines, les armes, les homes, les métiers, l'argent et les coffres se gagnent uniquement en jouant.</p>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="card objectif" id="objectif">
+      <h3>Objectif du mois : <span data-objectif>50</span> €</h3>
+      <p>Quand l'objectif est atteint, <b>tout le serveur</b> gagne un week-end Double XP de métiers. Même ceux qui n'ont rien acheté.</p>
+      <div class="barre" hidden><span></span></div>
+      <p class="barre-txt" hidden></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center" style="margin-bottom:28px"><span class="eyebrow">Comment ça marche</span><h2>Trois étapes.</h2></div>
+    <div class="etapes">
+      <div class="card"><p><b>1.</b> Clique sur le grade de ton choix. Tu arrives sur notre boutique sécurisée <b>Tebex</b> (carte, PayPal, Bancontact…).</p></div>
+      <div class="card"><p><b>2.</b> Entre ton <b>pseudo Minecraft exact</b>. Sur Bedrock, avec le point devant (ex. <code>.Pseudo</code>).</p></div>
+      <div class="card"><p><b>3.</b> Le grade arrive tout seul en jeu en quelques minutes (connecte-toi au serveur). Un souci ? Écris-nous sur le <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a> avec ton reçu.</p></div>
+      <div class="card"><p>Moins de 18 ans ? Demande à un parent : c'est lui qui paie. Les conditions de vente sont <a href="../conditions.html#soutien">ici</a>.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../icon.png" alt="">MOT MYSTÈRE</a>
+    <div class="flinks">
+      <a href="../jouer/">Jouer</a>
+      <a href="../actualites.html">Actualités</a>
+      <a href="../forum/">Forum</a>
+      <a href="../staff/">Staff</a>
+      <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
+      <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X (Twitter)</a>
+      <a href="../conditions.html">Conditions d'utilisation</a>
+      <a href="../confidentialite.html">Confidentialité</a>
+      <a href="../cookies.html">Cookies</a>
+    </div>
+    <span>© <span data-year>2026</span> Les Naufragés</span>
+  </div>
+</footer>
+<script src="config.js?v=1"></script>
+<script>
+(function(){
+  var C = window.SOUTIEN || {};
+  var ok = /^https:\/\/[^\s"'<>]+$/;
+  document.querySelectorAll('[data-grade]').forEach(function(a){
+    var lien = C[a.getAttribute('data-grade')] || C.BOUTIQUE || '';
+    if (!ok.test(lien)) return;
+    a.href = lien; a.target = '_blank'; a.rel = 'noopener';
+    a.removeAttribute('aria-disabled');
+    a.textContent = 'Devenir ' + a.closest('.grade').querySelector('h3').textContent;
+  });
+  var obj = Number(C.OBJECTIF) || 50, deja = Math.max(0, Number(C.DEJA) || 0);
+  document.querySelector('[data-objectif]').textContent = obj;
+  if (deja > 0) {
+    var b = document.querySelector('.barre'), t = document.querySelector('.barre-txt');
+    b.hidden = false; t.hidden = false;
+    b.firstElementChild.style.width = Math.min(100, deja / obj * 100) + '%';
+    t.textContent = deja >= obj ? 'Objectif atteint, merci à tous ! Le week-end Double XP arrive.' : deja + ' € sur ' + obj + ' € ce mois-ci.';
+  }
+})();
+</script>
+<script src="../site.js?v=2"></script>
+</body>
+</html>

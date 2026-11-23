@@ -7,5 +7,9 @@
    Tant que c'est vide, le forum affiche « bientôt disponible ». */
 var SUPABASE = {
   URL: 'https://updqdvsigqtsjddeshvi.supabase.co',
-  CLE: 'sb_publishable_wvxRoVPpFIvPPrB9GTqsLQ_Q8LUArgH'
+  CLE: 'sb_publishable_wvxRoVPpFIvPPrB9GTqsLQ_Q8LUArgH',
+  // Cloudflare Turnstile (anti-robots sur connexion / inscription / mot de passe oublié).
+  // Clé de SITE, publique. La clé SECRÈTE va seulement dans Supabase :
+  // Authentication > Attack Protection > Enable CAPTCHA protection > Cloudflare Turnstile.
+  TURNSTILE: '0x4AAAAAAF4sR6eJeqnpi8er'
 };

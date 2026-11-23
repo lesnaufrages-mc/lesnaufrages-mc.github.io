@@ -11,7 +11,7 @@ import { LIBRES } from './questions-libres.js';
 
 const TRIES = 6;
 const KEY = 'mm-esport:v1';
-const URL_JEU = 'https://lesnaufrages-mc.github.io/esport/';
+const URL_JEU = 'https://lesnaufrages.net/esport/';
 const ROUNDS = 10; // questions du jour
 const MAX_LIBRES = 20; // + les 10 du jour = 30 parties par jour
 const CHRONO = 2 * 60000; // 2 minutes maximum par partie

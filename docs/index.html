@@ -4,21 +4,37 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mot Mystère – Le mot du jour et le journal du naufragé</title>
-<meta name="description" content="Mot Mystère : un mot de 5 lettres par jour, le même pour tout le monde. Chaque mot trouvé débloque une page de l'histoire d'un naufragé. Gratuit, dans ton navigateur.">
+<title>Mot Mystère – Jeu du mot du jour gratuit en français | Les Naufragés</title>
+<meta name="description" content="Mot Mystère : le jeu du mot du jour gratuit, en français et sans inscription. Un mot de 5 lettres par jour, 6 essais, et chaque mot trouvé débloque une page du journal d'un naufragé. L'alternative française à Wordle.">
+<link rel="canonical" href="https://lesnaufrages.net/">
 <meta name="theme-color" content="#0f0f10">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Mot Mystère – Le mot du jour et le journal du naufragé">
 <meta property="og:description" content="Un mot de 5 lettres par jour, le même pour tout le monde. Tu le trouves en combien ?">
-<meta property="og:image" content="https://lesnaufrages-mc.github.io/icon.png">
-<meta property="og:url" content="https://lesnaufrages-mc.github.io/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://lesnaufrages.net/img/partage.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Les Naufragés">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://lesnaufrages.net/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@NaufrageeC">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cubes.css?v=1">
+<link rel="stylesheet" href="serveur-mc.css?v=2">
+<link rel="stylesheet" href="accueil.css?v=1">
 <!-- Google AdSense (pubs du site). ID éditeur = le même que AdMob. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
 <meta name="google-adsense-account" content="ca-pub-7922547142050402">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","@id":"https://lesnaufrages.net/#org","name":"Les Naufragés","url":"https://lesnaufrages.net/","logo":"https://lesnaufrages.net/icon.png","email":"lesnaufragees@gmail.com","sameAs":["https://x.com/NaufrageeC","https://discord.gg/Xdkzj8bZnk"]},
+{"@type":"WebSite","name":"Les Naufragés","url":"https://lesnaufrages.net/","inLanguage":"fr","publisher":{"@id":"https://lesnaufrages.net/#org"}},
+{"@type":"VideoGame","name":"Mot Mystère","url":"https://lesnaufrages.net/jouer/","description":"Jeu du mot du jour gratuit en français : un mot de 5 lettres par jour en 6 essais, et une histoire à suivre.","genre":["Jeu de mots","Puzzle"],"gamePlatform":["Navigateur web","Android","iPhone"],"inLanguage":"fr","isAccessibleForFree":true,"publisher":{"@id":"https://lesnaufrages.net/#org"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}
+]}
+</script>
 </head>
 <body>
 
@@ -26,11 +42,26 @@
   <div class="wrap">
     <a class="brand" href="#"><img src="icon.png" alt="">MOT MYSTÈRE</a>
     <div class="links">
+      <a href="jouer/">Mot du jour</a>
       <a href="amis/">Entre amis</a>
-      <a href="esport/">CLUTCH (esport)</a>
-      <a href="strategie/">Imperium of Wars</a>
-      <a href="croisade/">Ferrum et Fides</a>
-      <a href="montage/">Studio montage</a>
+      <details class="menu-crea">
+        <summary><span class="txt-pc">Nos autres créations</span><span class="txt-mob">Menu</span></summary>
+        <div class="menu-liste">
+          <span class="menu-titre">Nos autres créations</span>
+          <a href="esport/"><b>🎮 CLUTCH</b><small>Le quiz esport du jour</small></a>
+          <a href="strategie/"><b>⚔️ Imperium of Wars</b><small>Stratégie et batailles en 3D</small></a>
+          <a href="croisade/"><b>✠ Ferrum et Fides</b><small>Démo 3D au temps des croisades</small></a>
+          <a href="montage/"><b>🎬 Naufragés Studio</b><small>Logiciel de montage vidéo gratuit</small></a>
+          <a href="#serveur"><b>⛏️ Serveur Minecraft</b><small>Java et Bedrock</small></a>
+          <a href="presse/"><b>📦 Presse et créateurs</b><small>Kit média à télécharger</small></a>
+          <span class="menu-mob">
+            <a href="amis/"><b>Jouer entre amis</b></a>
+            <a href="actualites.html"><b>Actualités</b></a>
+            <a href="forum/"><b>Forum</b></a>
+            <a href="staff/"><b>Staff</b></a>
+          </span>
+        </div>
+      </details>
       <span class="sep" aria-hidden="true"></span>
       <a href="actualites.html">Actualités</a>
       <a href="forum/">Forum</a>
@@ -49,11 +80,9 @@
       <div class="cta">
         <a class="btn btn-play" href="jouer/">Jouer au mot du jour</a>
         <a class="btn btn-ghost" href="amis/">Défier des amis</a>
-        <a class="btn btn-ghost" href="esport/">🎮 CLUTCH, le quiz esport</a>
-        <a class="btn btn-ghost" href="croisade/">✠ Ferrum et Fides (démo 3D)</a>
-        <a class="btn btn-ghost" href="montage/">🎬 Logiciel de montage gratuit</a>
       </div>
       <p class="note">Gratuit, sans inscription, dans ton navigateur. <a href="jouer/#installer">Tu peux aussi l'installer sur ton téléphone.</a></p>
+      <p class="intro-studio">Mot Mystère est fait par <b>Les Naufragés</b>, un petit studio indépendant : des jeux gratuits, un serveur Minecraft, un Discord et des outils pour les créateurs. <a href="#creations">Voir toutes nos créations</a></p>
     </div>
     <div aria-hidden="true">
       <div class="phone">
@@ -71,9 +100,27 @@
       </div>
     </div>
   </div>
-  <img class="horizon" src="img/ile.svg" alt="">
+  <picture><source media="(max-width:600px)" srcset="img/ile-3d-mobile.webp"><img class="horizon vox" src="img/ile-3d.webp" width="2400" height="800" alt="L'île des Naufragés en cubes : palmier, coffre, feu de camp et épave sous la lune"></picture>
   <div class="horizon-sea" aria-hidden="true"></div>
 </header>
+
+<section id="journal" class="journal-teaser">
+  <div class="wrap">
+    <div class="carnet">
+      <div class="carnet-tete">
+        <span class="eyebrow">Le journal du naufragé · Saison 1</span>
+        <h2>Chaque mot trouvé, c'est une page de l'histoire.</h2>
+        <p class="lead">Un avion s'écrase, un survivant se réveille sur une île. Trouve le mot du jour pour lire la page suivante de son journal : 30 pages, une par jour.</p>
+      </div>
+      <figure class="page">
+        <figcaption>Page 1 · Le réveil</figcaption>
+        <blockquote>« Je me réveille sur le sable, la tête contre le tronc d'un arbre. Autour de moi, la mer à perte de vue. Comment suis-je arrivé ici ? »</blockquote>
+        <p class="flou" aria-hidden="true">Au bout de la plage, quelque chose brille entre les vagues. Je m'approche doucement, le cœur battant, et je comprends enfin ce qui m'est arrivé cette nuit-là…</p>
+        <div class="page-cta"><a class="btn btn-play" href="jouer/">Trouver le mot pour lire la suite</a><small>Tu arrives en cours de route ? Les pages des jours manqués se repêchent gratuitement dans le journal du jeu.</small></div>
+      </figure>
+    </div>
+  </div>
+</section>
 
 <section id="comment-jouer">
   <div class="wrap grid2">
@@ -128,6 +175,24 @@
   </div>
 </section>
 
+<section id="creations">
+  <div class="wrap">
+    <div class="center" style="margin-bottom:36px">
+      <span class="eyebrow">Les Naufragés</span>
+      <h2>Un studio, plusieurs îles.</h2>
+      <p class="lead">Les Naufragés, c'est un petit studio indépendant et une communauté. On crée des jeux gratuits dans le navigateur, on fait vivre un serveur Minecraft et un Discord, et on partage nos outils avec les créateurs.</p>
+    </div>
+    <div class="crea-grille">
+      <a class="card crea" href="jouer/"><span class="crea-ico">🟩</span><h3>Mot Mystère</h3><p>Le mot du jour et le journal du naufragé. Notre jeu principal.</p></a>
+      <a class="card crea" href="amis/"><span class="crea-ico">👥</span><h3>Entre amis</h3><p>Un salon, un code, et le premier qui trouve le mot gagne.</p></a>
+      <a class="card crea" href="esport/"><span class="crea-ico">🎮</span><h3>CLUTCH</h3><p>Le quiz esport du jour : 10 rounds, du facile au difficile.</p></a>
+      <a class="card crea" href="strategie/"><span class="crea-ico">⚔️</span><h3>Imperium of Wars</h3><p>Stratégie historique : diplomatie, dynasties et batailles en 3D.</p></a>
+      <a class="card crea" href="croisade/"><span class="crea-ico">✠</span><h3>Ferrum et Fides</h3><p>Démo 3D au temps des croisades, en préparation pour Steam.</p></a>
+      <a class="card crea" href="montage/"><span class="crea-ico">🎬</span><h3>Naufragés Studio</h3><p>Un logiciel de montage vidéo gratuit pour Windows, Mac et Linux.</p></a>
+    </div>
+  </div>
+</section>
+
 <section id="communaute" class="alt">
   <div class="wrap">
     <div class="center" style="margin-bottom:40px">
@@ -142,7 +207,7 @@
           <h2>Les Naufragés Community</h2>
           <p>On a tous échoué sur la même île. Depuis, on construit, on commerce et on se fait la guerre.</p>
         </div>
-        <img class="horizon" src="img/ile.svg" alt="">
+        <img class="horizon vox" src="img/ile-3d.webp" width="2400" height="800" alt="" loading="lazy">
       </div>
       <div class="c-body">
         <div class="grid3">
@@ -152,6 +217,31 @@
           <div class="card"><div class="ico"><img class="px" src="img/ico/camera.svg" alt=""></div><h3>Créateurs soutenus</h3><p>Soutien aux créateurs Twitch &amp; YouTube.</p></div>
           <div class="card"><div class="ico"><img class="px" src="img/ico/bouclier.svg" alt=""></div><h3>Serveur sécurisé</h3><p>Bots, rôles et staff actif au quotidien.</p></div>
           <div class="card"><div class="ico"><img class="px" src="img/ico/feu.svg" alt=""></div><h3>Ambiance chill</h3><p>Une communauté fun et bienveillante.</p></div>
+        </div>
+        <div class="mc-join" id="serveur">
+          <h3>Rejoindre le serveur Minecraft</h3>
+          <p class="mc-etat" data-mc-etat="naufragesmc.mine.fun"><span class="pt"></span><span>Vérification de l'état…</span></p>
+          <div class="mc-lignes">
+            <div class="mc-ligne"><span class="lbl">Java (PC)</span><code>naufragesmc.mine.fun</code><small>Version <b>1.21.11</b> conseillée. Les versions plus anciennes (1.20, 1.21…) et les 26.x sont aussi acceptées.</small><button type="button" class="mc-copier" data-copier="naufragesmc.mine.fun">Copier l'adresse</button></div>
+            <div class="mc-ligne"><span class="lbl">Bedrock (mobile, console, Windows)</span><code>naufragesmc.mine.fun</code><small>Port : <b>30603</b></small><button type="button" class="mc-copier" data-copier="naufragesmc.mine.fun">Copier l'adresse</button></div>
+          </div>
+          <p class="mc-note">Sur Bedrock : Jouer → Serveurs → Ajouter un serveur, puis colle l'adresse et mets le port 30603. Chat vocal : installe le mod Simple Voice Chat (facultatif).</p>
+          <div class="mc-vote" id="voter">
+            <h4>🗳️ Voter pour Les Naufragés</h4>
+            <p>Chaque vote fait monter le serveur dans les classements. C'est gratuit, une fois par jour et par site, et tu gagnes <b>150 $ + 3 émeraudes</b> en jeu. Entre ton pseudo Minecraft exact (Bedrock : avec le point devant, ex. <code>.Pseudo</code>).</p>
+            <div class="mc-vote-liens">
+              <a class="btn btn-ghost" href="https://www.serveurs-minecraft.org/vote.php?id=64153" target="_blank" rel="noopener">Serveurs-Minecraft.org</a>
+              <a class="btn btn-ghost" href="https://serveur-prive.net/minecraft/les-naufrages/vote" target="_blank" rel="noopener">Serveur-Prive.net</a>
+              <a class="btn btn-ghost" href="https://top-serveurs.net/minecraft/vote/les-naufrages-mc" target="_blank" rel="noopener">Top-Serveurs.net</a>
+              <a class="btn btn-ghost" href="https://minecraft-mp.com/server/367164/vote/" target="_blank" rel="noopener">Minecraft-MP.com</a>
+            </div>
+            <p class="mc-note">Classé sur <a href="http://www.serveurs-minecraft.org/vote.php?id=64153">Voter pour Les Naufragés</a> dans le top <a href="http://www.serveurs-minecraft.org/">Serveurs Minecraft</a>.</p>
+          </div>
+          <div class="mc-vote" id="soutenir">
+            <h4>Soutenir le serveur</h4>
+            <p>Les grades <b>Matelot</b>, <b>Corsaire</b> et <b>Amiral</b> (dès 4,99 €) aident à payer l'hébergement. Préfixe, couleurs, monture et particules : uniquement cosmétique, aucun avantage en jeu.</p>
+            <div class="mc-vote-liens"><a class="btn btn-play" href="soutien/">Voir les grades Soutien</a></div>
+          </div>
         </div>
         <p class="c-punch">Tu construis. Tu combats. Tu domines.</p>
         <p class="c-sub">Rejoins des joueurs motivés dès maintenant.</p>
@@ -168,10 +258,10 @@
       <h2>Un bot Discord fait pour le jeu.</h2>
       <p class="lead">Sur notre serveur, le Naufragés Bot fait vivre le Mot Mystère au quotidien. Et il ne connaît jamais le mot : zéro spoiler.</p>
       <ul class="feat">
-        <li><img class="px" src="img/ico/piece_puzzle.svg" alt=""><p><b>Rappel du mot du jour</b>Chaque jour, une notification pour ne jamais casser ta série.</p></li>
-        <li><img class="px" src="img/ico/trophee.svg" alt=""><p><b>Classement des joueurs</b>Colle ton résultat, le bot compte les points. Le top 10 avec <span class="cmd">/classement</span>.</p></li>
-        <li><img class="px" src="img/ico/main.svg" alt=""><p><b>Accueil des nouveaux</b>Un message de bienvenue avec un bouton pour jouer tout de suite.</p></li>
-        <li><img class="px" src="img/ico/bouclier.svg" alt=""><p><b>Modération</b>Des outils simples pour garder une ambiance saine.</p></li>
+        <li><img class="px" src="img/ico/piece_puzzle.svg" alt=""><p><b>Rappel du mot du jour</b> Chaque jour, une notification pour ne jamais casser ta série.</p></li>
+        <li><img class="px" src="img/ico/trophee.svg" alt=""><p><b>Classement des joueurs</b> Colle ton résultat, le bot compte les points. Le top 10 avec <span class="cmd">/classement</span>.</p></li>
+        <li><img class="px" src="img/ico/main.svg" alt=""><p><b>Accueil des nouveaux</b> Un message de bienvenue avec un bouton pour jouer tout de suite.</p></li>
+        <li><img class="px" src="img/ico/bouclier.svg" alt=""><p><b>Modération</b> Des outils simples pour garder une ambiance saine.</p></li>
       </ul>
     </div>
     <div class="chat" aria-hidden="true">
@@ -190,9 +280,9 @@
     <p class="lead">Des vrais chiffres, mis à jour en temps réel.</p>
     <div class="live">
       <div class="live-card"><div class="lbl">Mot du jour</div><b data-live="mot">#1</b><span>depuis le lancement</span></div>
-      <div class="live-card" hidden><div class="lbl">Visites</div><b data-live="visites">–</b><span>sur le site</span></div>
-      <div class="live-card" hidden><div class="lbl">Discord</div><b data-live="membres">–</b><span>membres</span></div>
-      <div class="live-card" hidden><div class="lbl"><span class="dot"></span> En ligne</div><b data-live="enligne">–</b><span>sur le Discord</span></div>
+      <div class="live-card" hidden><div class="lbl">Visites</div><b data-live="visites"></b><span>sur le site</span></div>
+      <div class="live-card" hidden><div class="lbl">Discord</div><b data-live="membres"></b><span>membres</span></div>
+      <div class="live-card" hidden><div class="lbl"><span class="dot"></span> En ligne</div><b data-live="enligne"></b><span>sur le Discord</span></div>
     </div>
 
     <span class="eyebrow" style="margin-top:72px">Actualités</span>
@@ -213,6 +303,9 @@
       <details><summary>Faut-il créer un compte ?</summary><p>Non, tu joues directement. Ta série et tes statistiques sont enregistrées sur ton appareil.</p></details>
       <details><summary>Je peux jouer sur téléphone ?</summary><p>Oui, la version web marche sur téléphone. Les applications Android et iPhone arrivent bientôt.</p></details>
       <details><summary>Comment partager mon résultat ?</summary><p>À la fin de la partie, appuie sur « Partager mon score ». Ta grille est copiée en carrés de couleur, sans dévoiler le mot.</p></details>
+      <details><summary>C'est quoi la différence avec Wordle ou Sutom ?</summary><p>Le principe est le même : un mot du jour en 6 essais. Mais Mot Mystère est entièrement en français, gratuit et sans inscription, et chaque mot trouvé débloque une page du journal d'un naufragé. Tu as aussi la bouteille à la mer (un indice contre un essai), des niveaux de difficulté et des parties libres pour t'entraîner.</p></details>
+      <details><summary>J'arrive en cours de saison, je peux lire le début ?</summary><p>Oui. Les pages des jours que tu as manqués se repêchent gratuitement depuis le journal du jeu : tu peux lire l'histoire depuis la page 1.</p></details>
+      <details><summary>Comment rejoindre le serveur Minecraft ?</summary><p>Sur Java (PC), ajoute le serveur <b>naufragesmc.mine.fun</b> (version 1.21.11 conseillée, les plus anciennes et les 26.x marchent aussi). Sur Bedrock (mobile, console, Windows), mets la même adresse avec le port <b>30603</b>. Un compte Minecraft officiel est nécessaire. <a href="#serveur">Tout est expliqué ici.</a></p></details>
       <details><summary>J'ai trouvé un bug ou j'ai une idée</summary><p>Viens nous le dire sur <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">notre Discord</a> ou sur <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X (@NaufrageeC)</a>, on lit tout !</p></details>
     </div>
   </div>
@@ -246,7 +339,11 @@
       <a href="actualites.html">Actualités</a>
       <a href="forum/">Forum</a>
       <a href="staff/">Staff</a>
+      <a href="presse/">Presse et créateurs</a>
       <a href="#faq">FAQ</a>
+      <a href="#voter">Voter pour le serveur</a>
+      <a href="soutien/">Soutenir le serveur</a>
+      <a href="http://www.serveurs-minecraft.org/">Serveurs Minecraft</a>
       <a href="https://discord.gg/Xdkzj8bZnk" target="_blank" rel="noopener">Discord</a>
       <a href="https://x.com/NaufrageeC" target="_blank" rel="noopener">X (Twitter)</a>
       <a href="conditions.html">Conditions d'utilisation</a>
@@ -258,8 +355,10 @@
   </div>
 </footer>
 
-<script src="actualites.js"></script>
+<script src="actualites.js?v=2"></script>
 <script src="supabase-config.js"></script>
-<script src="site.js"></script>
+<script src="site.js?v=2"></script>
+<script src="serveur-mc.js?v=1"></script>
+<script src="accueil.js?v=1"></script>
 </body>
 </html>

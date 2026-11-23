@@ -1437,7 +1437,7 @@
       '<button class="btn or" id="fPartager">📤 Partager mon score</button>' +
       '<button class="btn" id="fRejouer">🔄 Nouvelle campagne</button>');
     $('fPartager').onclick = function () {
-      var url = 'https://lesnaufrages-mc.github.io/strategie/';
+      var url = 'https://lesnaufrages.net/strategie/';
       if (navigator.share) navigator.share({ text: partage, url: url }).catch(function () {});
       else if (navigator.clipboard) navigator.clipboard.writeText(partage + ' ' + url).then(function () { toast('Copié ! Colle-le à tes amis.'); });
     };

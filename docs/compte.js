@@ -102,8 +102,11 @@
     var m = (e && (e.message || e.error_description)) || String(e || '');
     var T = [
       [/Invalid login credentials/i, 'E-mail ou mot de passe incorrect.'],
+      [/captcha/i, 'La vérification anti-robot a échoué ou a expiré. Recommence la case et réessaie.'],
       [/Email not confirmed/i, 'Confirme d\'abord ton adresse : clique sur le lien reçu par e-mail.'],
       [/already registered|already been registered/i, 'Un compte existe déjà avec cet e-mail.'],
+      [/nonce|otp.*(expired|invalid)|token has expired or is invalid/i, 'Code incorrect ou expiré. Vérifie le dernier e-mail reçu et réessaie.'],
+      [/same_password|should be different/i, 'Choisis un mot de passe différent de l\'ancien.'],
       [/Password should be|weak.?password/i, 'Mot de passe trop faible : 8 caractères minimum.'],
       [/rate limit|too many|over_email_send_rate_limit/i, 'Trop d\'essais d\'un coup. Réessaie dans quelques minutes.'],
       [/invalid.*email|Unable to validate email/i, 'Adresse e-mail invalide.'],
@@ -271,14 +274,50 @@
 
   /* ---------- Fenêtre connexion / inscription ---------- */
   var modal;
-  function fermer() { if (modal) { modal.remove(); modal = null; } }
+  function fermer() { if (modal) { modal.remove(); modal = null; } tsId = null; }
+
+  /* ---------- Cloudflare Turnstile (anti-robots) ----------
+     Le jeton est envoyé à Supabase (captchaToken), qui le vérifie avec la clé secrète
+     quand la protection CAPTCHA est activée dans Supabase. Sinon, Supabase l'ignore. */
+  var TS_CLE = cfg.TURNSTILE || '';
+  var TS = TS_CLE ? '<div class="ts-zone" data-ts></div>' : '';
+  var tsId = null, tsScript = null, tsEchec = false;
+  function chargerTurnstile() {
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (!tsScript) tsScript = new Promise(function (ok, ko) {
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true; s.defer = true;
+      s.onload = function () { ok(window.turnstile); };
+      s.onerror = function () { tsEchec = true; tsScript = null; ko(new Error('turnstile')); };
+      document.head.appendChild(s);
+    });
+    return tsScript;
+  }
+  function montrerTurnstile() {
+    var zone = modal && modal.querySelector('[data-ts]');
+    if (!zone) return;
+    chargerTurnstile().then(function (ts) {
+      if (!modal || !modal.contains(zone)) return;
+      tsId = ts.render(zone, { sitekey: TS_CLE, theme: 'dark', language: 'fr', size: 'flexible', action: zone.closest('form').getAttribute('data-f') });
+    }).catch(function () {});
+  }
+  // Renvoie le jeton (ou undefined si Turnstile n'a pas pu se charger : Supabase décide alors).
+  function jetonTurnstile() {
+    if (!TS_CLE || !modal || !modal.querySelector('[data-ts]')) return undefined;
+    if (tsEchec || !window.turnstile || tsId === null) return undefined;
+    var t = window.turnstile.getResponse(tsId);
+    if (!t) throw new Error('Patiente une seconde : on vérifie que tu n\'es pas un robot (case ci-dessus).');
+    return t;
+  }
+  function resetTurnstile() { try { if (window.turnstile && tsId !== null) window.turnstile.reset(tsId); } catch (e) {} }
 
   var VUES = {
     connexion: function () {
       return '<h2>Se connecter</h2>' +
         '<form data-f="connexion"><label>E-mail<input type="email" name="email" required autocomplete="email"></label>' +
         '<label>Mot de passe<input type="password" name="mdp" required autocomplete="current-password"></label>' +
-        '<p class="err" data-err></p><button class="btn btn-play full">Se connecter</button></form>' +
+        TS + '<p class="err" data-err></p><button class="btn btn-play full">Se connecter</button></form>' +
         '<p class="small center">Pas encore de compte ? <a href="#" data-ouvrir="inscription">Inscris-toi</a><br>' +
         '<a href="#" data-ouvrir="oubli">Mot de passe oublié ?</a></p>';
     },
@@ -290,18 +329,21 @@
         '<p class="small">Ton e-mail reste privé : il sert seulement à te connecter.</p>' +
         '<label>Mot de passe<input type="password" name="mdp" required minlength="8" autocomplete="new-password"></label>' +
         '<label class="check"><input type="checkbox" required> J\'ai au moins 13 ans et j\'accepte les <a href="' + racine() + 'conditions.html" target="_blank">conditions d\'utilisation</a> (règles du forum) et la <a href="' + racine() + 'confidentialite.html#forum" target="_blank">politique de confidentialité</a>.</label>' +
-        '<p class="err" data-err></p><button class="btn btn-play full">Créer mon compte</button></form>' +
+        TS + '<p class="err" data-err></p><button class="btn btn-play full">Créer mon compte</button></form>' +
         '<p class="small center">Déjà inscrit ? <a href="#" data-ouvrir="connexion">Connecte-toi</a></p>';
     },
     oubli: function () {
       return '<h2>Mot de passe oublié</h2><p class="muted">On t\'envoie un lien par e-mail pour en choisir un nouveau.</p>' +
         '<form data-f="oubli"><label>E-mail<input type="email" name="email" required autocomplete="email"></label>' +
-        '<p class="err" data-err></p><button class="btn btn-play full">Envoyer le lien</button></form>' +
+        TS + '<p class="err" data-err></p><button class="btn btn-play full">Envoyer le lien</button></form>' +
         '<p class="small center"><a href="#" data-ouvrir="connexion">Retour</a></p>';
     },
     'nouveau-mdp': function () {
       return '<h2>Nouveau mot de passe</h2>' +
         '<form data-f="nouveau-mdp"><label>Nouveau mot de passe<input type="password" name="mdp" required minlength="8" autocomplete="new-password"></label>' +
+        // Code de sécurité envoyé par e-mail (seulement si Supabase le demande : « Secure password change »).
+        '<label data-code style="display:none">Code reçu par e-mail<input name="code" inputmode="numeric" maxlength="10" autocomplete="one-time-code"></label>' +
+        '<p class="small" data-code-info style="display:none">Par sécurité, on vient de t\'envoyer un code par e-mail. Recopie-le ci-dessus puis clique encore sur Enregistrer.</p>' +
         '<p class="err" data-err></p><button class="btn btn-play full">Enregistrer</button></form>';
     },
     bienvenue: function () {
@@ -367,6 +409,7 @@
     document.body.appendChild(modal);
     var champ = modal.querySelector('input');
     if (champ) champ.focus();
+    montrerTurnstile();
     if (vue === 'amis') chargerAmis();
     if (vue === 'profil' && C.user) chargerAmis();
   };
@@ -386,15 +429,18 @@
     var action;
     switch (f.getAttribute('data-f')) {
       case 'connexion':
-        action = sb.auth.signInWithPassword({ email: v('email'), password: f.elements.mdp.value })
+        action = Promise.resolve().then(function () {
+          return sb.auth.signInWithPassword({ email: v('email'), password: f.elements.mdp.value, options: { captchaToken: jetonTurnstile() } });
+        })
           .then(function (r) { if (r.error) throw r.error; fermer(); });
         break;
       case 'inscription':
-        action = sb.rpc('pseudo_disponible', { p: v('pseudo') }).then(function (r) {
+        var jeton;
+        action = Promise.resolve().then(function () { jeton = jetonTurnstile(); return sb.rpc('pseudo_disponible', { p: v('pseudo') }); }).then(function (r) {
           if (r.error) throw r.error;
-          if (!r.data) throw new Error('Ce pseudo est déjà pris, choisis-en un autre.');
+          if (!r.data) throw new Error('Ce pseudo est déjà pris ou réservé, choisis-en un autre.');
           return sb.auth.signUp({ email: v('email'), password: f.elements.mdp.value,
-            options: { data: { pseudo: v('pseudo') }, emailRedirectTo: retour } });
+            options: { data: { pseudo: v('pseudo') }, emailRedirectTo: retour, captchaToken: jeton } });
         }).then(function (r) {
           if (r.error) throw r.error;
           if (r.data.session) { fermer(); setTimeout(function () { chargeProfil().then(proposerProfil); }, 300); }
@@ -402,13 +448,26 @@
         });
         break;
       case 'oubli':
-        action = sb.auth.resetPasswordForEmail(v('email'), { redirectTo: retour }).then(function (r) {
+        action = Promise.resolve().then(function () {
+          return sb.auth.resetPasswordForEmail(v('email'), { redirectTo: retour, captchaToken: jetonTurnstile() });
+        }).then(function (r) {
           if (r.error) throw r.error;
           info('Lien envoyé 📬', 'Si un compte existe avec cette adresse, tu vas recevoir un e-mail.');
         });
         break;
       case 'nouveau-mdp':
-        action = sb.auth.updateUser({ password: f.elements.mdp.value }).then(function (r) {
+        var code = v('code');
+        action = sb.auth.updateUser(code ? { password: f.elements.mdp.value, nonce: code } : { password: f.elements.mdp.value }).then(function (r) {
+          // Connexion trop ancienne : Supabase demande de prouver que c'est bien toi (code par e-mail).
+          if (r.error && !code && /reauthentication/i.test((r.error.code || '') + ' ' + r.error.message)) {
+            return sb.auth.reauthenticate().then(function (x) {
+              if (x.error) throw x.error;
+              f.querySelector('[data-code]').style.display = '';
+              f.querySelector('[data-code-info]').style.display = '';
+              f.elements.code.required = true;
+              f.elements.code.focus();
+            });
+          }
           if (r.error) throw r.error;
           info('C\'est fait ✅', 'Ton nouveau mot de passe est enregistré.');
         });
@@ -450,6 +509,6 @@
         }).then(function () { info('Compte supprimé', 'Ton compte et tes messages ont été effacés. À bientôt peut-être !'); });
         break;
     }
-    action.catch(function (x) { err.textContent = C.erreur(x); }).then(function () { btn.disabled = false; });
+    action.catch(function (x) { err.textContent = C.erreur(x); resetTurnstile(); }).then(function () { btn.disabled = false; });
   });
 })();

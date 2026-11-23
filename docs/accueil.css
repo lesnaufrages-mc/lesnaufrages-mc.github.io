@@ -1,0 +1,62 @@
+/* Accueil (2026-11-15) : menu « Nos autres créations », extrait du journal, créations, chiffres. Chargé après cubes.css. */
+
+/* Menu déroulant des autres créations (et menu complet sur mobile) */
+.menu-crea{position:relative;overflow:visible;border:0;margin:0;background:none}
+.menu-crea summary{padding:0;font-family:var(--f-texte);justify-content:flex-start;list-style:none;cursor:pointer;color:var(--muted);font-weight:700;font-size:15px;white-space:nowrap;display:flex;align-items:center;gap:6px;min-height:44px}
+.menu-crea summary::-webkit-details-marker{display:none}
+.menu-crea summary:after{content:"▾";font-size:12px;color:inherit;font-family:var(--f-texte);transform:none}
+.menu-crea[open] summary:after{transform:rotate(180deg)}
+.menu-crea[open] summary,.menu-crea summary:hover{color:var(--txt)}
+.menu-crea .txt-mob{display:none}
+.menu-liste{position:absolute;right:0;top:calc(100% + 10px);width:300px;background:var(--card);padding:10px;display:flex;flex-direction:column;gap:2px;z-index:60;
+  box-shadow:inset 0 3px 0 var(--hi),3px 3px 0 var(--side),6px 6px 0 var(--side),0 18px 40px rgba(0,0,0,.45)}
+.menu-titre{font-family:var(--f-pixel);color:var(--sand);font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px}
+.top .links .menu-liste a{display:flex;flex-direction:column;gap:0;padding:9px 10px;border-radius:2px;font-size:15px;white-space:normal;color:var(--txt);box-shadow:none}
+.top .links .menu-liste a:hover{background:var(--card2)}
+.menu-liste small{color:var(--muted);font-weight:400;font-size:13px}
+.menu-mob{display:none}
+@media(max-width:1180px){.menu-crea .txt-pc{font-size:14px}}
+@media(max-width:980px){
+  .menu-crea .txt-pc{display:none}.menu-crea .txt-mob{display:inline}
+  .menu-crea summary{padding:6px 12px;border:1px solid var(--line);border-radius:3px;color:var(--txt)}
+  .menu-mob{display:flex;flex-direction:column;border-top:2px solid var(--line);margin-top:6px;padding-top:6px}
+  .menu-liste{position:fixed;left:12px;right:12px;top:72px;width:auto;max-height:calc(100vh - 90px);overflow:auto}
+}
+
+/* Phrase d'intro du studio dans le haut de page */
+.intro-studio{color:var(--muted);font-size:15px;max-width:560px;margin:18px 0 0;padding:12px 14px;background:var(--card);box-shadow:inset 4px 0 0 var(--sand)}
+.intro-studio b{color:var(--txt)}
+@media(max-width:860px){.intro-studio{margin:18px auto 0;text-align:left}}
+
+/* Extrait du journal du naufragé */
+.journal-teaser{padding-top:40px}
+.carnet{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
+@media(max-width:860px){.carnet{grid-template-columns:1fr}}
+.page{margin:0;background:#efe3c4;color:#3a2a14;padding:26px 26px 22px;transform:rotate(-.6deg);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.5),3px 3px 0 var(--sand2),6px 6px 0 var(--side-sand),9px 9px 0 #5e4622;
+  background-image:repeating-linear-gradient(transparent 0 31px,rgba(58,42,20,.12) 31px 32px)}
+.page figcaption{font-family:var(--f-pixel);font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#8a6a37;margin-bottom:10px}
+.page blockquote{margin:0;font-size:19px;line-height:1.65;font-style:italic}
+.page .flou{margin:10px 0 0;font-size:19px;line-height:1.65;font-style:italic;filter:blur(5px);user-select:none;opacity:.8}
+.page-cta{margin-top:18px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.page-cta small{color:#6b5530;font-size:14px}
+@media(prefers-reduced-motion:reduce){.page{transform:none}}
+
+/* Nos créations */
+.crea-grille{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:860px){.crea-grille{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.crea-grille{grid-template-columns:1fr}}
+.crea{display:block;text-decoration:none;padding:22px}
+.crea:hover{transform:translate(-2px,-2px)}
+.crea-ico{font-size:28px;line-height:1;display:block;margin-bottom:10px}
+.crea h3{font-size:21px;margin-bottom:6px}
+.crea p{margin:0;color:var(--muted)}
+
+/* Chiffres en direct : les cartes vides restent cachées, celles qui restent sont centrées */
+.live{grid-template-columns:repeat(auto-fit,minmax(180px,240px));justify-content:center}
+.live-card b:empty{display:none}
+
+/* Boutons et liens faciles à toucher au pouce */
+.mc-copier{min-height:44px;padding:10px 16px;font-size:14px}
+@media(max-width:600px){.mc-copier{width:100%}.cta .btn{min-height:48px}}
+@media(max-width:480px){.top .wrap{gap:10px}.links{gap:8px}.brand{font-size:16px}.brand img{width:30px;height:30px}.menu-crea summary{padding:6px 10px}}

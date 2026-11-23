@@ -188,3 +188,6 @@ a.staff-card.libre:hover{opacity:1}
 .ami-zone .ami-acts{justify-content:center}
 .ami-ok{color:var(--green);font-weight:800}
 .reset-sel{margin-top:6px;padding:6px 8px;font-size:13px;min-width:150px}
+/* Cloudflare Turnstile (anti-robots) dans les fenêtres de connexion */
+.ts-zone{margin:14px 0 4px;min-height:65px}
+.ts-zone:empty{min-height:0;margin:0}

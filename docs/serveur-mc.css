@@ -1,0 +1,23 @@
+/* Bloc « Rejoindre le serveur Minecraft » (accueil) */
+.mc-join{margin:26px auto 26px;max-width:760px;background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.mc-join h3{margin:0 0 4px;font-family:var(--f-titre);font-size:22px}
+.mc-etat{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin:0 0 16px}
+.mc-etat .pt{width:10px;height:10px;border-radius:50%;background:var(--grey);flex:none}
+.mc-etat.on .pt{background:var(--green);box-shadow:0 0 0 3px rgba(58,167,87,.25)}
+.mc-etat.off .pt{background:var(--rope)}
+.mc-lignes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mc-ligne{background:var(--field);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.mc-ligne .lbl{display:block;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.mc-ligne code{display:block;font-family:var(--f-pixel);font-size:18px;color:var(--sand);overflow-wrap:anywhere}
+.mc-ligne small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.mc-copier{margin-top:10px;font:inherit;font-size:13px;font-weight:700;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+.mc-copier:hover{border-color:var(--sand2)}
+.mc-note{color:var(--muted);font-size:14px;margin:14px 0 0}
+@media (max-width:640px){.mc-lignes{grid-template-columns:1fr}}
+
+.mc-vote{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.mc-vote h4{margin:0 0 6px;font-family:var(--f-titre);font-size:18px}
+.mc-vote p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.mc-vote-liens{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mc-vote-liens .btn{min-height:44px;justify-content:center;text-align:center}
+@media(max-width:600px){.mc-vote-liens{grid-template-columns:1fr}}

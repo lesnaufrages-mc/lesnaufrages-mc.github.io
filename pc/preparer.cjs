@@ -9,7 +9,7 @@ const path = require('path');
 const ICI = __dirname;
 const SOURCE = path.join(ICI, '..', 'docs', 'strategie');
 const APP = path.join(ICI, 'app');
-const SITE = 'https://lesnaufrages-mc.github.io';
+const SITE = 'https://lesnaufrages.net';
 
 fs.rmSync(APP, { recursive: true, force: true });
 fs.mkdirSync(path.join(APP, 'vendor'), { recursive: true });
@@ -63,7 +63,7 @@ remplacer('index.html', [
   [ligne(/<script src="\.\.\/supabase-config\.js"><\/script>\n/, 'supabase-config'), '', 'supabase-config'],
   [ligne(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase[^>]*><\/script>\n/, 'supabase'), '', 'supabase'],
   [ligne(/<script src="\.\.\/sauvegarde\.js"[^>]*><\/script>\n/, 'sauvegarde'), '', 'sauvegarde en ligne'],
-  [ligne(/<script src="https:\/\/cdnjs\.cloudflare\.com[^"]*three\.min\.js"><\/script>/, 'three.js'), '<script src="vendor/three.min.js"></script>', 'three.js'],
+  [ligne(/<script src="https:\/\/cdnjs\.cloudflare\.com[^"]*three\.min\.js"[^>]*><\/script>/, 'three.js'), '<script src="vendor/three.min.js"></script>', 'three.js'],
   [ligne(/<script src="\.\.\/site\.js"[^>]*><\/script>/, 'site.js'), '<script src="pc.js"></script>', 'site.js'],
   ['<link rel="icon" href="../icon.png">', '<link rel="icon" href="icone-192.png">', 'icône'],
   ['<a href="../conditions.html">', '<a href="' + SITE + '/conditions.html" target="_blank">', 'lien Conditions'],

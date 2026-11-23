@@ -3,7 +3,7 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 
-const SITE = 'https://lesnaufrages-mc.github.io';
+const SITE = 'https://lesnaufrages.net';
 
 // Une seule fenêtre du jeu à la fois.
 if (!app.requestSingleInstanceLock()) app.quit();

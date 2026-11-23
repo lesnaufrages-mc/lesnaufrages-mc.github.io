@@ -81,7 +81,11 @@ const conns = new Map();      // hôte : id joueur -> connexion
 
 function newPeer(id) {
   return new Promise((resolve, reject) => {
-    const opts = window.MM_PEER_OPTS || {}; // seulement pour les tests en local
+    // Anti-dox : on force le passage par le relais TURN de PeerJS (iceTransportPolicy « relay »),
+    // pour que les autres joueurs ne voient jamais l'adresse IP de quelqu'un.
+    const opts = window.MM_PEER_OPTS || { config: {
+      iceServers: [{ urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }],
+      iceTransportPolicy: 'relay', sdpSemantics: 'unified-plan' } }; // MM_PEER_OPTS : seulement pour les tests en local
     const p = id ? new Peer(id, opts) : new Peer(opts);
     p.on('open', () => resolve(p));
     p.on('error', (e) => reject(e));

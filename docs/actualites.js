@@ -8,6 +8,15 @@
    Attention : garde bien les guillemets "..." et la virgule entre chaque bloc. */
 var ACTUALITES = [
   {
+    date: "2026-11-14",
+    categorie: "minecraft",
+    epingle: true,
+    titre: "Le serveur Minecraft est de retour, sur Java ET Bedrock",
+    texte: "Le serveur Les Naufragés a été remis à neuf : Paper 1.21.11, plugins à jour, anti-triche, protection contre le grief (CoreProtect) et chat vocal. Nouveau : les joueurs Bedrock (téléphone, tablette, console, Windows) peuvent enfin nous rejoindre. Adresse : naufragesmc.mine.fun (port 30603 sur Bedrock). Ton monde et tes constructions sont intacts. On se retrouve en jeu !",
+    lien: "/#serveur",
+    bouton: "Voir comment rejoindre"
+  },
+  {
     date: "2026-11-06",
     categorie: "site",
     epingle: true,
@@ -114,7 +123,7 @@ var ACTUALITES = [
     date: "2026-10-25",
     categorie: "site",
     titre: "Nouveau site pour Les Naufragés",
-    texte: "Le site déménage sur lesnaufrages-mc.github.io avec une page d'actualités et des chiffres en direct : visites du site, membres du Discord et joueurs en ligne.",
+    texte: "Le site déménage sur lesnaufrages.net avec une page d'actualités et des chiffres en direct : visites du site, membres du Discord et joueurs en ligne.",
     lien: "index.html#direct",
     bouton: "Voir les chiffres"
   },

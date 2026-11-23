@@ -10,6 +10,7 @@
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cubes.css?v=1">
 <!-- Google AdSense (pubs du site). ID éditeur = le même que AdMob. -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7922547142050402" crossorigin="anonymous"></script>
 <meta name="google-adsense-account" content="ca-pub-7922547142050402">
@@ -35,14 +36,14 @@
   <div class="wrap center">
     <span class="eyebrow">Confidentialité</span>
     <h1>Politique de confidentialité</h1>
-    <p class="lead">Dernière mise à jour : 31 octobre 2026</p>
+    <p class="lead">Dernière mise à jour : 23 novembre 2026</p>
   </div>
 </header>
 
 <section style="padding-top:40px">
   <div class="wrap">
     <div class="prose">
-<p>Cette page explique, de façon simple, quelles données sont utilisées par le site <strong>lesnaufrages-mc.github.io</strong>
+<p>Cette page explique, de façon simple, quelles données sont utilisées par le site <strong>lesnaufrages.net</strong>
 et par l'application <strong>Mot Mystère</strong>, pourquoi, combien de temps, avec qui elles sont partagées, et quels sont tes droits
 selon le Règlement général sur la protection des données (RGPD) et la loi belge du 30 juillet 2018.</p>
 
@@ -59,7 +60,7 @@ selon le Règlement général sur la protection des données (RGPD) et la loi be
 </div>
 
 <h2 id="responsable">1. Qui est responsable de tes données</h2>
-<p>Le responsable du traitement est <strong>Les Naufragés</strong>, projet indépendant géré par un particulier résidant en Belgique (GitHub : lordmattstark).
+<p>Le responsable du traitement est <strong>Les Naufragés</strong>, projet indépendant géré par un particulier résidant en Belgique (contact : <a href="mailto:lesnaufragees@gmail.com">lesnaufragees@gmail.com</a>).
 Pour toute question ou demande sur tes données, voir la partie <a href="#contact">Contact</a>.</p>
 
 <h2 id="tableau">2. Les données en un coup d'œil</h2>
@@ -73,8 +74,8 @@ Pour toute question ou demande sur tes données, voir la partie <a href="#contac
 <tr><td>Signalements et modération</td><td>Message signalé, raison, auteur du signalement, sanctions</td><td>Garder un forum sûr et respecter la loi</td><td>Intérêt légitime et obligation légale (art. 6.1.f et 6.1.c)</td><td>Supprimés avec le message ou le compte concerné</td></tr>
 <tr><td>Statistiques (GoatCounter)</td><td>Page vue, site d'origine, navigateur, taille d'écran, pays (IP non conservée)</td><td>Savoir combien de personnes visitent le site</td><td>Intérêt légitime (art. 6.1.f)</td><td>Chiffres globaux, sans donnée qui t'identifie</td></tr>
 <tr><td>Publicité (Google AdSense / AdMob)</td><td>Cookies ou identifiant publicitaire, adresse IP, infos sur l'appareil</td><td>Financer le site et l'appli</td><td>Ton consentement (art. 6.1.a)</td><td>Voir la <a href="cookies.html">politique de cookies</a></td></tr>
-<tr><td>Jouer entre amis</td><td>Pseudo, avatar, essais, adresse IP (connexion)</td><td>Relier les joueurs d'un salon</td><td>Exécution du service (art. 6.1.b)</td><td>Rien n'est conservé à la fermeture du salon</td></tr>
-<tr><td>Hébergement du site</td><td>Adresse IP, navigateur, page demandée</td><td>Afficher le site et le protéger des attaques</td><td>Intérêt légitime (art. 6.1.f)</td><td>Journaux techniques de GitHub (durée courte fixée par GitHub)</td></tr>
+<tr><td>Jouer entre amis</td><td>Pseudo, avatar, essais, adresse IP (vue seulement par PeerJS et son relais, jamais par les autres joueurs)</td><td>Relier les joueurs d'un salon</td><td>Exécution du service (art. 6.1.b)</td><td>Rien n'est conservé à la fermeture du salon</td></tr>
+<tr><td>Hébergement du site</td><td>Adresse IP, navigateur, page demandée</td><td>Afficher le site et le protéger des attaques</td><td>Intérêt légitime (art. 6.1.f)</td><td>Journaux techniques de Cloudflare (durée courte fixée par Cloudflare)</td></tr>
 </tbody></table></div>
 
 <h2 id="jeux">3. Données de jeu</h2>
@@ -98,6 +99,11 @@ Tu peux bloquer ce comptage avec n'importe quel bloqueur de publicité.</p>
 <p>La page d'accueil affiche le nombre de membres de notre serveur Discord. Pour cela, ton navigateur interroge directement Discord (discord.com),
 qui peut voir ton adresse IP comme pour n'importe quelle visite. Voir les
 <a href="https://discord.com/privacy" target="_blank" rel="noopener">règles de confidentialité de Discord</a>.</p>
+<p id="traduction-vocale"><strong>Traduction vocale du bot Discord.</strong> Quand un membre lance <code>/traduction demarrer</code> dans un salon vocal,
+notre bot « Naufragés Bot » écoute ce qui y est dit, l'envoie au service <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">Groq</a>
+(États-Unis) pour le transcrire et le traduire, puis affiche le texte et sa traduction dans le chat du salon. L'audio n'est pas enregistré par le bot.
+Un message prévient tout le monde au démarrage, et chacun peut refuser d'être traduit avec <code>/traduction ignorer-moi</code>
+(ton identifiant Discord est alors gardé dans une liste pour respecter ce choix).</p>
 
 <h2 id="pub-site">6. Publicité sur le site (Google AdSense)</h2>
 <p>Le site est gratuit grâce à la publicité de Google AdSense. À ta première visite, si tu es dans l'Espace économique européen, au Royaume-Uni
@@ -120,8 +126,8 @@ Tu peux à tout moment réinitialiser ou désactiver l'identifiant publicitaire 
 
 <h2 id="amis">9. Jouer entre amis</h2>
 <p>Sur la page « Jouer entre amis », tu choisis un pseudo et un avatar : ils sont gardés uniquement dans ton navigateur. Pendant une partie,
-ton pseudo, ton avatar et tes essais sont envoyés directement aux navigateurs des autres joueurs du salon (connexion WebRTC), qui peuvent aussi
-voir ton adresse IP, comme dans tout jeu en ligne de joueur à joueur. Pour que les joueurs se trouvent grâce au code du salon, le service gratuit
+ton pseudo, ton avatar et tes essais sont envoyés aux navigateurs des autres joueurs du salon (connexion WebRTC). Pour protéger ta vie privée,
+la connexion passe toujours par un serveur relais (TURN) : les autres joueurs <strong>ne voient pas ton adresse IP</strong>. Pour que les joueurs se trouvent grâce au code du salon, le service gratuit
 <a href="https://peerjs.com/" target="_blank" rel="noopener">PeerJS</a> voit passer ton adresse IP et l'identifiant technique de la connexion.
 Rien n'est conservé par nous : quand le salon est fermé, tout disparaît.</p>
 
@@ -158,15 +164,24 @@ Nous ne recevons <strong>jamais</strong> tes données bancaires.</li>
 <p>Si tu supprimes ton compte, la ligne de l'édition est effacée avec lui (et l'édition est perdue). Les factures restent chez Lemon Squeezy
 pendant la durée imposée par la loi.</p>
 
+<h2 id="achats-soutien">11 bis. Achat d'un grade Soutien (serveur Minecraft)</h2>
+<p>Les grades Soutien sont vendus par <strong>Tebex Limited</strong> (Royaume-Uni), notre revendeur officiel. En cliquant sur un grade, tu quittes notre site pour la boutique Tebex.</p>
+<ul>
+<li><strong>Chez Tebex</strong> : ton pseudo Minecraft, ton nom, ton e-mail, ton pays, ton adresse IP et ton moyen de paiement, pour encaisser le paiement, t'envoyer le reçu, calculer la TVA et lutter contre la fraude. Tebex agit comme responsable de traitement indépendant : voir sa <a href="https://www.tebex.io/privacy" target="_blank" rel="noopener">politique de confidentialité</a>.</li>
+<li><strong>Chez nous</strong> : Tebex nous transmet ton pseudo, le grade acheté, la date et le montant, pour donner le grade sur le serveur, afficher ton pseudo sur le mur des soutiens (si tu ne veux pas, dis-le-nous) et assurer le service après-vente. Nous ne recevons <strong>jamais</strong> tes données bancaires.</li>
+</ul>
+
 <h2 id="destinataires">12. Qui reçoit tes données (sous-traitants)</h2>
 <p>Nous ne vendons, ne louons et ne donnons tes données à personne. Seuls ces prestataires les traitent, pour faire marcher le site :</p>
 <ul>
 <li><strong>Supabase</strong> (base de données du forum et comptes, serveurs en <strong>Irlande</strong>, UE) : <a href="https://supabase.com/privacy" target="_blank" rel="noopener">confidentialité</a>.</li>
-<li><strong>GitHub Pages</strong> (hébergement du site, GitHub Inc., États-Unis) : <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">confidentialité</a>.</li>
+<li><strong>Cloudflare Pages</strong> (hébergement du site, Cloudflare Inc., États-Unis) : <a href="https://www.cloudflare.com/fr-fr/privacypolicy/" target="_blank" rel="noopener">confidentialité</a>.</li>
 <li><strong>GoatCounter</strong> (statistiques sans cookie) : <a href="https://www.goatcounter.com/help/privacy" target="_blank" rel="noopener">confidentialité</a>.</li>
 <li><strong>PeerJS</strong> (mise en relation pour Jouer entre amis) et les serveurs publics <strong>jsDelivr</strong>, <strong>unpkg</strong> et <strong>cdnjs</strong> qui fournissent
 certaines bibliothèques du site : ils voient ton adresse IP le temps de la connexion.</li>
+<li><strong>mcsrvstat.us</strong> (état du serveur Minecraft affiché sur l'accueil) : ton navigateur lui demande si le serveur est en ligne, il voit ton adresse IP le temps de la requête, sans cookie.</li>
 <li><strong>Google</strong> (publicité AdSense et AdMob), uniquement selon ton choix sur les cookies, comme responsable indépendant.</li>
+<li><strong>Tebex</strong> (Tebex Limited, Royaume-Uni) : uniquement si tu achètes un grade Soutien, comme revendeur et responsable indépendant (partie 11 bis). Le Royaume-Uni bénéficie d'une décision d'adéquation de la Commission européenne.</li>
 <li><strong>Lemon Squeezy</strong> (Lemon Squeezy, LLC, États-Unis, avec Stripe) : uniquement si tu achètes l'Édition Couronne, comme revendeur et responsable indépendant (partie 11).</li>
 </ul>
 <p>Certains de ces prestataires sont aux <strong>États-Unis</strong>. Les transferts se font dans le cadre du EU-US Data Privacy Framework

@@ -4,7 +4,7 @@
 // MATELOT / CORSAIRE / AMIRAL (facultatif) : lien direct vers chaque grade
 // (IDs Tebex : Matelot 7829072, Corsaire 7829073, Amiral 7829074). Vide = lien vers la boutique.
 window.SOUTIEN = {
-  BOUTIQUE: 'https://les-naufrages.tebex.store',
+  BOUTIQUE: '', // à remettre quand Tebex a approuvé : 'https://les-naufrages.tebex.store'
   MATELOT: '',
   CORSAIRE: '',
   AMIRAL: '',

@@ -9,7 +9,7 @@ const path = require('path');
 const ICI = __dirname;
 const SOURCE = path.join(ICI, '..', 'docs', 'strategie');
 const APP = path.join(ICI, 'app');
-const SITE = 'https://lesnaufrages-mc.github.io';
+const SITE = 'https://lesnaufrages.net';
 
 fs.rmSync(APP, { recursive: true, force: true });
 fs.mkdirSync(path.join(APP, 'vendor'), { recursive: true });

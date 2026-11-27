@@ -60,6 +60,7 @@ const ligne = (re, nom) => {
 remplacer('index.html', [
   [ligne(/<script[^>]*adsbygoogle[^>]*><\/script>\n/, 'pub AdSense'), '', 'pub AdSense'],
   [ligne(/<link rel="manifest"[^>]*>\n/, 'manifest'), '', 'manifest'],
+  [ligne(/<link rel="canonical"[^>]*>\n/, 'canonical'), '', 'adresse canonique du site'],
   [ligne(/<script src="\.\.\/supabase-config\.js"><\/script>\n/, 'supabase-config'), '', 'supabase-config'],
   [ligne(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase[^>]*><\/script>\n/, 'supabase'), '', 'supabase'],
   [ligne(/<script src="\.\.\/sauvegarde\.js"[^>]*><\/script>\n/, 'sauvegarde'), '', 'sauvegarde en ligne'],

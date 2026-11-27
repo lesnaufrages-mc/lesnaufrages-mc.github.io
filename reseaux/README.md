@@ -16,4 +16,7 @@ Six agents Claude font tourner la chaîne de Shorts ; lord dit seulement oui ou 
 - Sur le PC : ouvrir un terminal dans le dossier du dépôt, `claude`, puis
   « lance l'équipe réseaux » (le skill `.claude/skills/equipe-reseaux` s'active).
 
+Skills Instagram (score du profil, viral, planning, posts, réponses) :
+[instagram/README.md](instagram/README.md).
+
 Ligne éditoriale, règles et concurrents suivis : [niche.md](niche.md).

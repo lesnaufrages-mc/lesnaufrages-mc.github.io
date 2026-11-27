@@ -22,6 +22,11 @@ dans `reseaux/niche.md` : lis-la d'abord.
 6. **publieur** : `a-valider.md`, puis **oui / non** de lord par vidéo.
    Jamais de publication sans « oui ».
 
+## Instagram
+Pour Instagram, l'équipe s'appuie sur les skills `/ig-profil`, `/ig-viral`,
+`/ig-plan`, `/ig-post`, `/ig-reponses`, `/ig-commenter` (voir `reseaux/instagram/README.md`) :
+le publieur utilise `/ig-post` pour les légendes Instagram.
+
 ## Bon à savoir
 - Coût : les recherches vidIQ coûtent des crédits (5 à 10 par appel) : chercheur
   et espion se limitent à 6 appels chacun par lancement.

@@ -6,7 +6,7 @@ avant le « … plus »). Remplace les crochets. Une seule accroche par post.
 ## Choc / surprise
 1. **« [Personnage] est mort à cause de [détail absurde]. »** : Empereur mort d'avoir trop mangé.
 2. **« Personne ne te raconte ça sur [sujet]. »**
-3. **« [Chiffre énorme] [unité]. C'est [comparaison du quotidien]. »** : 1 057 km/h, la vitesse de Bruxelles autour de la Terre.
+3. **« [Chiffre énorme] [unité]. C'est [comparaison du quotidien]. »** : 1 099 km/h, la vitesse de Paris autour de la Terre.
 4. **« Ce n'est pas une légende : [fait incroyable]. »**
 5. **« En [année], [peuple] faisait [chose impensable aujourd'hui]. »**
 

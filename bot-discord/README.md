@@ -12,7 +12,7 @@ Bot Discord pour **Les Naufragés Community**, relié au jeu **Mot Mystère**.
 | 🔔 Rôle à la carte | `/roles` poste un bouton pour prendre/enlever le rôle « Mot du jour » |
 | 🛡️ Modération | `/clear` (supprimer des messages), `/mute` (exclusion temporaire) |
 | 👥 Rôles du staff | `/staff-setup` crée les grades (Fondateur, Admin, Responsable, Modo, Helper, Builder, Dev, Animateur), `/staff` affiche qui en fait partie |
-| 📋 Recrutement | `/recrutement` poste un message avec un bouton « Postuler » par poste ; formulaire, puis Accepter/Refuser par le staff dans un salon privé (le bot donne le rôle et prévient en MP). Aussi : `/candidature` |
+| 📋 Recrutement | `/recrutement` poste un message avec un bouton « Postuler » par poste ; fiche rapide, puis Accepter/Refuser par le staff dans un salon privé (le bot donne le rôle et prévient en MP). Bouton 📋 vers le formulaire Google complet (lien changeable avec `FORMULAIRE_RECRUTEMENT`). Aussi : `/candidature` |
 | 📰 Actus du site | Toutes les 5 minutes, le bot poste dans le salon `SALON_ACTUS_ID` les nouvelles actus du site (fichier `actualites.js` + actus publiées depuis l'espace admin). `/actus` poste la dernière tout de suite |
 | ℹ️ Autres | `/aide`, `/jouer`, `/motdujour`, `/invitation` |
 

@@ -26,10 +26,13 @@ export const config = {
   roleArrivant: env.ROLE_ARRIVANT_ID || null,
   roleNotif: env.ROLE_NOTIF_ID || null,
   rappelHeure: Number(env.RAPPEL_HEURE ?? 9),
+  // Formulaire Google de candidature complet (bouton dans /recrutement). Modifiable sans toucher au code.
+  formulaireRecrutement: env.FORMULAIRE_RECRUTEMENT || 'https://forms.gle/7wKNW3dkHEBkHSTe8',
 };
 
 export const LIEN_JEU = 'https://lesnaufrages-mc.github.io/jouer/';
 export const LIEN_DISCORD = 'https://discord.gg/Xdkzj8bZnk';
+export const BANNIERE_RECRUTEMENT = 'https://lesnaufrages.net/img/recrutement-banniere.jpg';
 
 export function verifierConfig() {
   const manque = ['token', 'guildId'].filter((cle) => !config[cle]);

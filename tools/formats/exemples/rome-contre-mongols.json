@@ -1,0 +1,15 @@
+{
+  "accroche": "Qui gagne vraiment ?",
+  "titre": "Empire romain contre Empire mongol",
+  "a": {"nom": "Rome", "sous": "27 av. J.-C. – 476"},
+  "b": {"nom": "Mongols", "sous": "1206 – 1368"},
+  "criteres": [
+    {"nom": "Superficie maximale", "a": "5,0 M km²", "b": "24,0 M km²", "gagnant": "b"},
+    {"nom": "Durée", "a": "≈ 500 ans", "b": "≈ 160 ans", "gagnant": "a"},
+    {"nom": "Temps pour atteindre l'apogée", "a": "≈ 145 ans", "b": "≈ 65 ans", "gagnant": "b"}
+  ],
+  "verdict": "2 à 1 pour les Mongols… mais Rome a duré 3 fois plus longtemps.",
+  "question": "Pour toi, le plus grand, c'est lequel ?",
+  "appel": "Vote en commentaire : Rome ou Mongols 👇",
+  "source": "Taagepera (1997), Turchin et al. (2006), via Wikipédia « List of largest empires »"
+}

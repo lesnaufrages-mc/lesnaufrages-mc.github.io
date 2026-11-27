@@ -1,0 +1,4 @@
+exemples/*.mp4
+**/*.events.json
+**/*.tmp/
+**/apercu/

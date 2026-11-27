@@ -1,0 +1,16 @@
+{
+  "accroche": "1 228 ans. Puis plus rien.",
+  "titre": "La chute de Rome en 7 dates",
+  "etapes": [
+    {"date": "753 av. J.-C.", "titre": "Fondation de Rome", "texte": "Selon la légende, Romulus trace l'enceinte de la ville."},
+    {"date": "509 av. J.-C.", "titre": "La République", "texte": "Le dernier roi est chassé. Rome est gouvernée par des consuls."},
+    {"date": "44 av. J.-C.", "titre": "César assassiné", "texte": "23 coups de poignard au Sénat, aux ides de mars."},
+    {"date": "27 av. J.-C.", "titre": "Auguste, premier empereur", "texte": "La République devient un Empire."},
+    {"date": "117", "titre": "L'apogée", "texte": "Sous Trajan, l'Empire atteint sa plus grande taille."},
+    {"date": "410", "titre": "Rome pillée", "texte": "Les Wisigoths d'Alaric pillent la ville pendant trois jours."},
+    {"date": "476", "titre": "La fin", "texte": "Odoacre dépose Romulus Augustule, dernier empereur d'Occident."}
+  ],
+  "question": "Quelle date a vraiment tué Rome ?",
+  "appel": "Donne ta réponse en commentaire 👇",
+  "source": "Tite-Live, Suétone, Wikipédia « Chute de l'Empire romain d'Occident »"
+}

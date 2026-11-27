@@ -1,0 +1,22 @@
+{
+  "accroche": "Rome n'est même pas dans le top 10.",
+  "titre": "Les 10 plus grands empires de l'histoire",
+  "unite": "millions de km² (à leur apogée)",
+  "decimales": 1,
+  "items": [
+    {"nom": "Empire britannique", "valeur": 35.5, "detail": "1920"},
+    {"nom": "Empire mongol", "valeur": 24.0, "detail": "1270"},
+    {"nom": "Empire russe", "valeur": 22.8, "detail": "1895"},
+    {"nom": "Dynastie Qing", "valeur": 14.7, "detail": "1790"},
+    {"nom": "Empire espagnol", "valeur": 13.7, "detail": "1810"},
+    {"nom": "Empire colonial français", "valeur": 11.5, "detail": "1920"},
+    {"nom": "Califat abbasside", "valeur": 11.1, "detail": "750"},
+    {"nom": "Califat omeyyade", "valeur": 11.1, "detail": "720"},
+    {"nom": "Dynastie Yuan", "valeur": 11.0, "detail": "1310"},
+    {"nom": "États-Unis", "valeur": 9.5, "detail": "1900"}
+  ],
+  "bonus": {"nom": "Empire romain", "valeur": 5.0, "detail": "117 apr. J.-C.", "texte": "À peine la moitié du n°10."},
+  "question": "Lequel t'a le plus surpris ?",
+  "appel": "Dis-le en commentaire 👇",
+  "source": "Taagepera (1997), Turchin et al. (2006), via Wikipédia « List of largest empires »"
+}

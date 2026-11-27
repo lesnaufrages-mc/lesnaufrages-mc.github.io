@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Format versus</title>
+<script src="../moteur/commun.js"></script>
+</head><body><div id="scene"></div>
+<script>
+// FORMAT « VERSUS » : A contre B, critère par critère, un point au gagnant de chaque ligne, score final.
+// DATA = { accroche, titre, a:{nom, sous}, b:{nom, sous}, criteres:[{nom, a, b, gagnant:'a'|'b'|'='}], verdict, question, appel, source }
+const D = window.DATA || {}; const C = D.criteres; const N = C.length;
+const T_INTRO = 3.2, T_CRIT = 2.8, T_VERD = 3.5, T_FIN = 3.5;
+const T_C0 = T_INTRO + .6, T_V0 = T_C0 + N * T_CRIT, T_FIN0 = T_V0 + T_VERD;
+window.DURATION = T_FIN0 + T_FIN;
+K.base(D);
+const intro = K.el('div', 'abs'); intro.style.cssText = 'left:70px;right:70px;top:560px;text-align:center';
+intro.innerHTML = `<div class="titre" id="acc" style="font-size:90px;line-height:1.1;color:var(--or2)"></div><div id="sous" style="margin-top:40px;font-size:44px">${K.esc(D.titre)}</div>`;
+const acc = intro.querySelector('#acc'), sous = intro.querySelector('#sous');
+const tete = K.el('div', 'abs'); tete.style.cssText = 'left:40px;right:40px;top:110px;height:250px';
+tete.innerHTML = `<div style="position:absolute;left:0;width:440px;text-align:center"><div class="titre" style="font-size:58px;color:var(--bleu)">${K.esc(D.a.nom)}</div><div style="font-size:28px;color:var(--doux)">${K.esc(D.a.sous || '')}</div><div class="sa titre" style="font-size:110px;margin-top:6px">0</div></div>
+  <div class="titre" style="position:absolute;left:440px;width:120px;top:40px;text-align:center;font-size:64px;color:var(--or)">VS</div>
+  <div style="position:absolute;right:0;width:440px;text-align:center"><div class="titre" style="font-size:58px;color:var(--rouge)">${K.esc(D.b.nom)}</div><div style="font-size:28px;color:var(--doux)">${K.esc(D.b.sous || '')}</div><div class="sb titre" style="font-size:110px;margin-top:6px">0</div></div>`;
+const sa = tete.querySelector('.sa'), sb = tete.querySelector('.sb');
+const H = Math.min(250, 1000 / N);
+const lignes = C.map((c, i) => {
+  const l = K.el('div', 'abs'); l.style.cssText = `left:40px;right:40px;top:${440 + i * H}px;height:${H - 20}px;border-radius:24px;background:rgba(255,255,255,.04)`;
+  l.innerHTML = `<div style="position:absolute;left:0;right:0;top:16px;text-align:center;font-size:34px;color:var(--doux);text-transform:uppercase;letter-spacing:.08em">${K.esc(c.nom)}</div>
+    <div class="va" style="position:absolute;left:20px;width:440px;top:80px;text-align:center;font-size:54px;font-weight:800">${K.esc(c.a)}</div>
+    <div class="vb" style="position:absolute;right:20px;width:440px;top:80px;text-align:center;font-size:54px;font-weight:800">${K.esc(c.b)}</div>`;
+  return l;
+});
+const verd = K.el('div', 'abs titre'); verd.style.cssText = `left:60px;right:60px;top:${440 + N * H + 50}px;`+'text-align:center;font-size:56px;color:var(--or2)';
+window.render = function (t) {
+  const xo = K.p(t, T_INTRO - .4, T_INTRO); intro.style.opacity = 1 - xo;
+  acc.textContent = K.tape(D.accroche || '', K.p(t, .1, 1.4)); sous.style.opacity = K.p(t, 1.4, 1.9);
+  const xh = K.easeOut(K.p(t, T_INTRO - .2, T_INTRO + .5)); tete.style.opacity = xh; tete.style.transform = `scale(${.9 + .1 * xh})`;
+  let A = 0, B = 0;
+  lignes.forEach((l, i) => {
+    const t0 = T_C0 + i * T_CRIT, a = K.p(t, t0, t0 + .4), g = t >= t0 + 1.3; const w = C[i].gagnant;
+    l.style.opacity = a; l.style.transform = `translateY(${40 * (1 - K.easeOut(a))}px)`;
+    const va = l.querySelector('.va'), vb = l.querySelector('.vb');
+    va.style.color = g && w === 'a' ? 'var(--bleu)' : g && w === 'b' ? '#6d7686' : 'var(--texte)';
+    vb.style.color = g && w === 'b' ? 'var(--rouge)' : g && w === 'a' ? '#6d7686' : 'var(--texte)';
+    va.style.transform = `scale(${g && w === 'a' ? 1.12 : 1})`; vb.style.transform = `scale(${g && w === 'b' ? 1.12 : 1})`;
+    l.style.boxShadow = g ? `inset ${w === 'a' ? '8px' : w === 'b' ? '-8px' : '0'} 0 0 ${w === 'a' ? 'var(--bleu)' : 'var(--rouge)'}` : 'none';
+    if (g) { if (w === 'a') A++; else if (w === 'b') B++; }
+  });
+  sa.textContent = A; sb.textContent = B;
+  verd.style.opacity = K.p(t, T_V0, T_V0 + .4); verd.textContent = K.tape(D.verdict || '', K.p(t, T_V0, T_V0 + 1.5));
+  if (t >= T_FIN0) K.fin(t, T_FIN0, D); else { const f = document.getElementById('kfin'); if (f) f.style.opacity = 0; }
+};
+window.EVENTS = function () {
+  const e = [{ t: 0, type: 'whoosh' }, { t: T_INTRO - .2, type: 'whoosh' }];
+  for (let i = 0; i < N; i++) e.push({ t: T_C0 + i * T_CRIT, type: 'tick' }, { t: T_C0 + i * T_CRIT + 1.3, type: 'tick' });
+  e.push({ t: T_V0, type: 'impact' }, { t: T_FIN0, type: 'fin' }); return e;
+};
+</script></body></html>

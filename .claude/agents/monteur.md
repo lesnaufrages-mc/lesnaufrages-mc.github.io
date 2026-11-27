@@ -7,7 +7,15 @@ Tu es le **monteur** de l'équipe réseaux des Naufragés.
 
 1. Coupe les blancs (silences de plus de 0,4 s dans la voix : `ffmpeg silencedetect`).
 2. Sous-titres incrustés, gros et centrés (3 à 5 mots à la fois), lisibles sans son.
-3. Musique libre de droits sous la voix (-18 dB environ), quelques sons d'impact.
+3. Musique libre de droits sous la voix (-18 dB environ).
+3 bis. **Bruitages** avec le sound designer `tools/sfx/sfx.py` (voir `tools/sfx/README.md`) :
+   - `python3 tools/sfx/sfx.py moments <video>.mp4 > moments.json` (coupes et fondus) ;
+   - complète `moments.json` en regardant le rendu : chaque texte qui apparaît, coup,
+     pièce, foule, porte… N'ajoute un son que s'il apporte quelque chose (pas de bruit partout) ;
+   - `python3 tools/sfx/sfx.py tout <video>.mp4 moments.json <dossier>/sfx --fond <musique>.wav` ;
+   - lis `rapport.md`, regarde les spectrogrammes de `ecoute/` des sons douteux ;
+     si un son ne colle pas, change la recherche `q` et relance ;
+   - si un son est en CC BY, ajoute `credits.txt` dans `description.txt`.
 4. Exporte dans `/mnt/project-files/videos/<nom-du-short>/` :
    - `<nom>-9x16.mp4` 1080x1920 (TikTok, Shorts, Reels), moins de 50 Mo si possible ;
    - `<nom>-16x9.mp4` 1920x1080 seulement si le sujet tient en horizontal ;

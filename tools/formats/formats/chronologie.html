@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Format chronologie</title>
+<script src="../moteur/commun.js"></script>
+</head><body><div id="scene"></div>
+<script>
+// FORMAT « CHRONOLOGIE » : une frise verticale qui défile, une date toutes les ~3 s, la dernière = la chute / le twist.
+// DATA = { accroche, titre, etapes:[{date, titre, texte}], question, appel, source }
+const D = window.DATA || {}; const E = D.etapes; const N = E.length;
+const T_INTRO = 3, T_ETAPE = 3.2, T_FIN = 3.5, T_FIN0 = T_INTRO + N * T_ETAPE + .8;
+window.DURATION = T_FIN0 + T_FIN;
+K.base(D);
+const intro = K.el('div', 'abs'); intro.style.cssText = 'left:70px;right:70px;top:600px;text-align:center';
+intro.innerHTML = `<div class="titre" id="acc" style="font-size:90px;line-height:1.1;color:var(--or2)"></div><div id="sous" style="margin-top:40px;font-size:44px">${K.esc(D.titre)}</div>`;
+const acc = intro.querySelector('#acc'), sous = intro.querySelector('#sous');
+const bande = K.el('div', 'abs'); bande.style.cssText = 'left:0;right:0;top:0;height:270px;z-index:2;background:linear-gradient(var(--fond2) 75%,transparent)';
+const bandeB = K.el('div', 'abs'); bandeB.style.cssText = 'left:0;right:0;bottom:0;height:300px;z-index:2;background:linear-gradient(transparent,var(--fond) 55%)';
+const tete = K.el('div', 'abs titre'); tete.style.cssText = 'left:60px;right:60px;top:100px;text-align:center;font-size:50px;color:var(--or2);z-index:3';
+tete.textContent = D.titre;
+const piste = K.el('div', 'abs'); piste.style.cssText = 'left:0;right:0;top:0;height:100%';
+const STEP = 470, Y0 = 860; // écart entre étapes, position de l'étape active
+const ligne = K.el('div', 'abs', piste); ligne.style.cssText = `left:170px;width:8px;top:${Y0}px;height:${STEP * (N - 1) + 4}px;background:linear-gradient(var(--or),#6b5420);border-radius:4px`;
+const cartes = E.map((e, i) => {
+  const c = K.el('div', 'abs', piste); c.style.cssText = `left:110px;right:60px;top:${Y0 + i * STEP - 64}px`;
+  c.innerHTML = `<div class="pt" style="position:absolute;left:38px;top:42px;width:56px;height:56px;border-radius:50%;background:var(--fond);border:8px solid var(--or)"></div>
+    <div style="margin-left:150px"><div class="titre date" style="font-size:86px;color:var(--or2);line-height:1">${K.esc(e.date)}</div>
+    <div style="font-size:54px;font-weight:800;margin-top:14px">${K.esc(e.titre)}</div>
+    <div class="txt" style="font-size:40px;line-height:1.35;color:var(--doux);margin-top:10px"></div></div>`;
+  return c;
+});
+window.render = function (t) {
+  const xo = K.p(t, T_INTRO - .4, T_INTRO); intro.style.opacity = 1 - xo;
+  acc.textContent = K.tape(D.accroche || '', K.p(t, .1, 1.4)); sous.style.opacity = K.p(t, 1.4, 1.9);
+  tete.style.opacity = K.p(t, T_INTRO - .2, T_INTRO + .4);
+  // défilement : l'étape i est au centre à partir de T_INTRO + i*T_ETAPE
+  let pos = 0;
+  for (let i = 1; i < N; i++) pos += K.easeInOut(K.p(t, T_INTRO + i * T_ETAPE - .6, T_INTRO + i * T_ETAPE));
+  piste.style.transform = `translateY(${-pos * STEP}px)`; piste.style.opacity = K.p(t, T_INTRO - .2, T_INTRO + .3);
+  cartes.forEach((c, i) => {
+    const t0 = T_INTRO + i * T_ETAPE; const vu = K.p(t, t0 - .3, t0 + .3); const actif = t >= t0 - .3 && (i === N - 1 || t < t0 + T_ETAPE - .6);
+    const y = Y0 + (i - pos) * STEP; const masque = K.clamp((y - 300) / 200) * K.clamp((1640 - y) / 200); // s'efface sous le titre
+    c.style.opacity = masque * (.25 + .75 * (actif ? vu : (t > t0 ? .35 : 0)));
+    c.querySelector('.pt').style.background = t >= t0 ? 'var(--or2)' : 'var(--fond)';
+    c.querySelector('.txt').textContent = K.tape(E[i].texte || '', K.p(t, t0, t0 + 1.4));
+    if (i === N - 1) c.querySelector('.date').style.color = t >= t0 ? 'var(--rouge)' : 'var(--or2)';
+  });
+  if (t >= T_FIN0) K.fin(t, T_FIN0, D); else { const f = document.getElementById('kfin'); if (f) f.style.opacity = 0; }
+};
+window.EVENTS = function () {
+  const e = [{ t: 0, type: 'whoosh' }];
+  for (let i = 0; i < N; i++) e.push({ t: T_INTRO + i * T_ETAPE - .5, type: 'whoosh' }, { t: T_INTRO + i * T_ETAPE, type: i === N - 1 ? 'impact' : 'tick' });
+  e.push({ t: T_FIN0, type: 'fin' }); return e;
+};
+</script></body></html>

@@ -1,0 +1,142 @@
+[
+ {
+  "t": 0.6,
+  "type": "ambiance",
+  "d": 3.6,
+  "q": "seagulls harbour",
+  "gain": 0.9,
+  "note": "Constantinople au coucher du soleil (port)"
+ },
+ {
+  "t": 1.0,
+  "type": "whoosh",
+  "q": "deep whoosh",
+  "gain": 0.6,
+  "note": "ouverture / titre"
+ },
+ {
+  "t": 4.02,
+  "type": "impact",
+  "q": "war drum hit",
+  "gain": 0.9,
+  "note": "rang I : spathaire"
+ },
+ {
+  "t": 4.3,
+  "type": "metal",
+  "q": "sword unsheathe",
+  "gain": 0.7,
+  "note": "épée de cérémonie"
+ },
+ {
+  "t": 12.02,
+  "type": "impact",
+  "q": "war drum hit",
+  "gain": 0.9,
+  "note": "rang II : protospathaire"
+ },
+ {
+  "t": 14.4,
+  "type": "piece",
+  "q": "coins pouring",
+  "gain": 0.9,
+  "note": "pluie de pièces d'or (la pension)"
+ },
+ {
+  "t": 16.4,
+  "type": "piece",
+  "q": "coins drop",
+  "gain": 0.7,
+  "pan": 0.5,
+  "note": "pièces (suite)"
+ },
+ {
+  "t": 20.02,
+  "type": "impact",
+  "q": "war drum hit",
+  "gain": 0.9,
+  "note": "rang III : patrice"
+ },
+ {
+  "t": 20.3,
+  "type": "ambiance",
+  "d": 7.4,
+  "q": "crowd cheering",
+  "gain": 0.8,
+  "note": "procession, foule en fête"
+ },
+ {
+  "t": 28.02,
+  "type": "impact",
+  "q": "war drum hit",
+  "gain": 0.9,
+  "note": "rang IV : parakoimômène"
+ },
+ {
+  "t": 28.2,
+  "type": "ambiance",
+  "d": 7.6,
+  "q": "crickets night",
+  "gain": 0.7,
+  "note": "nuit devant la chambre"
+ },
+ {
+  "t": 30.0,
+  "type": "ambiance",
+  "d": 5.5,
+  "q": "fire crackling",
+  "gain": 0.6,
+  "note": "chandelle qui crépite"
+ },
+ {
+  "t": 36.02,
+  "type": "impact",
+  "q": "war drum hit",
+  "gain": 1.0,
+  "note": "rang V : empereur"
+ },
+ {
+  "t": 38.0,
+  "type": "whoosh",
+  "q": "cloth rustle",
+  "gain": 0.6,
+  "note": "l'ambassadeur se prosterne"
+ },
+ {
+  "t": 40.62,
+  "type": "rugissement",
+  "q": "lion roar",
+  "gain": 1.0,
+  "note": "les lions d'or rugissent"
+ },
+ {
+  "t": 41.2,
+  "type": "ambiance",
+  "d": 3.8,
+  "q": "mechanical gears",
+  "gain": 0.8,
+  "note": "le trône monte (mécanisme)"
+ },
+ {
+  "t": 41.0,
+  "type": "ambiance",
+  "d": 3.5,
+  "q": "birds chirping",
+  "gain": 0.5,
+  "note": "oiseaux d'or qui chantent"
+ },
+ {
+  "t": 44.8,
+  "type": "impact",
+  "q": "cinematic boom",
+  "gain": 0.9,
+  "note": "trône au plafond"
+ },
+ {
+  "t": 49.2,
+  "type": "cloche",
+  "q": "bell strike",
+  "gain": 0.7,
+  "note": "fin : « Tu serais à quel rang ? »"
+ }
+]

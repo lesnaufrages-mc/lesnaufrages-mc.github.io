@@ -1,0 +1,12 @@
+[{
+"titre": "🛠️ Mise à jour du serveur · 22 novembre",
+"intro": "Une nouvelle mise à jour est en ligne depuis le redémarrage de cette nuit : les métiers et les factions ont maintenant leurs propres menus.",
+"notes": [
+{"type":"nouveaute","titre":"Menu des métiers : /metiers","texte":"Les 16 métiers dans un seul menu, avec votre niveau et votre progression. Clic gauche pour rejoindre un métier, shift + clic droit pour le quitter. Le classement des meilleurs joueurs est sur /metierstop."},
+{"type":"nouveaute","titre":"Menu de faction : /fmenu ou /pays","texte":"Infos, membres, invitations, territoires, banque, relations, annuaire et classement des factions, sans retenir une seule commande. Sur Java, créer une faction, inviter un joueur ou gérer la banque se fait maintenant dans de vraies fenêtres."},
+{"type":"amelioration","titre":"Menus dessinés sur Java","texte":"Un pack de ressources facultatif est proposé à la connexion : il donne un vrai décor aux menus. Vous pouvez le refuser, les menus marchent aussi sans. Sur Bedrock, les menus restent au format coffre."},
+{"type":"nouveaute","titre":"Rangs d'équipage dans les factions","texte":"Les membres d'une faction portent désormais un rang : Capitaine, Quartier-Maître ou Matelot."}
+],
+"bientot": ["⚓ D'autres idées autour des métiers maritimes et des événements de faction sont en préparation."],
+"mentionner": true
+}]

@@ -7,7 +7,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlag
 //  - le fichier actualites.js du site (actus écrites à la main) ;
 //  - la table « actualites » de Supabase (actus publiées depuis l'espace admin).
 // Toutes les 5 minutes, le bot regarde s'il y en a une nouvelle et la poste dans le salon des actus.
-export const SITE = 'https://lesnaufrages-mc.github.io/';
+export const SITE = 'https://lesnaufrages.net/';
 // Valeurs publiques (les mêmes que dans docs/supabase-config.js du site) : lecture seule.
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://updqdvsigqtsjddeshvi.supabase.co';
 const SUPABASE_CLE = process.env.SUPABASE_CLE || 'sb_publishable_wvxRoVPpFIvPPrB9GTqsLQ_Q8LUArgH';
@@ -80,7 +80,7 @@ export function messageActu(a) {
     .setTitle(String(a.titre).slice(0, 256))
     .setDescription(String(a.texte).slice(0, 4000))
     .setURL(`${SITE}actualites.html`)
-    .setFooter({ text: 'lesnaufrages-mc.github.io' });
+    .setFooter({ text: 'lesnaufrages.net' });
   if (/^\d{4}-\d{2}-\d{2}$/.test(a.date ?? '')) embed.setTimestamp(new Date(`${a.date}T12:00:00Z`));
   const image = lienAbsolu(a.image);
   if (image) embed.setImage(image);
@@ -93,7 +93,7 @@ export function messageActu(a) {
 }
 
 let enCours = false;
-export async function verifierActus(client, salonId) {
+export async function verifierActus(client, salonId, salonMinecraft = null) {
   if (!salonId || enCours) return;
   enCours = true;
   try {
@@ -102,7 +102,12 @@ export async function verifierActus(client, salonId) {
     const vues = lireVues();
     const salon = await client.channels.fetch(salonId).catch(() => null);
     if (!salon) return console.error('Salon des actus introuvable : vérifie SALON_ACTUS_ID.');
-    for (const a of nouvelles(actus, vues)) await salon.send(messageActu(a));
+    const mc = salonMinecraft ? await client.channels.fetch(salonMinecraft).catch(() => null) : null;
+    for (const a of nouvelles(actus, vues)) {
+      await salon.send(messageActu(a));
+      // Les actus « Minecraft » du site sont aussi relayées dans le salon du serveur.
+      if (a.categorie === 'minecraft' && mc?.isTextBased()) await mc.send(messageActu(a)).catch(() => {});
+    }
     ecrireVues([...new Set([...(vues ?? []), ...actus.map(cle)])]);
   } catch (e) {
     console.error('Actus :', e.message);

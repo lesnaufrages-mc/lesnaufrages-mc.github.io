@@ -1,0 +1,12 @@
+[{
+"titre": "🛠️ Mise à jour du serveur · 17 novembre",
+"intro": "Une nouvelle mise à jour vient d'être déployée sur le serveur. Voici ce qui change pour vous en jeu.",
+"notes": [
+{"type":"nouveaute","titre":"Nouveau camp de mineurs dans l'Archipel Sauvage","texte":"Le monde de minage accueille désormais un véritable camp de mineurs à son point d'arrivée. Il sert de base sûre pour s'équiper et se reposer entre deux expéditions. Accès : le passeur du port, Capitaine Le Goff."},
+{"type":"nouveaute","titre":"Statues du staff","texte":"Des statues à l'effigie des membres du staff ont été érigées pour que chacun puisse reconnaître facilement l'équipe qui fait vivre le serveur."},
+{"type":"amelioration","titre":"Zone sans monstres autour du spawn","texte":"Les monstres hostiles n'apparaissent plus dans une bande de 200 blocs autour du spawn, où la construction reste libre. Les nouveaux joueurs peuvent s'installer en sécurité ; les fermes à monstres sont à construire plus loin."},
+{"type":"nouveaute","titre":"Avant-poste en ruines dans le Nether","texte":"Le portail du spawn débouche désormais sur un avant-poste en ruines, protégé et sans monstres : un point d'arrivée sûr avant de partir explorer le Nether."}
+],
+"bientot": ["🏴‍☠️ L'île des pirates est en cours de construction. Elle sera annoncée ici dès son ouverture."],
+"mentionner": true
+}]

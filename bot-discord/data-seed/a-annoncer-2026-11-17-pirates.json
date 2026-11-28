@@ -1,0 +1,10 @@
+[{
+"titre": "🏴‍☠️ Nouvelle zone : l'Île des Pirates",
+"intro": "Une nouvelle île vient d'ouvrir ses portes aux aventuriers du serveur. Voici tout ce qu'il faut savoir pour partir à l'abordage.",
+"notes": [
+{"type":"nouveaute","titre":"L'Île des Pirates","texte":"Une île tropicale a fait son apparition à environ 570 blocs au sud du spawn. Vous y découvrirez le Fort du Capitaine Barbe-Grise, le Rocher du Crâne, la Taverne du Rhum du Pendu, une épave et un galion. Pour s'y rendre : parlez à Jacquot le Borgne au port, ou utilisez `/warp pirates`."},
+{"type":"evenement","titre":"Quête : le trésor du Capitaine Barbe-Grise","texte":"Rendez-vous auprès du capitaine, puis retrouvez les 3 morceaux de sa carte au trésor, cachés dans l'épave, la taverne et une cabane de l'île. Une fois la carte complète, ouvrez le trésor du Rocher du Crâne : clé royale, diamants, or et émeraudes vous y attendent. La quête ne peut être accomplie qu'une seule fois par joueur."},
+{"type":"amelioration","titre":"Statues du staff","texte":"Les statues du Fondateur et des administrateurs se dressent désormais au Palais des Nations, et celle d'Astraloutre au spawn."}
+],
+"mentionner": true
+}]

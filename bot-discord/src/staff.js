@@ -4,7 +4,6 @@ import {
   EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ModalBuilder, TextInputBuilder,
   TextInputStyle, PermissionFlagsBits,
 } from 'discord.js';
-import { config, BANNIERE_RECRUTEMENT } from './config.js';
 
 // Mêmes noms de grades que sur le site (page /staff/). Du plus haut au plus bas.
 // Le bot ne peut donner que des permissions qu'il a lui-même : les grades du haut
@@ -76,33 +75,23 @@ async function creerRoles(i) {
   return i.editReply(lignes.join('\n'));
 }
 
-// --- /recrutement : poste le message avec les boutons « Postuler » + le lien du formulaire complet ---
+// --- /recrutement : poste le message avec les boutons « Postuler » ---
 const boutonsPostuler = () => new ActionRowBuilder().addComponents(
   POSTES.map((g) => new ButtonBuilder().setCustomId(`postuler:${g.nom}`).setLabel(g.nom).setEmoji(g.emoji).setStyle(ButtonStyle.Primary)),
-);
-const boutonFormulaire = () => new ActionRowBuilder().addComponents(
-  new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(config.formulaireRecrutement).setLabel('Formulaire de candidature complet').setEmoji('📋'),
 );
 
 async function posterRecrutement(i) {
   const salon = i.options.getChannel('salon_candidatures');
   ecrire('reglages.json', { ...lire('reglages.json'), salonCandidatures: salon.id });
   const embed = new EmbedBuilder()
-    .setColor(0xd9b878)
-    .setTitle('⚓ Rejoins l\'équipage des Naufragés')
+    .setColor(0x3fae5a)
+    .setTitle('📋 Recrutement du staff des Naufragés')
     .setDescription(
-      'Les Naufragés MC recrute des membres motivés pour faire vivre l\'île, en jeu comme sur Discord.\n\n'
+      'Tu veux aider la communauté ? Choisis le poste qui te correspond et remplis le formulaire.\n\n'
       + POSTES.map((g) => `${g.emoji} **${g.nom}**`).join('\n')
-      + '\n\n**Comment postuler**\n'
-      + '1️⃣ Clique sur le bouton de ton poste et remplis la fiche rapide.\n'
-      + '2️⃣ Remplis le **formulaire complet** (10 à 15 min) avec le bouton 📋.\n'
-      + '3️⃣ La Direction te répond en message privé sous 3 jours.\n'
-      + '4️⃣ Entretien vocal, puis période d\'essai de 14 jours.\n\n'
-      + 'Tous les postes sont bénévoles. Garde tes messages privés ouverts !',
-    )
-    .setImage(BANNIERE_RECRUTEMENT)
-    .setFooter({ text: 'Les Naufragés MC · Recrutement' });
-  await i.channel.send({ embeds: [embed], components: [boutonsPostuler(), boutonFormulaire()] });
+      + '\n\nLe staff étudie chaque candidature et te répond en message privé. Bonne chance ! 🍀',
+    );
+  await i.channel.send({ embeds: [embed], components: [boutonsPostuler()] });
   return i.reply({ content: `Message de recrutement posté ✅ Les candidatures arriveront dans ${salon}.`, flags: MessageFlags.Ephemeral });
 }
 
@@ -159,11 +148,7 @@ async function recevoirFormulaire(i, poste) {
     new ButtonBuilder().setCustomId(`cand-non:${i.user.id}:${poste}`).setLabel('Refuser').setEmoji('❌').setStyle(ButtonStyle.Danger),
   );
   await salon.send({ embeds: [embed], components: [boutons] });
-  return i.reply({
-    content: '📨 Fiche rapide envoyée ! Dernière étape : remplis le formulaire complet (10 à 15 min), la Direction lit les deux avant de te répondre en message privé.',
-    components: [boutonFormulaire()],
-    flags: MessageFlags.Ephemeral,
-  });
+  return i.reply({ content: '📨 Candidature envoyée ! Le staff te répondra en message privé.', flags: MessageFlags.Ephemeral });
 }
 
 // --- Boutons Accepter / Refuser (réservés à Fondateur, Admin, Responsable ou « Gérer les rôles ») ---

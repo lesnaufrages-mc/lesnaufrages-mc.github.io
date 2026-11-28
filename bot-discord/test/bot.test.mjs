@@ -73,7 +73,7 @@ test('actus du site : lecture, nouveautés et liens sûrs', async () => {
   assert.deepEqual(nouvelles(actus, null), []); // 1er passage : on n'inonde pas le salon
   assert.deepEqual(nouvelles(actus, [cle(actus[1])]).map((a) => a.titre), ['B']);
   assert.equal(cle({ id: 7, titre: 'x' }), 'sb:7');
-  assert.equal(lienAbsolu('strategie/'), 'https://lesnaufrages-mc.github.io/strategie/');
+  assert.equal(lienAbsolu('strategie/'), 'https://lesnaufrages.net/strategie/');
   assert.equal(lienAbsolu('https://discord.gg/x'), 'https://discord.gg/x');
   assert.equal(lienAbsolu('javascript:alert(1)'), null);
   assert.equal(lienAbsolu(' javascript:x'), null);

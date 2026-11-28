@@ -24,6 +24,11 @@ lord sait déjà livrer, à des gens qui en **demandent publiquement** :
   répondu avec un mod qui existe) est jetée.
 - Respecter les règles de chaque forum : sur Reddit, répondre dans le fil, pas de pub sèche.
 
+## Étape 0 : relire la fiche offre
+Lis `/mnt/project-files/premier-client/fiche-offre.md` : formules, preuves, 3 profils de
+client et les 12 objections avec leurs réponses. Donne aux chercheurs les 3 profils
+(joueur à une idée, orphelin de mod abandonné, chef de communauté) pour savoir quoi chercher.
+
 ## Étape 1 : les chercheurs (en parallèle)
 Lance **6 agents** (type `general-purpose`, en parallèle, chacun avec sa source de
 `sources.md`). Consigne commune :
@@ -52,12 +57,17 @@ Additionne. Les **3 premiers** gagnent ; en cas d'égalité, la piste la plus r�
   1. ce qu'on a compris de sa demande, 2. une preuve (un mod des Naufragés qui ressemble),
   3. l'offre (prix, délai), 4. une question simple (« je te fais un aperçu ? »).
   Pas de « Cher Monsieur », pas de pavé, pas de lien raccourci.
+  La preuve vient du §3 de la fiche offre ; sous chaque message, note **l'objection la plus
+  probable** (numéro de la fiche) et sa réponse prête, pour que lord l'ait sous la main.
 - en bas : les pistes recalées et pourquoi (pour ne pas les rechercher la prochaine fois).
 
 Puis ajoute les 3 au compteur de contacts du plan (section compteur de `plan-premier-client.md`)
 avec l'état « à envoyer », et montre à lord les 3 messages pour son **oui / non**.
 
 ## Bon à savoir
+- Pas besoin d'outil externe type « Harvey » (testé par un TikTok le 2026-11-28 : il faut une
+  clé Serper/Tavily et il sort des listes d'entreprises basiques). Nos clients sont des
+  joueurs qui demandent en public : cette skill suffit.
 - Coût : 11 agents par lancement. Une fois par semaine suffit.
 - Depuis le cloud, Reddit, le forum Paradox et les discussions Steam bloquent les robots
   (vérifié le 2026-11-27 : page de vérification, contenu masqué, erreur 429 sur Nexus).
